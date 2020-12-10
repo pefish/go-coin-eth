@@ -57,6 +57,7 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 }
 
 /**
+只能获取以后的事件，即使start指定为过去的block number，也不能获取到
 query的第一个[]interface{}是指第一个index，第二个是指第二个index
  */
 func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
@@ -86,6 +87,9 @@ func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan 
 	return sub, nil
 }
 
+/*
+查找历史的事件，但不能实时接受后面的事件
+ */
 func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.FilterOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
