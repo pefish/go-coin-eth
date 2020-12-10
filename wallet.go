@@ -56,6 +56,9 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 	return out, nil
 }
 
+/**
+query的第一个[]interface{}是指第一个index，第二个是指第二个index
+ */
 func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {

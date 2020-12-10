@@ -73,14 +73,16 @@ func TestWallet_FindLogs(t *testing.T) {
 			Start:   11424197,
 			End:     nil,
 			Context: nil,
-		})
+		},
+		nil,
+		[]interface{}{common.HexToAddress("0x560Be2E616473a16f834529B128460329E972A5e")},)
 	test.Equal(t, nil, err)
 	for {
 		select {
 		case result := <- resultChan:
-			//fmt.Println(result["from"].(common.Address).String())
-			//fmt.Println(result["to"].(common.Address).String())
-			//fmt.Println(result["value"].(*big.Int).String())
+			fmt.Println(result["from"].(common.Address).String())
+			fmt.Println(result["to"].(common.Address).String())
+			fmt.Println(result["value"].(*big.Int).String())
 			test.Equal(t, true, result["from"].(common.Address).String() != "")
 			goto exit
 		case err := <- errChan:
