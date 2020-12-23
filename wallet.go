@@ -8,10 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pefish/go-error"
 	go_reflect "github.com/pefish/go-reflect"
 	"math/big"
@@ -23,6 +26,7 @@ type Wallet struct {
 	RemoteClient *ethclient.Client
 	ctx          context.Context
 	chainId      *big.Int
+	nodeUrl string
 }
 
 func NewWallet(url string) (*Wallet, error) {
@@ -39,6 +43,7 @@ func NewWallet(url string) (*Wallet, error) {
 		RemoteClient: client,
 		ctx:          ctx,
 		chainId:      chainId,
+		nodeUrl: url,
 	}, nil
 }
 
@@ -59,7 +64,7 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 /**
 只能获取以后的事件，即使start指定为过去的block number，也不能获取到
 query的第一个[]interface{}是指第一个index，第二个是指第二个index
- */
+*/
 func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
@@ -73,7 +78,7 @@ func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan 
 	go func() {
 		for {
 			select {
-			case log1 := <- chanLog:
+			case log1 := <-chanLog:
 				map_ := make(map[string]interface{})
 				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
 				if err != nil {
@@ -89,7 +94,7 @@ func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan 
 
 /*
 查找历史的事件，但不能实时接受后面的事件
- */
+*/
 func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.FilterOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
@@ -103,7 +108,7 @@ func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan e
 	go func() {
 		for {
 			select {
-			case log1 := <- chanLog:
+			case log1 := <-chanLog:
 				map_ := make(map[string]interface{})
 				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
 				if err != nil {
@@ -118,10 +123,11 @@ func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan e
 }
 
 type CallMethodOpts struct {
-	Nonce    uint64
-	Value    string
-	GasPrice string
-	GasLimit uint64
+	Nonce     uint64
+	Value     string
+	GasPrice  string
+	GasLimit  uint64
+	Broadcast bool
 }
 
 func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*types.Transaction, error) {
@@ -191,9 +197,31 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	err = w.RemoteClient.SendTransaction(w.ctx, signedTx)
-	if err != nil {
-		return nil, go_error.WithStack(err)
+	if opts != nil && opts.Broadcast == true {
+		err = w.RemoteClient.SendTransaction(w.ctx, signedTx)
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
 	}
 	return signedTx, nil
+}
+
+func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
+	data, err := rlp.EncodeToBytes(tx)
+	if err != nil {
+		return err
+	}
+	rpcClient, err := rpc.DialContext(w.ctx, w.nodeUrl)
+	if err != nil {
+		return err
+	}
+	return rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
+}
+
+func (w *Wallet) SendRawTransaction(txHex string) error {
+	rpcClient, err := rpc.DialContext(w.ctx, w.nodeUrl)
+	if err != nil {
+		return err
+	}
+	return rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", txHex)
 }
