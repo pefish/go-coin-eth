@@ -34,7 +34,7 @@ func NewWallet(url string) (*Wallet, error) {
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
 	chainId, err := client.ChainID(ctx)
 	if err != nil {
 		return nil, go_error.WithStack(err)
