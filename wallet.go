@@ -180,10 +180,11 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 	}
 	if gasLimit == 0 {
 		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: input}
-		gasLimit, err = w.RemoteClient.EstimateGas(w.ctx, msg)
+		tempGasLimit, err := w.RemoteClient.EstimateGas(w.ctx, msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas needed: %v", err))
 		}
+		gasLimit = uint64(float64(tempGasLimit) * 1.3)
 	}
 	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, input)
 	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
