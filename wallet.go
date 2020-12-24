@@ -24,7 +24,7 @@ import (
 
 type Wallet struct {
 	RemoteClient *ethclient.Client
-	ctx          context.Context
+	timeout          time.Duration
 	chainId      *big.Int
 	nodeUrl string
 }
@@ -34,14 +34,15 @@ func NewWallet(url string) (*Wallet, error) {
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 60*time.Second)
+	timeout := 30 * time.Second
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	chainId, err := client.ChainID(ctx)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
 	return &Wallet{
 		RemoteClient: client,
-		ctx:          ctx,
+		timeout:      timeout,
 		chainId:      chainId,
 		nodeUrl: url,
 	}, nil
@@ -169,13 +170,15 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.RemoteClient.PendingNonceAt(w.ctx, fromAddress)
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		nonce, err = w.RemoteClient.PendingNonceAt(ctx, fromAddress)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
 	}
 	if gasPrice == nil {
-		gasPrice, err = w.RemoteClient.SuggestGasPrice(w.ctx)
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		gasPrice, err = w.RemoteClient.SuggestGasPrice(ctx)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 		}
@@ -186,7 +189,8 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 	}
 	if gasLimit == 0 {
 		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: input}
-		tempGasLimit, err := w.RemoteClient.EstimateGas(w.ctx, msg)
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		tempGasLimit, err := w.RemoteClient.EstimateGas(ctx, msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas needed: %v", err))
 		}
@@ -198,7 +202,8 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 		return nil, go_error.WithStack(err)
 	}
 	if opts != nil && opts.Broadcast == true {
-		err = w.RemoteClient.SendTransaction(w.ctx, signedTx)
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		err = w.RemoteClient.SendTransaction(ctx, signedTx)
 		if err != nil {
 			return nil, go_error.WithStack(err)
 		}
@@ -212,11 +217,13 @@ func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	rpcClient, err := rpc.DialContext(w.ctx, w.nodeUrl)
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	rpcClient, err := rpc.DialContext(ctx, w.nodeUrl)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	err = rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
+	ctx, _ = context.WithTimeout(context.Background(), w.timeout)
+	err = rpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
 	if err != nil {
 		return go_error.WithStack(err)
 	}
@@ -224,11 +231,13 @@ func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
 }
 
 func (w *Wallet) SendRawTransaction(txHex string) error {
-	rpcClient, err := rpc.DialContext(w.ctx, w.nodeUrl)
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	rpcClient, err := rpc.DialContext(ctx, w.nodeUrl)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	err = rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", txHex)
+	ctx, _ = context.WithTimeout(context.Background(), w.timeout)
+	err = rpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", txHex)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
