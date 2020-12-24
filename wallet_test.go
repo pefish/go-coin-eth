@@ -94,3 +94,13 @@ func TestWallet_FindLogs(t *testing.T) {
 	}
 exit:
 }
+
+func TestWallet_SendRawTransaction(t *testing.T) {
+	wallet1, err := NewWallet("https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b")
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = wallet1.SendRawTransaction("0xf8693f850bc97c324083041c8794bbd3c0c794f40c4f993b03f65343acc6fcfcb2e2808441fe00a025a015e4e95a51191607472b98fcbd168bd32aaadeed40c074ed2ec82044ec5a5e71a0484a64cf7fca58254404343926e91c96aca09cc2187ec83cc3be31f619a6f1df")
+	test.Equal(t, true, err != nil)
+	test.Equal(t, "nonce too low", err.Error())
+}
