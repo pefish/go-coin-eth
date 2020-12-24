@@ -68,12 +68,12 @@ query的第一个[]interface{}是指第一个index，第二个是指第二个ind
 func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, err
+		return nil, go_error.WithStack(err)
 	}
 	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
 	chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
 	if err != nil {
-		return nil, err
+		return nil, go_error.WithStack(err)
 	}
 	go func() {
 		for {
@@ -82,7 +82,7 @@ func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan 
 				map_ := make(map[string]interface{})
 				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
 				if err != nil {
-					errChan <- err
+					errChan <- go_error.WithStack(err)
 					return
 				}
 				resultChan <- map_
@@ -98,12 +98,12 @@ func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan 
 func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.FilterOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, err
+		return nil, go_error.WithStack(err)
 	}
 	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
 	chanLog, sub, err := contractInstance.FilterLogs(opts, eventName, query...)
 	if err != nil {
-		return nil, err
+		return nil, go_error.WithStack(err)
 	}
 	go func() {
 		for {
@@ -112,7 +112,7 @@ func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan e
 				map_ := make(map[string]interface{})
 				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
 				if err != nil {
-					errChan <- err
+					errChan <- go_error.WithStack(err)
 					return
 				}
 				resultChan <- map_
@@ -209,11 +209,11 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
-		return err
+		return go_error.WithStack(err)
 	}
 	rpcClient, err := rpc.DialContext(w.ctx, w.nodeUrl)
 	if err != nil {
-		return err
+		return go_error.WithStack(err)
 	}
 	return rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
 }
@@ -221,7 +221,7 @@ func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
 func (w *Wallet) SendRawTransaction(txHex string) error {
 	rpcClient, err := rpc.DialContext(w.ctx, w.nodeUrl)
 	if err != nil {
-		return err
+		return go_error.WithStack(err)
 	}
 	return rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", txHex)
 }
