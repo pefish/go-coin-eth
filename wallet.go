@@ -128,10 +128,14 @@ type CallMethodOpts struct {
 	Value     string
 	GasPrice  string
 	GasLimit  uint64
-	Broadcast bool
 }
 
-func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*types.Transaction, error) {
+type BuildCallMethodTxResult struct {
+	signedTx *types.Transaction
+	txHex string
+}
+
+func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -201,33 +205,14 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	if opts != nil && opts.Broadcast == true {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		err = w.RemoteClient.SendTransaction(ctx, signedTx)
-		if err != nil {
-			return nil, go_error.WithStack(err)
-		}
-	}
-	return signedTx, nil
-}
-
-
-func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
-	data, err := rlp.EncodeToBytes(tx)
+	data, err := rlp.EncodeToBytes(signedTx)
 	if err != nil {
-		return go_error.WithStack(err)
+		return nil, go_error.WithStack(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	rpcClient, err := rpc.DialContext(ctx, w.nodeUrl)
-	if err != nil {
-		return go_error.WithStack(err)
-	}
-	ctx, _ = context.WithTimeout(context.Background(), w.timeout)
-	err = rpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
-	if err != nil {
-		return go_error.WithStack(err)
-	}
-	return nil
+	return &BuildCallMethodTxResult{
+		signedTx: signedTx,
+		txHex:    hexutil.Encode(data),
+	}, nil
 }
 
 func (w *Wallet) SendRawTransaction(txHex string) error {

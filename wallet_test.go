@@ -22,8 +22,8 @@ func init() {
 	wallet = wallet1
 }
 
-func TestContract_CallMethod(t *testing.T) {
-	tx, err := wallet.CallMethod("", contractAddress, abiStr,"transfer", &CallMethodOpts{
+func TestContract_BuildCallMethodTx(t *testing.T) {
+	tx, err := wallet.BuildCallMethodTx("", contractAddress, abiStr,"transfer", &CallMethodOpts{
 		GasPrice: "1000000000",
 	}, common.HexToAddress("0x2117210296c2993Cfb4c6790FEa1bEB3ECe8Ac06"), big.NewInt(1000000000000000000))
 	test.Equal(t, true, tx == nil)
