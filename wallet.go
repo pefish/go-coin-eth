@@ -131,8 +131,8 @@ type CallMethodOpts struct {
 }
 
 type BuildCallMethodTxResult struct {
-	signedTx *types.Transaction
-	txHex string
+	SignedTx *types.Transaction
+	TxHex string
 }
 
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
@@ -210,8 +210,8 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 		return nil, go_error.WithStack(err)
 	}
 	return &BuildCallMethodTxResult{
-		signedTx: signedTx,
-		txHex:    hexutil.Encode(data),
+		SignedTx: signedTx,
+		TxHex:    hexutil.Encode(data),
 	}, nil
 }
 
