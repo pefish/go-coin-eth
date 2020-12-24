@@ -206,6 +206,7 @@ func (w *Wallet) CallMethod(privateKey, contractAddress, abiStr, methodName stri
 	return signedTx, nil
 }
 
+
 func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
