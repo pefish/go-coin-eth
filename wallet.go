@@ -216,7 +216,11 @@ func (w *Wallet) SendSignedTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	return rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
+	err = rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", hexutil.Encode(data))
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	return nil
 }
 
 func (w *Wallet) SendRawTransaction(txHex string) error {
@@ -224,5 +228,9 @@ func (w *Wallet) SendRawTransaction(txHex string) error {
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	return rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", txHex)
+	err = rpcClient.CallContext(w.ctx, nil, "eth_sendRawTransaction", txHex)
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	return nil
 }
