@@ -12,10 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pefish/go-error"
+	"github.com/pefish/go-logger"
 	go_reflect "github.com/pefish/go-reflect"
 	"math/big"
 	"strings"
@@ -28,6 +28,7 @@ type Wallet struct {
 	chainId      *big.Int
 	nodeUrl      string
 	RpcClient    *rpc.Client
+	logger       go_logger.InterfaceLogger
 }
 
 func NewWallet(url string) (*Wallet, error) {
@@ -50,7 +51,12 @@ func NewWallet(url string) (*Wallet, error) {
 		chainId:      chainId,
 		nodeUrl:      url,
 		RpcClient:    rpcClient,
+		logger:       go_logger.DefaultLogger,
 	}, nil
+}
+
+func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) {
+	w.logger = logger
 }
 
 func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string, opts *bind.CallOpts, params ...interface{}) ([]interface{}, error) {
@@ -68,34 +74,43 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 }
 
 /**
+是个同步方法
+
 只能获取以后的而且区块确认了的事件，即使start指定为过去的block number，也不能获取到
+
 query的第一个[]interface{}是指第一个index，第二个是指第二个index
 */
-func (w *Wallet) WatchLogsByWs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
+func (w *Wallet) WatchLogsByWs(resultChan chan map[string]interface{}, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return go_error.WithStack(err)
 	}
 	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
-	chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
-	go func() {
+retry:
+	for {
+		chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
+		if err != nil {
+			return go_error.WithStack(err)
+		}
+		w.logger.Info("connected. watching...")
 		for {
 			select {
 			case log1 := <-chanLog:
 				map_ := make(map[string]interface{})
 				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
 				if err != nil {
-					errChan <- go_error.WithStack(err)
-					return
+					sub.Unsubscribe()
+					return go_error.WithStack(err)
 				}
 				resultChan <- map_
+			case err := <-sub.Err():
+				w.logger.WarnF("connection closed. err -> %#v", err)
+				sub.Unsubscribe()
+				w.logger.Info("reconnect...")
+				continue retry
 			}
 		}
-	}()
-	return sub, nil
+	}
 }
 
 /*
@@ -245,11 +260,18 @@ func (w *Wallet) SendRawTransaction(txHex string) error {
 	return nil
 }
 
-func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) (event.Subscription, error) {
-	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	subscription, err := w.RpcClient.EthSubscribe(ctx, resultChan, "newPendingTransactions")
-	if err != nil {
-		return nil, go_error.WithStack(err)
+func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
+	for {
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		subscription, err := w.RpcClient.EthSubscribe(ctx, resultChan, "newPendingTransactions")
+		if err != nil {
+			subscription.Unsubscribe()
+			return go_error.WithStack(err)
+		}
+		w.logger.Info("connected. watching...")
+		err = <-subscription.Err()
+		w.logger.WarnF("connection closed. err -> %#v", err)
+		subscription.Unsubscribe()
+		w.logger.Info("reconnect...")
 	}
-	return subscription, nil
 }
