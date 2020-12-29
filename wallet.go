@@ -24,18 +24,22 @@ import (
 
 type Wallet struct {
 	RemoteClient *ethclient.Client
-	timeout          time.Duration
+	timeout      time.Duration
 	chainId      *big.Int
-	nodeUrl string
+	nodeUrl      string
+	RpcClient    *rpc.Client
 }
 
 func NewWallet(url string) (*Wallet, error) {
-	client, err := ethclient.Dial(url)
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
 	timeout := 30 * time.Second
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	rpcClient, err := rpc.DialContext(ctx, url)
+	if err != nil {
+		return nil, err
+	}
+	client := ethclient.NewClient(rpcClient)
+
+	ctx, _ = context.WithTimeout(context.Background(), timeout)
 	chainId, err := client.ChainID(ctx)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -44,7 +48,8 @@ func NewWallet(url string) (*Wallet, error) {
 		RemoteClient: client,
 		timeout:      timeout,
 		chainId:      chainId,
-		nodeUrl: url,
+		nodeUrl:      url,
+		RpcClient:    rpcClient,
 	}, nil
 }
 
@@ -63,10 +68,10 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 }
 
 /**
-只能获取以后的事件，即使start指定为过去的block number，也不能获取到
+只能获取以后的而且区块确认了的事件，即使start指定为过去的block number，也不能获取到
 query的第一个[]interface{}是指第一个index，第二个是指第二个index
 */
-func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
+func (w *Wallet) WatchLogsByWs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) (event.Subscription, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -94,45 +99,61 @@ func (w *Wallet) WatchLogs(resultChan chan map[string]interface{}, errChan chan 
 }
 
 /*
-查找历史的事件，但不能实时接受后面的事件
+查找历史的已经确认的事件，但不能实时接受后面的事件。取不到pending中的logs
+
+fromBlock；nil就是0，负数就是pending，正数就是blockNumber
+toBlock；nil就是latest，负数就是pending，正数就是blockNumber
 */
-func (w *Wallet) FindLogs(resultChan chan map[string]interface{}, errChan chan error, contractAddress, abiStr, eventName string, opts *bind.FilterOpts, query ...[]interface{}) (event.Subscription, error) {
+func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, toBlock *big.Int, query ...[]interface{}) ([]map[string]interface{}, error) {
+	result := make([]map[string]interface{}, 0)
+
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
-	chanLog, sub, err := contractInstance.FilterLogs(opts, eventName, query...)
+
+	query = append([][]interface{}{{parsedAbi.Events[eventName].ID}}, query...)
+
+	topics, err := abi.MakeTopics(query...)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	go func() {
-		for {
-			select {
-			case log1 := <-chanLog:
-				map_ := make(map[string]interface{})
-				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
-				if err != nil {
-					errChan <- go_error.WithStack(err)
-					return
-				}
-				resultChan <- map_
-			}
+
+	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
+
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	logs, err := w.RemoteClient.FilterLogs(ctx, ethereum.FilterQuery{
+		FromBlock: fromBlock,
+		ToBlock:   toBlock,
+		Addresses: []common.Address{
+			common.HexToAddress(contractAddress),
+		},
+		Topics: topics,
+	})
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	for _, log := range logs {
+		map_ := make(map[string]interface{})
+		err := contractInstance.UnpackLogIntoMap(map_, eventName, log)
+		if err != nil {
+			return nil, go_error.WithStack(err)
 		}
-	}()
-	return sub, nil
+		result = append(result, map_)
+	}
+	return result, nil
 }
 
 type CallMethodOpts struct {
-	Nonce     uint64
-	Value     string
-	GasPrice  string
-	GasLimit  uint64
+	Nonce    uint64
+	Value    string
+	GasPrice string
+	GasLimit uint64
 }
 
 type BuildCallMethodTxResult struct {
 	SignedTx *types.Transaction
-	TxHex string
+	TxHex    string
 }
 
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
@@ -217,14 +238,18 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 
 func (w *Wallet) SendRawTransaction(txHex string) error {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	rpcClient, err := rpc.DialContext(ctx, w.nodeUrl)
-	if err != nil {
-		return go_error.WithStack(err)
-	}
-	ctx, _ = context.WithTimeout(context.Background(), w.timeout)
-	err = rpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", txHex)
+	err := w.RpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", txHex)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
 	return nil
+}
+
+func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) (event.Subscription, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	subscription, err := w.RpcClient.EthSubscribe(ctx, resultChan, "newPendingTransactions")
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return subscription, nil
 }
