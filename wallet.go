@@ -3,6 +3,7 @@ package go_coin_eth
 import (
 	"context"
 	"encoding/hex"
+	"github.com/pkg/errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -32,7 +33,7 @@ type Wallet struct {
 }
 
 func NewWallet(url string) (*Wallet, error) {
-	timeout := 30 * time.Second
+	timeout := 60 * time.Second
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	rpcClient, err := rpc.DialContext(ctx, url)
 	if err != nil {
@@ -53,6 +54,11 @@ func NewWallet(url string) (*Wallet, error) {
 		RpcClient:    rpcClient,
 		logger:       go_logger.DefaultLogger,
 	}, nil
+}
+
+func (w *Wallet) Close() {
+	w.RemoteClient.Close()
+	w.RpcClient.Close()
 }
 
 func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) {
@@ -169,6 +175,38 @@ type CallMethodOpts struct {
 type BuildCallMethodTxResult struct {
 	SignedTx *types.Transaction
 	TxHex    string
+}
+
+func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string) (*abi.Method, error) {
+	if len(payloadStr) < 8 {
+		return nil, errors.New("payloadStr error")
+	}
+	if strings.HasPrefix(payloadStr, "0x") {
+		payloadStr = payloadStr[2:]
+	}
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	data, err := hex.DecodeString(payloadStr)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	method, err := parsedAbi.MethodById(data[:4])
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	if len(data[4:]) > 0 {
+		a, err := method.Inputs.Unpack(data[4:])
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+		err = method.Inputs.Copy(out, a)
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+	}
+	return method, err
 }
 
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
