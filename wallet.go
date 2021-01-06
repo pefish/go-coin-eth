@@ -38,6 +38,7 @@ type UrlParam struct {
 	WsUrl string
 }
 
+
 func NewWallet(urlParam UrlParam) (*Wallet, error) {
 	if urlParam.RpcUrl == "" {
 		return nil, errors.New("rpc url must be set")
