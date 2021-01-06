@@ -77,8 +77,12 @@ func NewWallet(urlParam UrlParam) (*Wallet, error) {
 }
 
 func (w *Wallet) Close() {
-	w.RemoteRpcClient.Close()
-	w.RpcClient.Close()
+	if w.RemoteRpcClient != nil {
+		w.RemoteRpcClient.Close()
+	}
+	if w.RpcClient != nil {
+		w.RpcClient.Close()
+	}
 	if w.RemoteWsClient != nil {
 		w.RemoteWsClient.Close()
 	}
