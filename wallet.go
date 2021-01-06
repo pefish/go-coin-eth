@@ -3,7 +3,6 @@ package go_coin_eth
 import (
 	"context"
 	"encoding/hex"
-	"github.com/pkg/errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -18,6 +17,7 @@ import (
 	"github.com/pefish/go-error"
 	"github.com/pefish/go-logger"
 	go_reflect "github.com/pefish/go-reflect"
+	"github.com/pkg/errors"
 	"math/big"
 	"strings"
 	"time"
@@ -25,19 +25,18 @@ import (
 
 type Wallet struct {
 	RemoteRpcClient *ethclient.Client
-	RemoteWsClient *ethclient.Client
+	RemoteWsClient  *ethclient.Client
 	timeout         time.Duration
 	chainId         *big.Int
 	RpcClient       *rpc.Client
-	WsClient       *rpc.Client
+	WsClient        *rpc.Client
 	logger          go_logger.InterfaceLogger
 }
 
 type UrlParam struct {
 	RpcUrl string
-	WsUrl string
+	WsUrl  string
 }
-
 
 func NewWallet(urlParam UrlParam) (*Wallet, error) {
 	if urlParam.RpcUrl == "" {
@@ -145,7 +144,7 @@ retry:
 				resultChan <- map_
 			case err := <-sub.Err():
 				w.logger.WarnF("connection closed. err -> %#v", err)
-				if err == nil {  // 自己主动关闭的
+				if err == nil { // 自己主动关闭的
 					return nil
 				}
 				sub.Unsubscribe()
@@ -215,6 +214,28 @@ type BuildCallMethodTxResult struct {
 }
 
 func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string) (*abi.Method, error) {
+	method, err := w.MethodFromPayload(abiStr, payloadStr)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	data, err := hex.DecodeString(payloadStr)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	if len(data[4:]) > 0 {
+		a, err := method.Inputs.Unpack(data[4:])
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+		err = method.Inputs.Copy(out, a)
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+	}
+	return method, err
+}
+
+func (w *Wallet) MethodFromPayload(abiStr string, payloadStr string) (*abi.Method, error) {
 	if len(payloadStr) < 8 {
 		return nil, errors.New("payloadStr error")
 	}
@@ -233,19 +254,8 @@ func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	if len(data[4:]) > 0 {
-		a, err := method.Inputs.Unpack(data[4:])
-		if err != nil {
-			return nil, go_error.WithStack(err)
-		}
-		err = method.Inputs.Copy(out, a)
-		if err != nil {
-			return nil, go_error.WithStack(err)
-		}
-	}
 	return method, err
 }
-
 
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
@@ -361,7 +371,7 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 		w.logger.Info("connected. watching...")
 		err = <-subscription.Err()
 		w.logger.WarnF("connection closed. err -> %#v", err)
-		if err == nil {  // 自己主动关闭的
+		if err == nil { // 自己主动关闭的
 			return nil
 		}
 		subscription.Unsubscribe()
