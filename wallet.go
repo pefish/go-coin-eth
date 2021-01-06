@@ -46,7 +46,7 @@ func NewWallet(urlParam UrlParam) (*Wallet, error) {
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	rpcClient, err := rpc.DialContext(ctx, urlParam.RpcUrl)
 	if err != nil {
-		return nil, err
+		return nil, go_error.WithStack(err)
 	}
 	remoteRpcClient := ethclient.NewClient(rpcClient)
 
@@ -66,7 +66,7 @@ func NewWallet(urlParam UrlParam) (*Wallet, error) {
 		ctx, _ := context.WithTimeout(context.Background(), timeout)
 		wsClient, err := rpc.DialContext(ctx, urlParam.WsUrl)
 		if err != nil {
-			return nil, err
+			return nil, go_error.WithStack(err)
 		}
 		remoteWsClient := ethclient.NewClient(wsClient)
 		wallet.RemoteWsClient = remoteWsClient
