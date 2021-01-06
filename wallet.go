@@ -139,6 +139,9 @@ retry:
 				}
 				resultChan <- map_
 			case err := <-sub.Err():
+				if err == nil {  // 自己主动关闭的
+					return nil
+				}
 				w.logger.WarnF("connection closed. err -> %#v", err)
 				sub.Unsubscribe()
 				w.logger.Info("reconnect...")
@@ -352,6 +355,9 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 		}
 		w.logger.Info("connected. watching...")
 		err = <-subscription.Err()
+		if err == nil {  // 自己主动关闭的
+			return nil
+		}
 		w.logger.WarnF("connection closed. err -> %#v", err)
 		subscription.Unsubscribe()
 		w.logger.Info("reconnect...")
