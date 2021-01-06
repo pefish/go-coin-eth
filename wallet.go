@@ -24,41 +24,67 @@ import (
 )
 
 type Wallet struct {
-	RemoteClient *ethclient.Client
-	timeout      time.Duration
-	chainId      *big.Int
-	nodeUrl      string
-	RpcClient    *rpc.Client
-	logger       go_logger.InterfaceLogger
+	RemoteRpcClient *ethclient.Client
+	RemoteWsClient *ethclient.Client
+	timeout         time.Duration
+	chainId         *big.Int
+	RpcClient       *rpc.Client
+	WsClient       *rpc.Client
+	logger          go_logger.InterfaceLogger
 }
 
-func NewWallet(url string) (*Wallet, error) {
+type UrlParam struct {
+	RpcUrl string
+	WsUrl string
+}
+
+func NewWallet(urlParam UrlParam) (*Wallet, error) {
+	if urlParam.RpcUrl == "" {
+		return nil, errors.New("rpc url must be set")
+	}
 	timeout := 60 * time.Second
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
-	rpcClient, err := rpc.DialContext(ctx, url)
+	rpcClient, err := rpc.DialContext(ctx, urlParam.RpcUrl)
 	if err != nil {
 		return nil, err
 	}
-	client := ethclient.NewClient(rpcClient)
+	remoteRpcClient := ethclient.NewClient(rpcClient)
 
 	ctx, _ = context.WithTimeout(context.Background(), timeout)
-	chainId, err := client.ChainID(ctx)
+	chainId, err := remoteRpcClient.ChainID(ctx)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	return &Wallet{
-		RemoteClient: client,
-		timeout:      timeout,
-		chainId:      chainId,
-		nodeUrl:      url,
-		RpcClient:    rpcClient,
-		logger:       go_logger.DefaultLogger,
-	}, nil
+	wallet := &Wallet{
+		RemoteRpcClient: remoteRpcClient,
+		timeout:         timeout,
+		chainId:         chainId,
+		RpcClient:       rpcClient,
+		logger:          go_logger.DefaultLogger,
+	}
+	if urlParam.WsUrl != "" {
+		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		wsClient, err := rpc.DialContext(ctx, urlParam.WsUrl)
+		if err != nil {
+			return nil, err
+		}
+		remoteWsClient := ethclient.NewClient(wsClient)
+		wallet.RemoteWsClient = remoteWsClient
+		wallet.WsClient = wsClient
+	}
+	return wallet, nil
 }
 
 func (w *Wallet) Close() {
-	w.RemoteClient.Close()
+	w.RemoteRpcClient.Close()
 	w.RpcClient.Close()
+	if w.RemoteWsClient != nil {
+		w.RemoteWsClient.Close()
+	}
+	if w.WsClient != nil {
+		w.WsClient.Close()
+	}
+
 }
 
 func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) {
@@ -71,7 +97,7 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
+	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient)
 	err = contractInstance.Call(opts, &out, methodName, params...)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -87,11 +113,14 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 query的第一个[]interface{}是指第一个index，第二个是指第二个index
 */
 func (w *Wallet) WatchLogsByWs(resultChan chan map[string]interface{}, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) error {
+	if w.RemoteWsClient == nil || w.WsClient == nil {
+		return errors.New("please set ws url")
+	}
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
+	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteWsClient, w.RemoteWsClient, w.RemoteWsClient)
 retry:
 	for {
 		chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
@@ -140,10 +169,10 @@ func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, 
 		return nil, go_error.WithStack(err)
 	}
 
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteClient, w.RemoteClient, w.RemoteClient)
+	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient)
 
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	logs, err := w.RemoteClient.FilterLogs(ctx, ethereum.FilterQuery{
+	logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: fromBlock,
 		ToBlock:   toBlock,
 		Addresses: []common.Address{
@@ -250,14 +279,14 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		nonce, err = w.RemoteClient.PendingNonceAt(ctx, fromAddress)
+		nonce, err = w.RemoteRpcClient.PendingNonceAt(ctx, fromAddress)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
 	}
 	if gasPrice == nil {
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		gasPrice, err = w.RemoteClient.SuggestGasPrice(ctx)
+		gasPrice, err = w.RemoteRpcClient.SuggestGasPrice(ctx)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 		}
@@ -269,7 +298,7 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	if gasLimit == 0 {
 		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: input}
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		tempGasLimit, err := w.RemoteClient.EstimateGas(ctx, msg)
+		tempGasLimit, err := w.RemoteRpcClient.EstimateGas(ctx, msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas needed: %v", err))
 		}
@@ -300,9 +329,12 @@ func (w *Wallet) SendRawTransaction(txHex string) error {
 }
 
 func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
+	if w.RemoteWsClient == nil || w.WsClient == nil {
+		return errors.New("please set ws url")
+	}
 	for {
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		subscription, err := w.RpcClient.EthSubscribe(ctx, resultChan, "newPendingTransactions")
+		subscription, err := w.WsClient.EthSubscribe(ctx, resultChan, "newPendingTransactions")
 		if err != nil {
 			subscription.Unsubscribe()
 			return go_error.WithStack(err)
