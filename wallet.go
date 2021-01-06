@@ -328,6 +328,15 @@ func (w *Wallet) SendRawTransaction(txHex string) error {
 	return nil
 }
 
+func (w *Wallet) TransactionByHash(txHash string) (*types.Transaction, bool, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	tx, isPending, err := w.RemoteRpcClient.TransactionByHash(ctx, common.HexToHash(txHash))
+	if err != nil {
+		return nil, false, go_error.WithStack(err)
+	}
+	return tx, isPending, nil
+}
+
 func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
 		return errors.New("please set ws url")
