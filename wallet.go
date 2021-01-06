@@ -345,7 +345,9 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		subscription, err := w.WsClient.EthSubscribe(ctx, resultChan, "newPendingTransactions")
 		if err != nil {
-			subscription.Unsubscribe()
+			if subscription != nil {
+				subscription.Unsubscribe()
+			}
 			return go_error.WithStack(err)
 		}
 		w.logger.Info("connected. watching...")
