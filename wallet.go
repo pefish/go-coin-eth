@@ -214,11 +214,21 @@ type BuildCallMethodTxResult struct {
 }
 
 func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string) (*abi.Method, error) {
-	method, err := w.MethodFromPayload(abiStr, payloadStr)
+	if len(payloadStr) < 8 {
+		return nil, errors.New("payloadStr error")
+	}
+	if strings.HasPrefix(payloadStr, "0x") {
+		payloadStr = payloadStr[2:]
+	}
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
 	data, err := hex.DecodeString(payloadStr)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	method, err := parsedAbi.MethodById(data[:4])
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
