@@ -1,6 +1,7 @@
 package go_coin_eth
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pefish/go-test-assert"
@@ -170,4 +171,17 @@ func TestWallet_DecodePayload(t *testing.T) {
 		"0x38ed1739")
 	test.Equal(t, nil, err)
 	test.Equal(t, "swapExactTokensForTokens", method1.Name)
+}
+
+func TestWallet_TxsInPool(t *testing.T) {
+	wallet1, err := NewWallet(UrlParam{
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		WsUrl:  "",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wallet1.Close()
+	txs, err := wallet1.TxsInPool()
+	fmt.Println(txs, err)
 }

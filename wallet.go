@@ -355,6 +355,38 @@ func (w *Wallet) TransactionByHash(txHash string) (*types.Transaction, bool, err
 	return tx, isPending, nil
 }
 
+type Transaction struct{
+	BlockHash string `json:"blockHash"`
+	BlockNumber string `json:"blockNumber"`
+	From string `json:"from"`
+	Gas string `json:"gas"`
+	GasPrice string `json:"gasPrice"`
+	Hash string `json:"hash"`
+	Input string `json:"input"`
+	Nonce string `json:"nonce"`
+	To string `json:"to"`
+	TransactionIndex string `json:"transactionIndex"`
+	Value string `json:"value"`
+	V string `json:"v"`
+	R string `json:"r"`
+	S string `json:"s"`
+}
+
+type TxsInPoolResult struct {
+	Pending map[string]map[string]Transaction `json:"pending"`
+	Queued map[string]map[string]Transaction `json:"queued"`
+}
+
+func (w *Wallet) TxsInPool() (*TxsInPoolResult, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	var result TxsInPoolResult
+	err := w.RpcClient.CallContext(ctx, &result, "txpool_content")
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return &result, nil
+}
+
 func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
 		return errors.New("please set ws url")
