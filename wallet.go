@@ -267,6 +267,24 @@ func (w *Wallet) MethodFromPayload(abiStr string, payloadStr string) (*abi.Metho
 	return method, err
 }
 
+func (w *Wallet) SuggestGasPrice() (string, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
+	if err != nil {
+		return "", go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+	}
+	return gasPrice.String(), nil
+}
+
+func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (uint64, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	gasCount, err := w.RemoteRpcClient.EstimateGas(ctx, msg)
+	if err != nil {
+		return 0, go_error.WithStack(fmt.Errorf("failed to estimate gas needed: %v", err))
+	}
+	return gasCount, nil
+}
+
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
@@ -325,10 +343,9 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	}
 	if gasLimit == 0 {
 		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: input}
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		tempGasLimit, err := w.RemoteRpcClient.EstimateGas(ctx, msg)
+		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas needed: %v", err))
+			return nil, err
 		}
 		gasLimit = uint64(float64(tempGasLimit) * 1.3)
 	}

@@ -40,7 +40,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 
 func TestWallet_WatchLogs(t *testing.T) {
 	wallet, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "wss://mainnet.infura.io/ws/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func TestWallet_WatchLogs(t *testing.T) {
 
 func TestWallet_FindLogs(t *testing.T) {
 	wallet, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -86,7 +86,7 @@ func TestWallet_FindLogs(t *testing.T) {
 
 func TestWallet_SendRawTransaction(t *testing.T) {
 	wallet1, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -100,7 +100,7 @@ func TestWallet_SendRawTransaction(t *testing.T) {
 
 func TestWallet_WatchPendingTxByWs(t *testing.T) {
 	wallet, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -120,7 +120,7 @@ func TestWallet_WatchPendingTxByWs(t *testing.T) {
 
 func TestWallet_CallContractConstant(t *testing.T) {
 	wallet1, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -138,7 +138,7 @@ func TestWallet_CallContractConstant(t *testing.T) {
 
 func TestWallet_DecodePayload(t *testing.T) {
 	wallet1, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -175,7 +175,7 @@ func TestWallet_DecodePayload(t *testing.T) {
 
 func TestWallet_TxsInPool(t *testing.T) {
 	wallet1, err := NewWallet(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8",
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -184,4 +184,18 @@ func TestWallet_TxsInPool(t *testing.T) {
 	defer wallet1.Close()
 	txs, err := wallet1.TxsInPool()
 	fmt.Println(txs, err)
+}
+
+func TestWallet_SuggestGasPrice(t *testing.T) {
+	wallet1, err := NewWallet(UrlParam{
+		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		WsUrl:  "",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wallet1.Close()
+	gasPrice, err := wallet1.SuggestGasPrice()
+	test.Equal(t, nil, err)
+	test.Equal(t, true, len(gasPrice) > 3)
 }
