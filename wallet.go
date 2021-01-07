@@ -267,7 +267,6 @@ func (w *Wallet) MethodFromPayload(abiStr string, payloadStr string) (*abi.Metho
 	return method, err
 }
 
-
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
