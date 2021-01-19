@@ -464,10 +464,19 @@ func (w *Wallet) TransactionByHash(txHash string) (*types.Transaction, bool, err
 	return tx, isPending, nil
 }
 
-func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) {
+func (w *Wallet) TransactionReceiptByHash(txHash string) (*types.Receipt, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	receipt, err := w.RemoteRpcClient.TransactionReceipt(ctx, common.HexToHash(txHash))
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return receipt, nil
+}
+
+func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Transaction {
 	timer := time.NewTimer(0)
 	for range timer.C {
-		_, isPending, err := w.TransactionByHash(txHash)
+		tx, isPending, err := w.TransactionByHash(txHash)
 		if err != nil {
 			w.logger.Warn(err)
 			timer.Reset(interval)
@@ -477,8 +486,10 @@ func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) {
 			timer.Reset(interval)
 			continue
 		}
-		break
+		timer.Stop()
+		return tx
 	}
+	return nil
 }
 
 type Transaction struct{
