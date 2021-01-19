@@ -199,3 +199,19 @@ func TestWallet_SuggestGasPrice(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, true, len(gasPrice) > 3)
 }
+
+func TestWallet_BuildTransferTx(t *testing.T) {
+	wallet1, err := NewWallet(UrlParam{
+		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		WsUrl:  "",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wallet1.Close()
+	_, err = wallet1.BuildTransferTx("", "0x476fBB25d56B5dD4f1df03165498C403C4713069", &CallMethodOpts{
+		Value:    "1000000000000000",
+	})
+	test.Equal(t, "invalid length, need 256 bits", err.Error())
+	//fmt.Println(tx.TxHex)
+}

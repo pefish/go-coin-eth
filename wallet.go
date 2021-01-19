@@ -364,6 +364,73 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	}, nil
 }
 
+func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodOpts) (*BuildCallMethodTxResult, error) {
+	if strings.HasPrefix(privateKey, "0x") {
+		privateKey = privateKey[2:]
+	}
+
+	toAddressObj := common.HexToAddress(toAddress)
+	privateKeyBuf, err := hex.DecodeString(privateKey)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+
+	var value = big.NewInt(0)
+	var gasPrice *big.Int = nil
+	var gasLimit uint64 = 0
+	var nonce uint64 = 0
+	if opts != nil {
+		if opts.Value != "" {
+			value = big.NewInt(go_reflect.Reflect.MustToInt64(opts.Value))
+		}
+
+		if opts.GasPrice != "" {
+			gasPrice = big.NewInt(go_reflect.Reflect.MustToInt64(opts.GasPrice))
+		}
+
+		gasLimit = opts.GasLimit
+		nonce = opts.Nonce
+	}
+	if gasLimit == 0 {
+		gasLimit = 21000
+	}
+
+	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	publicKeyECDSA := privateKeyECDSA.PublicKey
+	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
+	if nonce == 0 {
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		nonce, err = w.RemoteRpcClient.PendingNonceAt(ctx, fromAddress)
+		if err != nil {
+			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
+		}
+	}
+	if gasPrice == nil {
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		gasPrice, err = w.RemoteRpcClient.SuggestGasPrice(ctx)
+		if err != nil {
+			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+		}
+	}
+	var rawTx = types.NewTransaction(nonce, toAddressObj, value, gasLimit, gasPrice, make([]byte, 0))
+	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	data, err := rlp.EncodeToBytes(signedTx)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return &BuildCallMethodTxResult{
+		SignedTx: signedTx,
+		TxHex:    hexutil.Encode(data),
+	}, nil
+}
+
+
 func (w *Wallet) SendRawTransaction(txHex string) error {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	err := w.RpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", txHex)
