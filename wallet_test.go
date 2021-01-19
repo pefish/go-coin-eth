@@ -238,4 +238,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 	}, "0000000000000000000000000000000000000000000000000000000000000001")
 	test.Equal(t, nil, err)
 	test.Equal(t, "1", out.Value.String())
+
+	//tempValue, _ := big.NewInt(0).SetString("100000000000000000", 10)
+	//fmt.Println(tempValue.String())
 }

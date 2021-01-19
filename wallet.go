@@ -364,7 +364,7 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	var nonce uint64 = 0
 	if opts != nil {
 		if opts.Value != "" {
-			tempValue, ok := value.SetString(opts.Value, 10)
+			tempValue, ok := new(big.Int).SetString(opts.Value, 10)
 			if !ok {
 				return nil, errors.New("string convert to bigint error")
 			}
@@ -372,7 +372,7 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 		}
 
 		if opts.GasPrice != "" {
-			tempGasPrice, ok := value.SetString(opts.GasPrice, 10)
+			tempGasPrice, ok := new(big.Int).SetString(opts.GasPrice, 10)
 			if !ok {
 				return nil, errors.New("string convert to bigint error")
 			}
@@ -447,7 +447,7 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	var nonce uint64 = 0
 	if opts != nil {
 		if opts.Value != "" {
-			tempValue, ok := value.SetString(opts.Value, 10)
+			tempValue, ok := new(big.Int).SetString(opts.Value, 10)
 			if !ok {
 				return nil, errors.New("string convert to bigint error")
 			}
@@ -455,7 +455,7 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 		}
 
 		if opts.GasPrice != "" {
-			tempGasPrice, ok := value.SetString(opts.GasPrice, 10)
+			tempGasPrice, ok := new(big.Int).SetString(opts.GasPrice, 10)
 			if !ok {
 				return nil, errors.New("string convert to bigint error")
 			}
