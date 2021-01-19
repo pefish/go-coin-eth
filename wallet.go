@@ -531,10 +531,10 @@ func (w *Wallet) TransactionReceiptByHash(txHash string) (*types.Receipt, error)
 	return receipt, nil
 }
 
-func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Transaction {
+func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Receipt {
 	timer := time.NewTimer(0)
 	for range timer.C {
-		tx, isPending, err := w.TransactionByHash(txHash)
+		_, isPending, err := w.TransactionByHash(txHash)
 		if err != nil {
 			w.logger.Warn(err)
 			timer.Reset(interval)
@@ -544,8 +544,14 @@ func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Trans
 			timer.Reset(interval)
 			continue
 		}
+		receipt, err := w.TransactionReceiptByHash(txHash)
+		if err != nil {
+			w.logger.Warn(err)
+			timer.Reset(interval)
+			continue
+		}
 		timer.Stop()
-		return tx
+		return receipt
 	}
 	return nil
 }
