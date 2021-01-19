@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pefish/go-error"
 	"github.com/pefish/go-logger"
-	go_reflect "github.com/pefish/go-reflect"
 	"github.com/pkg/errors"
 	"math/big"
 	"strings"
@@ -306,11 +305,19 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	var nonce uint64 = 0
 	if opts != nil {
 		if opts.Value != "" {
-			value = big.NewInt(go_reflect.Reflect.MustToInt64(opts.Value))
+			tempValue, ok := value.SetString(opts.Value, 10)
+			if !ok {
+				return nil, errors.New("string convert to bigint error")
+			}
+			value = tempValue
 		}
 
 		if opts.GasPrice != "" {
-			gasPrice = big.NewInt(go_reflect.Reflect.MustToInt64(opts.GasPrice))
+			tempGasPrice, ok := value.SetString(opts.GasPrice, 10)
+			if !ok {
+				return nil, errors.New("string convert to bigint error")
+			}
+			gasPrice = tempGasPrice
 		}
 
 		gasLimit = opts.GasLimit
@@ -381,11 +388,19 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	var nonce uint64 = 0
 	if opts != nil {
 		if opts.Value != "" {
-			value = big.NewInt(go_reflect.Reflect.MustToInt64(opts.Value))
+			tempValue, ok := value.SetString(opts.Value, 10)
+			if !ok {
+				return nil, errors.New("string convert to bigint error")
+			}
+			value = tempValue
 		}
 
 		if opts.GasPrice != "" {
-			gasPrice = big.NewInt(go_reflect.Reflect.MustToInt64(opts.GasPrice))
+			tempGasPrice, ok := value.SetString(opts.GasPrice, 10)
+			if !ok {
+				return nil, errors.New("string convert to bigint error")
+			}
+			gasPrice = tempGasPrice
 		}
 
 		gasLimit = opts.GasLimit
