@@ -464,6 +464,23 @@ func (w *Wallet) TransactionByHash(txHash string) (*types.Transaction, bool, err
 	return tx, isPending, nil
 }
 
+func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) {
+	timer := time.NewTimer(0)
+	for range timer.C {
+		_, isPending, err := w.TransactionByHash(txHash)
+		if err != nil {
+			w.logger.Warn(err)
+			timer.Reset(interval)
+			continue
+		}
+		if isPending {
+			timer.Reset(interval)
+			continue
+		}
+		break
+	}
+}
+
 type Transaction struct{
 	BlockHash string `json:"blockHash"`
 	BlockNumber string `json:"blockNumber"`
