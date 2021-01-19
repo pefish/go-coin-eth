@@ -22,6 +22,32 @@ import (
 	"time"
 )
 
+var (
+	Uint256, _    = abi.NewType("uint256", "", nil)
+	Uint32, _     = abi.NewType("uint32", "", nil)
+	Uint16, _     = abi.NewType("uint16", "", nil)
+	String, _     = abi.NewType("string", "", nil)
+	Bool, _       = abi.NewType("bool", "", nil)
+	Bytes, _      = abi.NewType("bytes", "", nil)
+	Address, _    = abi.NewType("address", "", nil)
+	Uint64Arr, _  = abi.NewType("uint64[]", "", nil)
+	AddressArr, _ = abi.NewType("address[]", "", nil)
+	Int8, _       = abi.NewType("int8", "", nil)
+	// Special types for testing
+	Uint32Arr2, _       = abi.NewType("uint32[2]", "", nil)
+	Uint64Arr2, _       = abi.NewType("uint64[2]", "", nil)
+	Uint256Arr, _       = abi.NewType("uint256[]", "", nil)
+	Uint256Arr2, _      = abi.NewType("uint256[2]", "", nil)
+	Uint256Arr3, _      = abi.NewType("uint256[3]", "", nil)
+	Uint256ArrNested, _ = abi.NewType("uint256[2][2]", "", nil)
+	Uint8ArrNested, _   = abi.NewType("uint8[][2]", "", nil)
+	Uint8SliceNested, _ = abi.NewType("uint8[][]", "", nil)
+	TupleF, _           = abi.NewType("tuple", "struct Overloader.F", []abi.ArgumentMarshaling{
+		{Name: "_f", Type: "uint256"},
+		{Name: "__f", Type: "uint256"},
+		{Name: "f", Type: "uint256"}})
+)
+
 type Wallet struct {
 	RemoteRpcClient *ethclient.Client
 	RemoteWsClient  *ethclient.Client
@@ -210,6 +236,26 @@ type CallMethodOpts struct {
 type BuildCallMethodTxResult struct {
 	SignedTx *types.Transaction
 	TxHex    string
+}
+
+func (w *Wallet) UnpackParams(out interface{}, inputs abi.Arguments, paramsStr string) error {
+	if strings.HasPrefix(paramsStr, "0x") {
+		paramsStr = paramsStr[2:]
+	}
+
+	data, err := hex.DecodeString(paramsStr)
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	a, err := inputs.Unpack(data)
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	err = inputs.Copy(out, a)
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	return nil
 }
 
 func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string) (*abi.Method, error) {
@@ -458,7 +504,6 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	}, nil
 }
 
-
 func (w *Wallet) SendRawTransaction(txHex string) error {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	err := w.RpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", txHex)
@@ -505,26 +550,26 @@ func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Trans
 	return nil
 }
 
-type Transaction struct{
-	BlockHash string `json:"blockHash"`
-	BlockNumber string `json:"blockNumber"`
-	From string `json:"from"`
-	Gas string `json:"gas"`
-	GasPrice string `json:"gasPrice"`
-	Hash string `json:"hash"`
-	Input string `json:"input"`
-	Nonce string `json:"nonce"`
-	To string `json:"to"`
+type Transaction struct {
+	BlockHash        string `json:"blockHash"`
+	BlockNumber      string `json:"blockNumber"`
+	From             string `json:"from"`
+	Gas              string `json:"gas"`
+	GasPrice         string `json:"gasPrice"`
+	Hash             string `json:"hash"`
+	Input            string `json:"input"`
+	Nonce            string `json:"nonce"`
+	To               string `json:"to"`
 	TransactionIndex string `json:"transactionIndex"`
-	Value string `json:"value"`
-	V string `json:"v"`
-	R string `json:"r"`
-	S string `json:"s"`
+	Value            string `json:"value"`
+	V                string `json:"v"`
+	R                string `json:"r"`
+	S                string `json:"s"`
 }
 
 type TxsInPoolResult struct {
 	Pending map[string]map[string]Transaction `json:"pending"`
-	Queued map[string]map[string]Transaction `json:"queued"`
+	Queued  map[string]map[string]Transaction `json:"queued"`
 }
 
 func (w *Wallet) TxsInPool() (*TxsInPoolResult, error) {
@@ -560,4 +605,3 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 		w.logger.Info("reconnect...")
 	}
 }
-
