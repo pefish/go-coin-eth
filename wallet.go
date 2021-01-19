@@ -284,6 +284,19 @@ func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (uint64, error) {
 	return gasCount, nil
 }
 
+func (w *Wallet) PrivateKeyToAddress(privateKey string) (string, error) {
+	privateKeyBuf, err := hex.DecodeString(privateKey)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	publicKeyECDSA := privateKeyECDSA.PublicKey
+	return crypto.PubkeyToAddress(publicKeyECDSA).String(), nil
+}
+
 func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
