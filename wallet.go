@@ -560,3 +560,4 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 		w.logger.Info("reconnect...")
 	}
 }
+
