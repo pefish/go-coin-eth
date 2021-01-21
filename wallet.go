@@ -23,26 +23,26 @@ import (
 )
 
 var (
-	Uint256, _    = abi.NewType("uint256", "", nil)
-	Uint32, _     = abi.NewType("uint32", "", nil)
-	Uint16, _     = abi.NewType("uint16", "", nil)
-	String, _     = abi.NewType("string", "", nil)
-	Bool, _       = abi.NewType("bool", "", nil)
-	Bytes, _      = abi.NewType("bytes", "", nil)
-	Address, _    = abi.NewType("address", "", nil)
-	Uint64Arr, _  = abi.NewType("uint64[]", "", nil)
-	AddressArr, _ = abi.NewType("address[]", "", nil)
-	Int8, _       = abi.NewType("int8", "", nil)
+	TypeUint256, _    = abi.NewType("uint256", "", nil)
+	TypeUint32, _     = abi.NewType("uint32", "", nil)
+	TypeUint16, _     = abi.NewType("uint16", "", nil)
+	TypeString, _     = abi.NewType("string", "", nil)
+	TypeBool, _       = abi.NewType("bool", "", nil)
+	TypeBytes, _      = abi.NewType("bytes", "", nil)
+	TypeAddress, _    = abi.NewType("address", "", nil)
+	TypeUint64Arr, _  = abi.NewType("uint64[]", "", nil)
+	TypeAddressArr, _ = abi.NewType("address[]", "", nil)
+	TypeInt8, _       = abi.NewType("int8", "", nil)
 	// Special types for testing
-	Uint32Arr2, _       = abi.NewType("uint32[2]", "", nil)
-	Uint64Arr2, _       = abi.NewType("uint64[2]", "", nil)
-	Uint256Arr, _       = abi.NewType("uint256[]", "", nil)
-	Uint256Arr2, _      = abi.NewType("uint256[2]", "", nil)
-	Uint256Arr3, _      = abi.NewType("uint256[3]", "", nil)
-	Uint256ArrNested, _ = abi.NewType("uint256[2][2]", "", nil)
-	Uint8ArrNested, _   = abi.NewType("uint8[][2]", "", nil)
-	Uint8SliceNested, _ = abi.NewType("uint8[][]", "", nil)
-	TupleF, _           = abi.NewType("tuple", "struct Overloader.F", []abi.ArgumentMarshaling{
+	TypeUint32Arr2, _       = abi.NewType("uint32[2]", "", nil)
+	TypeUint64Arr2, _       = abi.NewType("uint64[2]", "", nil)
+	TypeUint256Arr, _       = abi.NewType("uint256[]", "", nil)
+	TypeUint256Arr2, _      = abi.NewType("uint256[2]", "", nil)
+	TypeUint256Arr3, _      = abi.NewType("uint256[3]", "", nil)
+	TypeUint256ArrNested, _ = abi.NewType("uint256[2][2]", "", nil)
+	TypeUint8ArrNested, _   = abi.NewType("uint8[][2]", "", nil)
+	TypeUint8SliceNested, _ = abi.NewType("uint8[][]", "", nil)
+	TypeTupleF, _           = abi.NewType("tuple", "struct Overloader.F", []abi.ArgumentMarshaling{
 		{Name: "_f", Type: "uint256"},
 		{Name: "__f", Type: "uint256"},
 		{Name: "f", Type: "uint256"}})
@@ -238,6 +238,7 @@ type BuildCallMethodTxResult struct {
 	TxHex    string
 }
 
+// payload 除了 methodId 就是 params
 func (w *Wallet) UnpackParams(out interface{}, inputs abi.Arguments, paramsStr string) error {
 	if strings.HasPrefix(paramsStr, "0x") {
 		paramsStr = paramsStr[2:]
@@ -256,6 +257,14 @@ func (w *Wallet) UnpackParams(out interface{}, inputs abi.Arguments, paramsStr s
 		return go_error.WithStack(err)
 	}
 	return nil
+}
+
+func (w *Wallet) PackParams(inputs abi.Arguments, args ...interface{}) (string, error) {
+	bytes_, err := inputs.Pack(args...)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	return hex.EncodeToString(bytes_), nil
 }
 
 func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string) (*abi.Method, error) {

@@ -1,6 +1,7 @@
 package go_coin_eth
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -232,7 +233,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 	err = wallet1.UnpackParams(&out, abi.Arguments{
 		abi.Argument{
 			Name:    "value",
-			Type:    Uint256,
+			Type:    TypeUint256,
 			Indexed: false,
 		},
 	}, "0000000000000000000000000000000000000000000000000000000000000001")
@@ -241,4 +242,41 @@ func TestWallet_UnpackParams(t *testing.T) {
 
 	//tempValue, _ := big.NewInt(0).SetString("100000000000000000", 10)
 	//fmt.Println(tempValue.String())
+}
+
+func TestWallet_PackParams(t *testing.T) {
+	wallet1, err := NewWallet(UrlParam{
+		RpcUrl: "https://heconode.ifoobar.com",
+		WsUrl:  "",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wallet1.Close()
+	result, err := wallet1.PackParams(abi.Arguments{
+		abi.Argument{
+			Name:    "value",
+			Type:    TypeUint256,
+			Indexed: false,
+		},
+	}, new(big.Int).SetUint64(1))
+	test.Equal(t, nil, err)
+	test.Equal(t, "0000000000000000000000000000000000000000000000000000000000000001", result)
+
+	data, err := hex.DecodeString("b872dd0e")
+	test.Equal(t, nil, err)
+	result1, err := wallet1.PackParams(abi.Arguments{
+		abi.Argument{
+			Name:    "token",
+			Type:    TypeAddress,
+			Indexed: false,
+		},
+		abi.Argument{
+			Name:    "data",
+			Type:    TypeBytes,
+			Indexed: false,
+		},
+	}, common.HexToAddress("0x7373c42502874C88954bDd6D50b53061F018422e"), data)
+	test.Equal(t, nil, err)
+	test.Equal(t, "0000000000000000000000007373c42502874c88954bdd6d50b53061f018422e00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000004b872dd0e00000000000000000000000000000000000000000000000000000000", result1)
 }
