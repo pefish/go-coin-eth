@@ -321,13 +321,13 @@ func (w *Wallet) MethodFromPayload(abiStr string, payloadStr string) (*abi.Metho
 	return method, err
 }
 
-func (w *Wallet) SuggestGasPrice() (string, error) {
+func (w *Wallet) SuggestGasPrice() (*big.Int, error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
 	if err != nil {
-		return "", go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+		return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 	}
-	return gasPrice.String(), nil
+	return gasPrice, nil
 }
 
 func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (uint64, error) {
@@ -597,16 +597,16 @@ func (w *Wallet) TxsInPool() (*TxsInPoolResult, error) {
 	return &result, nil
 }
 
-func (w *Wallet) Balance(address string) (string, error) {
+func (w *Wallet) Balance(address string) (*big.Int, error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	result, err := w.RemoteRpcClient.BalanceAt(ctx, common.HexToAddress(address), nil)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return nil, go_error.WithStack(err)
 	}
-	return result.String(), nil
+	return result, nil
 }
 
-func (w *Wallet) TokenBalance(contractAddress, address string) (string, error) {
+func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error) {
 	result, err := w.CallContractConstant(
 		contractAddress,
 		`[{
@@ -633,9 +633,9 @@ func (w *Wallet) TokenBalance(contractAddress, address string) (string, error) {
   	common.HexToAddress(address),
 		)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return result[0].(*big.Int).String(), nil
+	return result[0].(*big.Int), nil
 }
 
 func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
