@@ -597,6 +597,47 @@ func (w *Wallet) TxsInPool() (*TxsInPoolResult, error) {
 	return &result, nil
 }
 
+func (w *Wallet) Balance(address string) (string, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	result, err := w.RemoteRpcClient.BalanceAt(ctx, common.HexToAddress(address), nil)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	return result.String(), nil
+}
+
+func (w *Wallet) TokenBalance(contractAddress, address string) (string, error) {
+	result, err := w.CallContractConstant(
+		contractAddress,
+		`[{
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }]`,
+  	"balanceOf",
+  	nil,
+  	common.HexToAddress(address),
+		)
+	if err != nil {
+		return "", err
+	}
+	return result[0].(*big.Int).String(), nil
+}
+
 func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
 		return errors.New("please set ws url")

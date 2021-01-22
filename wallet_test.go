@@ -280,3 +280,18 @@ func TestWallet_PackParams(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, "0000000000000000000000007373c42502874c88954bdd6d50b53061f018422e00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000004b872dd0e00000000000000000000000000000000000000000000000000000000", result1)
 }
+
+func TestWallet_TokenBalance(t *testing.T) {
+	wallet1, err := NewWallet(UrlParam{
+		RpcUrl: "https://heconode.ifoobar.com",
+		WsUrl:  "",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wallet1.Close()
+
+	result, err := wallet1.TokenBalance("0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c", "0x856daf91629f3e5b3757420219706377c580d5b5")
+	test.Equal(t, nil, err)
+	test.Equal(t, true, len(result) > 0)
+}
