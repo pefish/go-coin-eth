@@ -294,4 +294,5 @@ func TestWallet_TokenBalance(t *testing.T) {
 	result, err := wallet1.TokenBalance("0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c", "0x856daf91629f3e5b3757420219706377c580d5b5")
 	test.Equal(t, nil, err)
 	test.Equal(t, true, len(result.String()) > 0)
+	//fmt.Println(result.String())
 }
