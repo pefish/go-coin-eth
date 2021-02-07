@@ -291,8 +291,24 @@ func TestWallet_TokenBalance(t *testing.T) {
 	}
 	defer wallet1.Close()
 
-	result, err := wallet1.TokenBalance("0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c", "0x856daf91629f3e5b3757420219706377c580d5b5")
+	result, err := wallet1.TokenBalance("0xa71edc38d189767582c38a3145b5873052c3e47a", "0xe5fe1f8496095ab18f7e88eb13ed69f30a62d7a0")
 	test.Equal(t, nil, err)
 	test.Equal(t, true, len(result.String()) > 0)
-	//fmt.Println(result.String())
+	fmt.Println(result.String())
+}
+
+func TestWallet_TransactionByHash(t *testing.T) {
+	wallet1, err := NewWallet(UrlParam{
+		RpcUrl: "https://heconode.ifoobar.com",
+		WsUrl:  "",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer wallet1.Close()
+
+	result, pending, err := wallet1.TransactionByHash("0x15f1e706a96aaf26c344240f18dfae5848329ffe91304e2ed778c9ad3f4b12c5")
+	test.Equal(t, nil, err)
+	test.Equal(t, false, pending)
+	test.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
 }

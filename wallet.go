@@ -522,13 +522,25 @@ func (w *Wallet) SendRawTransaction(txHex string) error {
 	return nil
 }
 
-func (w *Wallet) TransactionByHash(txHash string) (*types.Transaction, bool, error) {
+type TransactionByHashResult struct {
+	*types.Transaction
+	From common.Address
+}
+
+func (w *Wallet) TransactionByHash(txHash string) (*TransactionByHashResult, bool, error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	tx, isPending, err := w.RemoteRpcClient.TransactionByHash(ctx, common.HexToHash(txHash))
 	if err != nil {
 		return nil, false, go_error.WithStack(err)
 	}
-	return tx, isPending, nil
+	msg, err := tx.AsMessage(types.NewEIP155Signer(w.chainId))
+	if err != nil {
+		return nil, false, go_error.WithStack(err)
+	}
+	return &TransactionByHashResult{
+		tx,
+		msg.From(),
+	}, isPending, nil
 }
 
 func (w *Wallet) TransactionReceiptByHash(txHash string) (*types.Receipt, error) {
@@ -628,10 +640,10 @@ func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error)
     "stateMutability": "view",
     "type": "function"
   }]`,
-  	"balanceOf",
-  	nil,
-  	common.HexToAddress(address),
-		)
+		"balanceOf",
+		nil,
+		common.HexToAddress(address),
+	)
 	if err != nil {
 		return nil, err
 	}
