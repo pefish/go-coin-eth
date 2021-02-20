@@ -3,6 +3,7 @@ package go_coin_eth
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -20,6 +21,11 @@ import (
 	"math/big"
 	"strings"
 	"time"
+	"github.com/pefish/go-http"
+)
+
+const (
+	ScanApiUrl = "https://api.etherscan.io/api"
 )
 
 var (
@@ -58,46 +64,52 @@ type Wallet struct {
 	logger          go_logger.InterfaceLogger
 }
 
+
+
+func NewWallet() *Wallet {
+	timeout := 60 * time.Second
+	return &Wallet{
+		timeout: timeout,
+		logger:          go_logger.DefaultLogger,
+	}
+}
+
 type UrlParam struct {
 	RpcUrl string
 	WsUrl  string
 }
 
-func NewWallet(urlParam UrlParam) (*Wallet, error) {
+func (w *Wallet) InitRemote(urlParam UrlParam) (*Wallet, error) {
 	if urlParam.RpcUrl == "" {
 		return nil, errors.New("rpc url must be set")
 	}
-	timeout := 60 * time.Second
-	ctx, _ := context.WithTimeout(context.Background(), timeout)
+
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	rpcClient, err := rpc.DialContext(ctx, urlParam.RpcUrl)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
 	remoteRpcClient := ethclient.NewClient(rpcClient)
 
-	ctx, _ = context.WithTimeout(context.Background(), timeout)
+	ctx, _ = context.WithTimeout(context.Background(), w.timeout)
 	chainId, err := remoteRpcClient.ChainID(ctx)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	wallet := &Wallet{
-		RemoteRpcClient: remoteRpcClient,
-		timeout:         timeout,
-		chainId:         chainId,
-		RpcClient:       rpcClient,
-		logger:          go_logger.DefaultLogger,
-	}
+	w.RemoteRpcClient = remoteRpcClient
+	w.chainId = chainId
+	w.RpcClient = rpcClient
 	if urlParam.WsUrl != "" {
-		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		wsClient, err := rpc.DialContext(ctx, urlParam.WsUrl)
 		if err != nil {
 			return nil, go_error.WithStack(err)
 		}
 		remoteWsClient := ethclient.NewClient(wsClient)
-		wallet.RemoteWsClient = remoteWsClient
-		wallet.WsClient = wsClient
+		w.RemoteWsClient = remoteWsClient
+		w.WsClient = wsClient
 	}
-	return wallet, nil
+	return w, nil
 }
 
 func (w *Wallet) Close() {
@@ -232,6 +244,77 @@ func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, 
 		result = append(result, map_)
 	}
 	return result, nil
+}
+
+type FindLogsByScanApiResult struct {
+	Address string `json:"address"`
+	Topics []string `json:"topics"`
+	Data string `json:"data"`
+	BlockNumber string `json:"blockNumber"`  // 十六进制字符串
+	Timestamp string `json:"timeStamp"` // 十六进制字符串
+	GasPrice string `json:"gasPrice"`  // 十六进制字符串
+	GasUsed string `json:"gasUsed"` // 十六进制字符串
+	LogIndex string `json:"logIndex"`  // 十六进制字符串
+	TransactionHash string `json:"transactionHash"`
+	TransactionIndex string `json:"transactionIndex"` // 十六进制字符串
+}
+
+// 通过 scan api 查询 logs。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
+// apikey：可以为空，但频率受限，每 5s 才能执行一次
+// toBlock：可以设置为 latest ，表示最新块
+func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBlock string, toBlock string, topic0 string, query ...string) ([]FindLogsByScanApiResult, error) {
+	params := map[string]interface{}{
+		"module": "logs",
+		"action": "getLogs",
+		"fromBlock": fromBlock,
+		"toBlock": toBlock,
+		"address": contractAddress,
+		"topic0": topic0,
+		"apikey": apikey,
+	}
+	for i, str := range query {
+		oprStr := fmt.Sprintf("topic%d_%d_opr", i, i+1)
+		params[oprStr] = "and"
+		params[fmt.Sprintf("topic%d", i + 1)] = str
+	}
+
+	_, resStr, err := go_http.NewHttpRequester(go_http.WithLogger(w.logger), go_http.WithTimeout(30 * time.Second)).Get(go_http.RequestParam{
+		Url:       ScanApiUrl,
+		Params:    params,
+	})
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	var tempResult struct{
+		Status string `json:"status"`
+		Message string `json:"message"`
+	}
+	err = json.Unmarshal([]byte(resStr), &tempResult)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	if tempResult.Status != "1" && tempResult.Message != "No records found" {
+		var result struct{
+			Status string `json:"status"`
+			Message string `json:"message"`
+			Result string `json:"result"`
+		}
+		err = json.Unmarshal([]byte(resStr), &result)
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+		return nil, go_error.WithStack(errors.New(result.Message + ". " + result.Result))
+	}
+	var result struct{
+		Status string `json:"status"`
+		Message string `json:"message"`
+		Result []FindLogsByScanApiResult `json:"result"`
+	}
+	err = json.Unmarshal([]byte(resStr), &result)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return result.Result, nil
 }
 
 type CallMethodOpts struct {

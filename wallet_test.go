@@ -24,7 +24,7 @@ func init() {
 }
 
 func TestContract_BuildCallMethodTx(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -41,7 +41,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 }
 
 func TestWallet_WatchLogs(t *testing.T) {
-	wallet, err := NewWallet(UrlParam{
+	wallet, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "wss://mainnet.infura.io/ws/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 	})
@@ -68,7 +68,7 @@ exit:
 }
 
 func TestWallet_FindLogs(t *testing.T) {
-	wallet, err := NewWallet(UrlParam{
+	wallet, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -87,7 +87,7 @@ func TestWallet_FindLogs(t *testing.T) {
 }
 
 func TestWallet_SendRawTransaction(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -101,7 +101,7 @@ func TestWallet_SendRawTransaction(t *testing.T) {
 }
 
 func TestWallet_WatchPendingTxByWs(t *testing.T) {
-	wallet, err := NewWallet(UrlParam{
+	wallet, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -121,7 +121,7 @@ func TestWallet_WatchPendingTxByWs(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -139,7 +139,7 @@ func TestWallet_CallContractConstant(t *testing.T) {
 }
 
 func TestWallet_DecodePayload(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -176,7 +176,7 @@ func TestWallet_DecodePayload(t *testing.T) {
 }
 
 func TestWallet_TxsInPool(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -189,7 +189,7 @@ func TestWallet_TxsInPool(t *testing.T) {
 }
 
 func TestWallet_SuggestGasPrice(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -203,7 +203,7 @@ func TestWallet_SuggestGasPrice(t *testing.T) {
 }
 
 func TestWallet_BuildTransferTx(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -219,7 +219,7 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 }
 
 func TestWallet_UnpackParams(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
@@ -245,7 +245,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 }
 
 func TestWallet_PackParams(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -282,7 +282,7 @@ func TestWallet_PackParams(t *testing.T) {
 }
 
 func TestWallet_TokenBalance(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -298,7 +298,7 @@ func TestWallet_TokenBalance(t *testing.T) {
 }
 
 func TestWallet_TransactionByHash(t *testing.T) {
-	wallet1, err := NewWallet(UrlParam{
+	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -311,4 +311,21 @@ func TestWallet_TransactionByHash(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, false, pending)
 	test.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
+}
+
+func TestWallet_FindLogsByScanApi(t *testing.T) {
+	wallet1 := NewWallet()
+	defer wallet1.Close()
+
+	result, err := wallet1.FindLogsByScanApi(
+		"",
+		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
+		"0",
+		"latest",
+		"0x298637f684da70674f26509b10f07ec2fbc77a335ab1e7d6215a4b2484d8bb52",
+		)
+	test.Equal(t, nil, err)
+	fmt.Println(result)
+	//test.Equal(t, false, pending)
+	//test.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
 }
