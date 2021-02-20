@@ -307,6 +307,16 @@ func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string
 	return method, err
 }
 
+// 得到事件签名的 hash，也就是 topic0
+func (w *Wallet) Topic0FromEventName(abiStr, eventName string) (string, error) {
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+
+	return parsedAbi.Events[eventName].ID.String(), nil
+}
+
 func (w *Wallet) MethodFromPayload(abiStr string, payloadStr string) (*abi.Method, error) {
 	if len(payloadStr) < 8 {
 		return nil, errors.New("payloadStr error")
