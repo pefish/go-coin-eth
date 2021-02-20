@@ -137,9 +137,9 @@ func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string
 /**
 是个同步方法
 
-只能获取以后的而且区块确认了的事件，即使start指定为过去的block number，也不能获取到
+只能获取以后的而且区块确认了的事件，即使 start 指定为过去的 block number，也不能获取到
 
-query的第一个[]interface{}是指第一个index，第二个是指第二个index
+query 的第一个 []interface{} 是指第一个 index ，第二个是指第二个 index
 */
 func (w *Wallet) WatchLogsByWs(resultChan chan map[string]interface{}, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) error {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
@@ -181,10 +181,10 @@ retry:
 }
 
 /*
-查找历史的已经确认的事件，但不能实时接受后面的事件。取不到pending中的logs
+查找历史的已经确认的事件，但不能实时接受后面的事件。取不到 pending 中的 logs
 
-fromBlock；nil就是0，负数就是pending，正数就是blockNumber
-toBlock；nil就是latest，负数就是pending，正数就是blockNumber
+fromBlock；nil 就是 最新块号 - 4900，负数就是 pending ，正数就是 blockNumber
+toBlock；nil 就是 latest ，负数就是 pending ，正数就是 blockNumber
 */
 func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, toBlock *big.Int, query ...[]interface{}) ([]map[string]interface{}, error) {
 	result := make([]map[string]interface{}, 0)
@@ -202,6 +202,14 @@ func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, 
 	}
 
 	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient)
+
+	if fromBlock == nil {
+		number, err := w.LatestBlockNumber()
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+		fromBlock = number.Sub(number, new(big.Int).SetUint64(4900))
+	}
 
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
@@ -328,6 +336,15 @@ func (w *Wallet) SuggestGasPrice() (*big.Int, error) {
 		return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 	}
 	return gasPrice, nil
+}
+
+func (w *Wallet) LatestBlockNumber() (*big.Int, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	number, err := w.RemoteRpcClient.BlockNumber(ctx)
+	if err != nil {
+		return nil, go_error.WithStack(fmt.Errorf("failed to get latest block number: %v", err))
+	}
+	return new(big.Int).SetUint64(number), nil
 }
 
 func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (uint64, error) {
