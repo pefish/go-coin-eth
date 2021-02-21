@@ -260,11 +260,11 @@ type FindLogsByScanApiResult struct {
 	TransactionIndex string `json:"transactionIndex"` // 十六进制字符串
 }
 
-// 通过 scan api 查询 logs。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
+// 通过 scan api 查询 logs（只支持以太坊）。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
 // apikey：可以为空，但频率受限，每 5s 才能执行一次
 // fromBlock: 如果是负数，则是最新高度加上这个负数
 // toBlock：可以设置为 latest ，表示最新块
-func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBlock string, toBlock string, topic0 string, query ...string) ([]FindLogsByScanApiResult, error) {
+func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBlock string, toBlock string, timeout time.Duration, topic0 string, query ...string) ([]FindLogsByScanApiResult, error) {
 	if go_decimal.Decimal.Start(fromBlock).Lt(0) {
 		result, err := w.LatestBlockNumber()
 		if err != nil {
@@ -292,7 +292,7 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 		params[fmt.Sprintf("topic%d", i + 1)] = str
 	}
 
-	_, resStr, err := go_http.NewHttpRequester(go_http.WithLogger(w.logger), go_http.WithTimeout(30 * time.Second)).Get(go_http.RequestParam{
+	_, resStr, err := go_http.NewHttpRequester(go_http.WithLogger(w.logger), go_http.WithTimeout(timeout)).Get(go_http.RequestParam{
 		Url:       ScanApiUrl,
 		Params:    params,
 	})
