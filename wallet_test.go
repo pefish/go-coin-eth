@@ -320,7 +320,7 @@ func TestWallet_FindLogsByScanApi(t *testing.T) {
 	result, err := wallet1.FindLogsByScanApi(
 		"",
 		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
-		"0",
+		"-1000",
 		"latest",
 		"0x298637f684da70674f26509b10f07ec2fbc77a335ab1e7d6215a4b2484d8bb52",
 		)

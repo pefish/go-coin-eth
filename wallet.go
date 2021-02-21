@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 	"github.com/pefish/go-http"
+	"github.com/pefish/go-decimal"
 )
 
 const (
@@ -261,8 +262,21 @@ type FindLogsByScanApiResult struct {
 
 // 通过 scan api 查询 logs。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
 // apikey：可以为空，但频率受限，每 5s 才能执行一次
+// fromBlock: 如果是负数，则是最新高度加上这个负数
 // toBlock：可以设置为 latest ，表示最新块
 func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBlock string, toBlock string, topic0 string, query ...string) ([]FindLogsByScanApiResult, error) {
+	if go_decimal.Decimal.Start(fromBlock).Lt(0) {
+		result, err := w.LatestBlockNumber()
+		if err != nil {
+			return nil, go_error.WithStack(err)
+		}
+		delta, ok := new(big.Int).SetString(fromBlock[1:], 10)
+		if !ok {
+			return nil, errors.New("string to bigint error")
+		}
+		fromBlock = result.Sub(result, delta).String()
+	}
+
 	params := map[string]interface{}{
 		"module": "logs",
 		"action": "getLogs",
