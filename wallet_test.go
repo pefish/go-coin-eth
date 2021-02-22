@@ -9,7 +9,9 @@ import (
 	"github.com/pefish/go-test-assert"
 	"log"
 	"math/big"
+	"strings"
 	"testing"
+	"time"
 )
 
 var contractAddress = "0xD384946C4054d53635CB9462eEd7d106101Ad449"
@@ -322,10 +324,21 @@ func TestWallet_FindLogsByScanApi(t *testing.T) {
 		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
 		"-1000",
 		"latest",
+		30 * time.Second,
 		"0x298637f684da70674f26509b10f07ec2fbc77a335ab1e7d6215a4b2484d8bb52",
 		)
 	test.Equal(t, nil, err)
 	fmt.Println(result)
 	//test.Equal(t, false, pending)
 	//test.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
+}
+
+func TestWallet_DeriveFromPath(t *testing.T) {
+	wallet1 := NewWallet()
+	defer wallet1.Close()
+
+	result, err := wallet1.DeriveFromPath("308c18194c8345cb16b7a265439bc09c69e3166404951717fe50abe28bc9d19985cc1c06084290c2eba446d2626a1bf3bfb12ede5974653f756f26752475e8d8", "m/0/0/1")
+	test.Equal(t, nil, err)
+	test.Equal(t, "0x3a7d9f86cd69cc009a85d9280f6df5ef1ae8201d", strings.ToLower(result.Address))
+	test.Equal(t, "e9d3bd38744b8c6026f6bc719b86f725fe4298b654465abaa9a624ddfce8dc95", strings.ToLower(result.PrivateKey))
 }

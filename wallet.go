@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+	chain "github.com/pefish/go-coin-eth/util"
 	"github.com/pefish/go-error"
 	"github.com/pefish/go-logger"
 	"github.com/pkg/errors"
@@ -740,6 +741,54 @@ func (w *Wallet) Balance(address string) (*big.Int, error) {
 		return nil, go_error.WithStack(err)
 	}
 	return result, nil
+}
+
+type DeriveFromPathResult struct {
+	Address string
+	PublicKey string
+	PrivateKey string
+}
+
+func (w *Wallet) DeriveFromPath(seed string, path string) (*DeriveFromPathResult, error) {
+	// 字符串转换成字节数组
+	seedBuf, err := hex.DecodeString(seed)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	// 通过种子生成 hdwallet
+	wallet, err := chain.NewFromSeed(seedBuf)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	// 解析派生路径
+	hdPath, err := chain.ParseDerivationPath(path)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	// 派生账号
+	account, err := wallet.Derive(hdPath, true)
+	// 获取私钥 hex 字符串
+	privateKeyStr, err := wallet.PrivateKeyHex(account)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+
+	privateKey, err := hex.DecodeString(privateKeyStr)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	privateKeyECDSA, err := crypto.ToECDSA(privateKey[:])
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	publicKeyECDSA := privateKeyECDSA.PublicKey
+	publicKeyStr := hex.EncodeToString(crypto.CompressPubkey(&publicKeyECDSA))
+	addr := crypto.PubkeyToAddress(publicKeyECDSA).String()
+	return &DeriveFromPathResult{
+		Address:    addr,
+		PublicKey:  publicKeyStr,
+		PrivateKey: privateKeyStr,
+	}, nil
 }
 
 func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error) {
