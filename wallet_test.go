@@ -35,7 +35,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 	}
 	defer wallet1.Close()
 	tx, err := wallet1.BuildCallMethodTx("", contractAddress, abiStr, "transfer", &CallMethodOpts{
-		GasPrice: "1000000000",
+		GasPrice: new(big.Int).SetUint64(1000000000),
 	}, common.HexToAddress("0x2117210296c2993Cfb4c6790FEa1bEB3ECe8Ac06"), big.NewInt(1000000000000000000))
 	test.Equal(t, true, tx == nil)
 	test.Equal(t, true, err != nil)
@@ -214,7 +214,7 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 	}
 	defer wallet1.Close()
 	_, err = wallet1.BuildTransferTx("", "0x476fBB25d56B5dD4f1df03165498C403C4713069", &CallMethodOpts{
-		Value: "1000000000000000",
+		Value: new(big.Int).SetUint64(1000000000000000),
 	})
 	test.Equal(t, "invalid length, need 256 bits", err.Error())
 	//fmt.Println(tx.TxHex)
@@ -387,7 +387,7 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, "0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000", paramsStr)
 	tx, err := wallet1.BuildCallMethodTxWithPayload("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", contractAddress, "0x0b4c7e4d" + paramsStr, &CallMethodOpts{
-		GasPrice: "1000000000",
+		GasPrice: new(big.Int).SetUint64(1000000000),
 		Nonce: 1,
 		GasLimit: 5000000,
 	})

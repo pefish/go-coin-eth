@@ -334,8 +334,8 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 
 type CallMethodOpts struct {
 	Nonce    uint64
-	Value    string
-	GasPrice string
+	Value    *big.Int
+	GasPrice *big.Int
 	GasLimit uint64
 }
 
@@ -511,20 +511,12 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
 	if opts != nil {
-		if opts.Value != "" {
-			tempValue, ok := new(big.Int).SetString(opts.Value, 10)
-			if !ok {
-				return nil, errors.New("string convert to bigint error")
-			}
-			value = tempValue
+		if opts.Value != nil {
+			value = opts.Value
 		}
 
-		if opts.GasPrice != "" {
-			tempGasPrice, ok := new(big.Int).SetString(opts.GasPrice, 10)
-			if !ok {
-				return nil, errors.New("string convert to bigint error")
-			}
-			gasPrice = tempGasPrice
+		if opts.GasPrice != nil {
+			gasPrice = opts.GasPrice
 		}
 
 		gasLimit = opts.GasLimit
@@ -601,20 +593,12 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
 	if opts != nil {
-		if opts.Value != "" {
-			tempValue, ok := new(big.Int).SetString(opts.Value, 10)
-			if !ok {
-				return nil, errors.New("string convert to bigint error")
-			}
-			value = tempValue
+		if opts.Value != nil {
+			value = opts.Value
 		}
 
-		if opts.GasPrice != "" {
-			tempGasPrice, ok := new(big.Int).SetString(opts.GasPrice, 10)
-			if !ok {
-				return nil, errors.New("string convert to bigint error")
-			}
-			gasPrice = tempGasPrice
+		if opts.GasPrice != nil {
+			gasPrice = opts.GasPrice
 		}
 
 		gasLimit = opts.GasLimit
@@ -680,20 +664,12 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
 	if opts != nil {
-		if opts.Value != "" {
-			tempValue, ok := new(big.Int).SetString(opts.Value, 10)
-			if !ok {
-				return nil, errors.New("string convert to bigint error")
-			}
-			value = tempValue
+		if opts.Value != nil {
+			value = opts.Value
 		}
 
-		if opts.GasPrice != "" {
-			tempGasPrice, ok := new(big.Int).SetString(opts.GasPrice, 10)
-			if !ok {
-				return nil, errors.New("string convert to bigint error")
-			}
-			gasPrice = tempGasPrice
+		if opts.GasPrice != nil {
+			gasPrice = opts.GasPrice
 		}
 
 		gasLimit = opts.GasLimit
