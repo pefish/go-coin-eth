@@ -365,12 +365,26 @@ func (w *Wallet) UnpackParams(out interface{}, inputs abi.Arguments, paramsStr s
 	return nil
 }
 
+// 不带 0x 前缀
 func (w *Wallet) PackParams(inputs abi.Arguments, args ...interface{}) (string, error) {
 	bytes_, err := inputs.Pack(args...)
 	if err != nil {
 		return "", go_error.WithStack(err)
 	}
 	return hex.EncodeToString(bytes_), nil
+}
+
+// 不带 0x 前缀
+func (w *Wallet) EncodePayload(abiStr string, methodName string, params ...interface{}) (string, error) {
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	input, err := parsedAbi.Pack(methodName, params...)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	return hex.EncodeToString(input), nil
 }
 
 func (w *Wallet) DecodePayload(abiStr string, out interface{}, payloadStr string) (*abi.Method, error) {
@@ -550,6 +564,92 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 		gasLimit = uint64(float64(tempGasLimit) * 1.3)
 	}
 	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, input)
+	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	data, err := rlp.EncodeToBytes(signedTx)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return &BuildCallMethodTxResult{
+		SignedTx: signedTx,
+		TxHex:    hexutil.Encode(data),
+	}, nil
+}
+
+func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, payload string, opts *CallMethodOpts) (*BuildCallMethodTxResult, error) {
+	if strings.HasPrefix(privateKey, "0x") {
+		privateKey = privateKey[2:]
+	}
+	privateKeyBuf, err := hex.DecodeString(privateKey)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	if strings.HasPrefix(payload, "0x") {
+		payload = payload[2:]
+	}
+	payloadBuf, err := hex.DecodeString(payload)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+
+	contractAddressObj := common.HexToAddress(contractAddress)
+
+	var value = big.NewInt(0)
+	var gasPrice *big.Int = nil
+	var gasLimit uint64 = 0
+	var nonce uint64 = 0
+	if opts != nil {
+		if opts.Value != "" {
+			tempValue, ok := new(big.Int).SetString(opts.Value, 10)
+			if !ok {
+				return nil, errors.New("string convert to bigint error")
+			}
+			value = tempValue
+		}
+
+		if opts.GasPrice != "" {
+			tempGasPrice, ok := new(big.Int).SetString(opts.GasPrice, 10)
+			if !ok {
+				return nil, errors.New("string convert to bigint error")
+			}
+			gasPrice = tempGasPrice
+		}
+
+		gasLimit = opts.GasLimit
+		nonce = opts.Nonce
+	}
+
+	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	publicKeyECDSA := privateKeyECDSA.PublicKey
+	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
+	if nonce == 0 {
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		nonce, err = w.RemoteRpcClient.PendingNonceAt(ctx, fromAddress)
+		if err != nil {
+			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
+		}
+	}
+	if gasPrice == nil {
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		gasPrice, err = w.RemoteRpcClient.SuggestGasPrice(ctx)
+		if err != nil {
+			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+		}
+	}
+	if gasLimit == 0 {
+		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: payloadBuf}
+		tempGasLimit, err := w.EstimateGas(msg)
+		if err != nil {
+			return nil, err
+		}
+		gasLimit = uint64(float64(tempGasLimit) * 1.3)
+	}
+	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, payloadBuf)
 	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
 	if err != nil {
 		return nil, go_error.WithStack(err)
