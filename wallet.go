@@ -342,6 +342,7 @@ type CallMethodOpts struct {
 	Value    *big.Int
 	GasPrice *big.Int
 	GasLimit uint64
+	IsPredictError bool
 }
 
 type BuildCallMethodTxResult struct {
@@ -515,6 +516,7 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	var gasPrice *big.Int = nil
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
+	var isPredictError bool = true
 	if opts != nil {
 		if opts.Value != nil {
 			value = opts.Value
@@ -526,6 +528,7 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 
 		gasLimit = opts.GasLimit
 		nonce = opts.Nonce
+		isPredictError = opts.IsPredictError
 	}
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
@@ -552,13 +555,15 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	if gasLimit == 0 {
+	if gasLimit == 0 || isPredictError {
 		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: input}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, err
+			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
 		}
-		gasLimit = uint64(float64(tempGasLimit) * 1.3)
+		if gasLimit == 0 {
+			gasLimit = uint64(float64(tempGasLimit) * 1.3)
+		}
 	}
 	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, input)
 	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
@@ -597,6 +602,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 	var gasPrice *big.Int = nil
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
+	var isPredictError bool = true
 	if opts != nil {
 		if opts.Value != nil {
 			value = opts.Value
@@ -608,6 +614,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 
 		gasLimit = opts.GasLimit
 		nonce = opts.Nonce
+		isPredictError = opts.IsPredictError
 	}
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
@@ -630,13 +637,15 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 		}
 	}
-	if gasLimit == 0 {
+	if gasLimit == 0 || isPredictError {
 		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: payloadBuf}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, err
+			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
 		}
-		gasLimit = uint64(float64(tempGasLimit) * 1.3)
+		if gasLimit == 0 {
+			gasLimit = uint64(float64(tempGasLimit) * 1.3)
+		}
 	}
 	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, payloadBuf)
 	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
