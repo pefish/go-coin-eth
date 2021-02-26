@@ -173,7 +173,9 @@ retry:
 	for {
 		chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
 		if err != nil {
-			return go_error.WithStack(err)
+			w.logger.WarnF("connect failed, reconnect after 3s. err -> %#v", err)
+			time.Sleep(3 * time.Second)
+			continue
 		}
 		w.logger.Info("connected. watching...")
 		for {
@@ -192,6 +194,7 @@ retry:
 					return nil
 				}
 				sub.Unsubscribe()
+				time.Sleep(3 * time.Second)
 				w.logger.Info("reconnect...")
 				continue retry
 			}
