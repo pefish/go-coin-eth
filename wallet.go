@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
 	"math/big"
-	"math/rand"
+	"github.com/pefish/go-random"
 	"strings"
 	"time"
 	"github.com/pefish/go-http"
@@ -947,8 +947,7 @@ func (w *Wallet) SeedHexByMnemonic(mnemonic string, pass string) string {
 }
 
 func (w *Wallet) RandomMnemonic() (string, error) {
-	entropy := make([]byte, 16)
-	_, err := rand.Read(entropy)
+	entropy, err := go_random.RandomInstance.RandomBytes(16)
 	if err != nil {
 		return "", go_error.WithStack(err)
 	}
