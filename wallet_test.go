@@ -394,3 +394,18 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, "0xf8a901843b9aca00834c4b4094d384946c4054d53635cb9462eed7d106101ad44980b8440b4c7e4d0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a76400001ba0ddf312004ff8bc93f407e89ba550f22f9bf7c0f87d234e9c60ddd0cbfeee82eaa06a43ceffb68dc057a681ed92d406d87e4ac13eaaadb354e2f4161f91e0d1c5f5", tx.TxHex)
 }
+
+func TestWallet_RandomMnemonic(t *testing.T) {
+	wallet1 := NewWallet()
+	defer wallet1.Close()
+	result, err := wallet1.RandomMnemonic()
+	test.Equal(t, nil, err)
+	fmt.Println(result)
+}
+
+func TestWallet_SeedHexByMnemonic(t *testing.T) {
+	wallet1 := NewWallet()
+	defer wallet1.Close()
+	result := wallet1.SeedHexByMnemonic("test", "test")
+	test.Equal(t, "da2a48a1b9fbade07552281143814b3cd7ba4b53a7de5241439417b9bb540e229c45a30b0ce32174aaccc80072df7cbdff24f0c0ae327cd5170d1f276b890173", result)
+}

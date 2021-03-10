@@ -19,7 +19,9 @@ import (
 	"github.com/pefish/go-error"
 	"github.com/pefish/go-logger"
 	"github.com/pkg/errors"
+	"github.com/tyler-smith/go-bip39"
 	"math/big"
+	"math/rand"
 	"strings"
 	"time"
 	"github.com/pefish/go-http"
@@ -938,4 +940,21 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 		subscription.Unsubscribe()
 		w.logger.Info("reconnect...")
 	}
+}
+
+func (w *Wallet) SeedHexByMnemonic(mnemonic string, pass string) string {
+	return hex.EncodeToString(bip39.NewSeed(mnemonic, pass))
+}
+
+func (w *Wallet) RandomMnemonic() (string, error) {
+	entropy := make([]byte, 16)
+	_, err := rand.Read(entropy)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	mnemonic, err := bip39.NewMnemonic(entropy)
+	if err != nil {
+		return "", go_error.WithStack(err)
+	}
+	return mnemonic, nil
 }
