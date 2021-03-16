@@ -733,13 +733,14 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	}, nil
 }
 
-func (w *Wallet) SendRawTransaction(txHex string) error {
+func (w *Wallet) SendRawTransaction(txHex string) (string, error) {
+	var hash common.Hash
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	err := w.RpcClient.CallContext(ctx, nil, "eth_sendRawTransaction", txHex)
+	err := w.RpcClient.CallContext(ctx, &hash, "eth_sendRawTransaction", txHex)
 	if err != nil {
-		return go_error.WithStack(err)
+		return "", go_error.WithStack(err)
 	}
-	return nil
+	return hash.String(), nil
 }
 
 type TransactionByHashResult struct {
