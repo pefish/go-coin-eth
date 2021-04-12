@@ -141,18 +141,76 @@ func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) {
 	w.logger = logger
 }
 
-func (w *Wallet) CallContractConstant(contractAddress, abiStr, methodName string, opts *bind.CallOpts, params ...interface{}) ([]interface{}, error) {
-	out := make([]interface{}, 0)
+func (w *Wallet) CallContractConstant(out interface{}, contractAddress, abiStr, methodName string, opts *bind.CallOpts, params ...interface{}) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return go_error.WithStack(err)
 	}
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient)
-	err = contractInstance.Call(opts, &out, methodName, params...)
+	inputParams, err := parsedAbi.Pack(methodName, params...)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return go_error.WithStack(err)
 	}
-	return out, nil
+
+	method, ok := parsedAbi.Methods[methodName]
+	if !ok {
+		return go_error.WithStack(errors.New("method not found"))
+	}
+	return w.CallContractConstantWithPayload(out, contractAddress, hex.EncodeToString(inputParams), method.Outputs, opts)
+}
+
+func (w *Wallet) CallContractConstantWithPayload(out interface{}, contractAddress, payload string, outputTypes abi.Arguments, opts *bind.CallOpts) error {
+	if opts == nil {
+		opts = new(bind.CallOpts)
+	}
+
+	contractAddressObj := common.HexToAddress(contractAddress)
+	if strings.HasPrefix(payload, "0x") {
+		payload = payload[2:]
+	}
+	payloadBuf, err := hex.DecodeString(payload)
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	var (
+		msg    = ethereum.CallMsg{From: opts.From, To: &contractAddressObj, Data: payloadBuf}
+		ctx    = opts.Context
+		code   []byte
+		output []byte
+	)
+	if ctx == nil {
+		ctxTemp, _ := context.WithTimeout(context.Background(), w.timeout)
+		ctx = ctxTemp
+	}
+	if opts.Pending {
+		pb := bind.PendingContractCaller(w.RemoteRpcClient)
+		output, err = pb.PendingCallContract(ctx, msg)
+		if err == nil && len(output) == 0 {
+			// Make sure we have a contract to operate on, and bail out otherwise.
+			if code, err = pb.PendingCodeAt(ctx, contractAddressObj); err != nil {
+				return go_error.WithStack(err)
+			} else if len(code) == 0 {
+				return go_error.WithStack(bind.ErrNoCode)
+			}
+		}
+	} else {
+		output, err = bind.ContractCaller(w.RemoteRpcClient).CallContract(ctx, msg, opts.BlockNumber)
+		if err != nil {
+			return go_error.WithStack(err)
+		}
+		if len(output) == 0 {
+			// Make sure we have a contract to operate on, and bail out otherwise.
+			if code, err = bind.ContractCaller(w.RemoteRpcClient).CodeAt(ctx, contractAddressObj, opts.BlockNumber); err != nil {
+				return go_error.WithStack(err)
+			} else if len(code) == 0 {
+				return go_error.WithStack(bind.ErrNoCode)
+			}
+		}
+	}
+	err = w.UnpackParams(&out, outputTypes, hex.EncodeToString(output))
+	if err != nil {
+		return go_error.WithStack(err)
+	}
+	return nil
 }
 
 /**
@@ -888,7 +946,9 @@ func (w *Wallet) DeriveFromPath(seed string, path string) (*DeriveFromPathResult
 }
 
 func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error) {
-	result, err := w.CallContractConstant(
+	result := new(big.Int)
+	err := w.CallContractConstant(
+		&result,
 		contractAddress,
 		`[{
     "inputs": [
@@ -916,7 +976,7 @@ func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error)
 	if err != nil {
 		return nil, err
 	}
-	return result[0].(*big.Int), nil
+	return result, nil
 }
 
 func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
