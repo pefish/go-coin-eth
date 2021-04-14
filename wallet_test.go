@@ -414,6 +414,20 @@ func TestWallet_SeedHexByMnemonic(t *testing.T) {
 	test.Equal(t, "da2a48a1b9fbade07552281143814b3cd7ba4b53a7de5241439417b9bb540e229c45a30b0ce32174aaccc80072df7cbdff24f0c0ae327cd5170d1f276b890173", result)
 }
 
+func TestWallet_MaxUint256(t *testing.T) {
+	wallet1 := NewWallet()
+	defer wallet1.Close()
+	result, err := wallet1.PackParams(abi.Arguments{
+		abi.Argument{
+			Name:    "",
+			Type:    TypeUint256,
+			Indexed: false,
+		},
+	}, MaxUint256)
+	test.Equal(t, nil, err)
+	test.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", result)
+}
+
 func TestWallet_CallContractConstantWithPayload(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
