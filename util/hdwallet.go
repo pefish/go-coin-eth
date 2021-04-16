@@ -232,7 +232,7 @@ func (w *Wallet) SignTxEIP155(account accounts.Account, tx *types.Transaction, c
 		return nil, err
 	}
 
-	// Sign the transaction and verify the sender to avoid hardware fault surprises
+	// SignMsg the transaction and verify the sender to avoid hardware fault surprises
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
 	if err != nil {
 		return nil, err
@@ -267,7 +267,7 @@ func (w *Wallet) SignTx(account accounts.Account, tx *types.Transaction, chainID
 		return nil, err
 	}
 
-	// Sign the transaction and verify the sender to avoid hardware fault surprises
+	// SignMsg the transaction and verify the sender to avoid hardware fault surprises
 	signedTx, err := types.SignTx(tx, types.HomesteadSigner{}, privateKey)
 	if err != nil {
 		return nil, err

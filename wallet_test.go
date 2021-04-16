@@ -428,6 +428,12 @@ func TestWallet_MaxUint256(t *testing.T) {
 	test.Equal(t, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", result)
 }
 
+func TestRecoverSignerAddress(t *testing.T) {
+	address, err := NewWallet().RecoverSignerAddressFromMsgHash("43aa0dee053b766817331315ab5440b144451f86d58f2d3b938e3de4dbca7ed8","c2f57c5b9c187b089c492ba216cbb28e1d3d59aa8b62178b58d5442cbfc45cf40769070dfee43a8dd3f721d9a7a514f27fff3e0efbe6d7a41a6b27b8093f4dce1b")
+	test.Equal(t, nil, err)
+	test.Equal(t, "0xf93B52193658335DBfe7b9138a0Da4CCEb6aF466", address.String())
+}
+
 func TestWallet_CallContractConstantWithPayload(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
@@ -458,4 +464,17 @@ func TestWallet_CallContractConstantWithPayload(t *testing.T) {
 		})
 	test.Equal(t, nil, err)
 	fmt.Println(out.String())
+}
+
+func TestWallet_SignMsg(t *testing.T) {
+	result, err := NewWallet().SignMsg("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", "hello")
+	test.Equal(t, nil, err)
+	test.Equal(t, "f315c40961c73b55f1e4cf4f2665c5cf70fda8f8f3a545e0788fe1f66e21f6d13d49ff33d300b9c5f9f943f095b5fc2838dbbb4d5820bc696fd974d284aa19751c", result)
+}
+
+func TestWallet_RecoverSignerAddress(t *testing.T) {
+	address, err := NewWallet().RecoverSignerAddress("hello", "f315c40961c73b55f1e4cf4f2665c5cf70fda8f8f3a545e0788fe1f66e21f6d13d49ff33d300b9c5f9f943f095b5fc2838dbbb4d5820bc696fd974d284aa19751c")
+	test.Equal(t, nil, err)
+
+	test.Equal(t, "0xC3BF2dF684d91248b01278499184cC30C5bE45C3", address.String())
 }
