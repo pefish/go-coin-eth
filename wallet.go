@@ -211,7 +211,7 @@ func (w *Wallet) CallContractConstantWithPayload(out interface{}, contractAddres
 			}
 		}
 	}
-	err = w.UnpackParams(&out, outputTypes, hex.EncodeToString(output))
+	err = w.UnpackParams(out, outputTypes, hex.EncodeToString(output))
 	if err != nil {
 		return go_error.WithStack(err)
 	}
