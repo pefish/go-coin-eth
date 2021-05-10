@@ -974,7 +974,7 @@ func TestWallet_TxsInPool(t *testing.T) {
 
 func TestWallet_SuggestGasPrice(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
 	if err != nil {
@@ -982,6 +982,7 @@ func TestWallet_SuggestGasPrice(t *testing.T) {
 	}
 	defer wallet1.Close()
 	gasPrice, err := wallet1.SuggestGasPrice()
+	//fmt.Println(gasPrice.String())
 	test.Equal(t, nil, err)
 	test.Equal(t, true, len(gasPrice.String()) > 3)
 }
