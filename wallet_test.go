@@ -899,7 +899,7 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 	defer wallet1.Close()
 	type TokenBank struct {
 		TokenAddr common.Address `json:"tokenAddr"`
-		PTokenAddr common.Address `json:"pTokenAddr"`
+		PTokenAddr common.Address
 		IsOpen bool `json:"isOpen"`
 		CanDeposit bool `json:"canDeposit"`
 		CanWithdraw bool`json:"canWithdraw"`
