@@ -1,18 +1,13 @@
-# XXX
+# go-coin-eth
 
-[![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/pefish/XXX)
+[![view examples](https://img.shields.io/badge/learn%20by-examples-0C8EC5.svg?style=for-the-badge&logo=go)](https://github.com/pefish/go-coin-eth)
 
-XXX
+go-coin-eth
 
-## Quick start
-
-```go
-
-```
 
 ## Document
 
-[Doc](https://godoc.org/github.com/pefish/XXX)
+[doc](https://godoc.org/github.com/pefish/go-coin-eth)
 
 ## Security Vulnerabilities
 
