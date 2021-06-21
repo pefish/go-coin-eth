@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pefish/go-test-assert"
-	"log"
 	"math/big"
 	"strings"
 	"testing"
@@ -19,9 +18,7 @@ var abiStr = `[{"inputs":[{"internalType":"string","name":"name","type":"string"
 
 func init() {
 	//wallet1, err := NewWallet("https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
+	//test.Equal(t, nil, err)
 	//wallet = wallet1
 }
 
@@ -30,9 +27,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	tx, err := wallet1.BuildCallMethodTx("", contractAddress, abiStr, "transfer", &CallMethodOpts{
 		GasPrice: new(big.Int).SetUint64(1000000000),
@@ -47,9 +42,7 @@ func TestWallet_WatchLogs(t *testing.T) {
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "wss://mainnet.infura.io/ws/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet.Close()
 	resultChan := make(chan map[string]interface{})
 	go func() {
@@ -74,9 +67,7 @@ func TestWallet_FindLogs(t *testing.T) {
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet.Close()
 	logs, err := wallet.FindLogs(
 		"0xdac17f958d2ee523a2206206994597c13d831ec7",
@@ -88,14 +79,38 @@ func TestWallet_FindLogs(t *testing.T) {
 	test.Equal(t, 1066, len(logs))
 }
 
+func TestWallet_FindLogs1(t *testing.T) {
+	wallet, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://data-seed-prebsc-2-s1.binance.org:8545/",
+		WsUrl:  "",
+	})
+	test.Equal(t, nil, err)
+	defer wallet.Close()
+	logs, err := wallet.FindLogs(
+		"0x375Ee04Fe818D896f98ce16199604C4706b7D74E",
+		`[{"inputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"string","name":"baseTokenURI","type":"string"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"previousAdminRole","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"newAdminRole","type":"bytes32"}],"name":"RoleAdminChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"sender","type":"address"}],"name":"RoleGranted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"sender","type":"address"}],"name":"RoleRevoked","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[],"name":"DEFAULT_ADMIN_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MINTER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PAUSER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"}],"name":"getRoleAdmin","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"uint256","name":"index","type":"uint256"}],"name":"getRoleMember","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"}],"name":"getRoleMemberCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"grantRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"hasRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"renounceRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"revokeRole","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"}]`,
+		"Transfer",
+		new(big.Int).SetUint64(1),
+		nil,
+		[]interface{}{
+			ZeroAddress,
+		},
+		[]interface{}{},
+		[]interface{}{
+			new(big.Int).SetUint64(6),
+		},
+		)
+	test.Equal(t, nil, err)
+	test.Equal(t, 1, len(logs))
+	test.Equal(t, "0x1A3f28CE6589dC9567dd895fe974E665C6A47547", logs[0]["to"].(common.Address).String())
+}
+
 func TestWallet_SendRawTransaction(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	_, err = wallet1.SendRawTransaction("0xf8693f850bc97c324083041c8794bbd3c0c794f40c4f993b03f65343acc6fcfcb2e2808441fe00a025a015e4e95a51191607472b98fcbd168bd32aaadeed40c074ed2ec82044ec5a5e71a0484a64cf7fca58254404343926e91c96aca09cc2187ec83cc3be31f619a6f1df")
 	test.Equal(t, true, err != nil)
@@ -107,9 +122,7 @@ func TestWallet_WatchPendingTxByWs(t *testing.T) {
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet.Close()
 	strChan := make(chan string)
 	go func() {
@@ -927,9 +940,7 @@ func TestWallet_DecodePayload(t *testing.T) {
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	var a struct {
 		AmountIn     *big.Int
@@ -964,9 +975,7 @@ func TestWallet_TxsInPool(t *testing.T) {
 		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	txs, err := wallet1.TxsInPool()
 	fmt.Println(txs, err)
@@ -977,9 +986,7 @@ func TestWallet_SuggestGasPrice(t *testing.T) {
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	gasPrice, err := wallet1.SuggestGasPrice()
 	//fmt.Println(gasPrice.String())
@@ -992,9 +999,7 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	_, err = wallet1.BuildTransferTx("", "0x476fBB25d56B5dD4f1df03165498C403C4713069", &CallMethodOpts{
 		Value: new(big.Int).SetUint64(1000000000000000),
@@ -1008,9 +1013,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	var out struct{
 		Value *big.Int `json:"value"`
@@ -1034,9 +1037,7 @@ func TestWallet_PackParams(t *testing.T) {
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	result, err := wallet1.PackParams(abi.Arguments{
 		abi.Argument{
@@ -1071,9 +1072,7 @@ func TestWallet_TokenBalance(t *testing.T) {
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 
 	result, err := wallet1.TokenBalance("0xa71edc38d189767582c38a3145b5873052c3e47a", "0xe5fe1f8496095ab18f7e88eb13ed69f30a62d7a0")
@@ -1087,9 +1086,7 @@ func TestWallet_TransactionByHash(t *testing.T) {
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+	test.Equal(t, nil, err)
 	defer wallet1.Close()
 
 	result, pending, err := wallet1.TransactionByHash("0x15f1e706a96aaf26c344240f18dfae5848329ffe91304e2ed778c9ad3f4b12c5")
