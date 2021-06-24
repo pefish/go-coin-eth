@@ -1261,3 +1261,8 @@ func TestWallet_SignHashForMsg(t *testing.T) {
 
 	test.Equal(t, "50b2c43fd39106bafbba0da34fc430e1f91e3c96ea2acee2bc34119f92b37750", result)
 }
+
+func TestWallet_MethodIdFromMethodStr(t *testing.T) {
+	result := NewWallet().MethodIdFromMethodStr("cashChequeBeneficiary(address,uint256,bytes)")
+	test.Equal(t, "0d5f2659", result)
+}

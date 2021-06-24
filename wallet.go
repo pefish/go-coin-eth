@@ -503,6 +503,13 @@ func (w *Wallet) Topic0FromEventName(abiStr, eventName string) (string, error) {
 	return parsedAbi.Events[eventName].ID.String(), nil
 }
 
+/**
+返回结果不带 0x 前缀
+ */
+func (w *Wallet) MethodIdFromMethodStr(methodStr string) string {
+	return hex.EncodeToString(crypto.Keccak256([]byte(methodStr))[:4])
+}
+
 func (w *Wallet) MethodFromPayload(abiStr string, payloadStr string) (*abi.Method, error) {
 	if len(payloadStr) < 8 {
 		return nil, errors.New("payloadStr error")
