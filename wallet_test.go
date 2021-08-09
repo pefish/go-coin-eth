@@ -17,14 +17,14 @@ var contractAddress = "0xD384946C4054d53635CB9462eEd7d106101Ad449"
 var abiStr = `[{"inputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"uint8","name":"decimals","type":"uint8"},{"internalType":"uint256","name":"totalSupply","type":"uint256"},{"internalType":"address","name":"receiveAccount","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}]`
 
 func init() {
-	//wallet1, err := NewWallet("https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b")
+	//wallet1, err := NewWallet("https://ropsten.infura.io/v3/7594e560416349f79c8ef6ff286d83fc")
 	//test.Equal(t, nil, err)
 	//wallet = wallet1
 }
 
 func TestContract_BuildCallMethodTx(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://ropsten.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
@@ -39,8 +39,8 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 
 func TestWallet_WatchLogs(t *testing.T) {
 	wallet, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
-		WsUrl:  "wss://mainnet.infura.io/ws/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
+		WsUrl:  "wss://mainnet.infura.io/ws/v3/7594e560416349f79c8ef6ff286d83fc",
 	})
 	test.Equal(t, nil, err)
 	defer wallet.Close()
@@ -64,7 +64,7 @@ exit:
 
 func TestWallet_FindLogs(t *testing.T) {
 	wallet, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
@@ -107,7 +107,7 @@ func TestWallet_FindLogs1(t *testing.T) {
 
 func TestWallet_SendRawTransaction(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
@@ -119,7 +119,7 @@ func TestWallet_SendRawTransaction(t *testing.T) {
 
 func TestWallet_WatchPendingTxByWs(t *testing.T) {
 	wallet, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
@@ -937,7 +937,7 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 
 func TestWallet_DecodePayload(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
@@ -972,7 +972,7 @@ func TestWallet_DecodePayload(t *testing.T) {
 
 func TestWallet_TxsInPool(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://mainnet.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
@@ -996,21 +996,22 @@ func TestWallet_SuggestGasPrice(t *testing.T) {
 
 func TestWallet_BuildTransferTx(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://rinkeby.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	_, err = wallet1.BuildTransferTx("", "0x476fBB25d56B5dD4f1df03165498C403C4713069", &CallMethodOpts{
 		Value: new(big.Int).SetUint64(1000000000000000),
+		MaxPriorityFeePerGas: new(big.Int).SetUint64(10000000000),
+		GasPrice: new(big.Int).SetUint64(100000000000),
 	})
 	test.Equal(t, "invalid length, need 256 bits", err.Error())
-	//fmt.Println(tx.TxHex)
 }
 
 func TestWallet_UnpackParams(t *testing.T) {
 	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://ropsten.infura.io/v3/9442f24048d94dbd9a588d3e4e2eac8b",
+		RpcUrl: "https://ropsten.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
 	test.Equal(t, nil, err)

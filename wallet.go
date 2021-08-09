@@ -2,6 +2,7 @@ package go_coin_eth
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	chain "github.com/pefish/go-coin-eth/util"
 	"github.com/pefish/go-decimal"
@@ -408,12 +408,13 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 type CallMethodOpts struct {
 	Nonce    uint64
 	Value    *big.Int
-	GasPrice *big.Int
+	GasPrice *big.Int  // MaxFeePerGas
 	GasLimit uint64
 	IsPredictError bool
+	MaxPriorityFeePerGas *big.Int
 }
 
-type BuildCallMethodTxResult struct {
+type BuildTxResult struct {
 	SignedTx *types.Transaction
 	TxHex    string
 }
@@ -572,7 +573,7 @@ func (w *Wallet) PrivateKeyToAddress(privateKey string) (string, error) {
 	return crypto.PubkeyToAddress(publicKeyECDSA).String(), nil
 }
 
-func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildCallMethodTxResult, error) {
+func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -588,17 +589,12 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 	}
 
 	var value = big.NewInt(0)
-	var gasPrice *big.Int = nil
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
-	var isPredictError bool = true
+	var isPredictError = true
 	if opts != nil {
 		if opts.Value != nil {
 			value = opts.Value
-		}
-
-		if opts.GasPrice != nil {
-			gasPrice = opts.GasPrice
 		}
 
 		gasLimit = opts.GasLimit
@@ -619,19 +615,12 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
 	}
-	if gasPrice == nil {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		gasPrice, err = w.RemoteRpcClient.SuggestGasPrice(ctx)
-		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
-		}
-	}
 	input, err := parsedAbi.Pack(methodName, params...)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
 	if gasLimit == 0 || isPredictError {
-		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: input}
+		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: new(big.Int).SetInt64(10), Value: value, Data: input}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
@@ -640,22 +629,59 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 			gasLimit = uint64(float64(tempGasLimit) * 1.3)
 		}
 	}
-	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, input)
-	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
+
+	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, input, opts)
+}
+
+func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddressObj common.Address, value *big.Int, gasLimit uint64, data []byte, opts *CallMethodOpts) (*BuildTxResult, error) {
+	var rawTx *types.Transaction
+	if opts.MaxPriorityFeePerGas == nil {
+		var gasPrice *big.Int = nil
+		if opts != nil && opts.GasPrice != nil {
+			gasPrice = opts.GasPrice
+		}
+		if gasPrice == nil {
+			ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+			_gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
+			if err != nil {
+				return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+			}
+			gasPrice = _gasPrice
+		}
+		rawTx = types.NewTx(&types.LegacyTx{
+			Nonce:    nonce,
+			To:       &toAddressObj,
+			Value:    value,
+			Gas:      gasLimit,
+			GasPrice: gasPrice,
+			Data: data,
+		})
+	} else {
+		rawTx = types.NewTx(&types.DynamicFeeTx{
+			Nonce:     nonce,
+			To:        &toAddressObj,
+			Value:     value,
+			Gas:       gasLimit,
+			GasFeeCap: opts.GasPrice,  // maxFeePerGas 最大的 gasPrice（包含 baseFee），减去 baseFee 就是小费。gasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
+			GasTipCap: opts.MaxPriorityFeePerGas,  // maxPriorityFeePerGas，也就是最大的小费。GasTipCap 和 gasFeeCap - baseFee 的更小值才是真正的给矿工的，baseFee 是销毁的。
+			Data: data,
+		})
+	}
+	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	data, err := rlp.EncodeToBytes(signedTx)
+	txBytes, err := signedTx.MarshalBinary()
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	return &BuildCallMethodTxResult{
+	return &BuildTxResult{
 		SignedTx: signedTx,
-		TxHex:    hexutil.Encode(data),
+		TxHex:    hexutil.Encode(txBytes),
 	}, nil
 }
 
-func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, payload string, opts *CallMethodOpts) (*BuildCallMethodTxResult, error) {
+func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, payload string, opts *CallMethodOpts) (*BuildTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -674,17 +700,12 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 	contractAddressObj := common.HexToAddress(contractAddress)
 
 	var value = big.NewInt(0)
-	var gasPrice *big.Int = nil
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
-	var isPredictError bool = true
+	var isPredictError = true
 	if opts != nil {
 		if opts.Value != nil {
 			value = opts.Value
-		}
-
-		if opts.GasPrice != nil {
-			gasPrice = opts.GasPrice
 		}
 
 		gasLimit = opts.GasLimit
@@ -705,15 +726,9 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
 	}
-	if gasPrice == nil {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		gasPrice, err = w.RemoteRpcClient.SuggestGasPrice(ctx)
-		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
-		}
-	}
+
 	if gasLimit == 0 || isPredictError {
-		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: gasPrice, Value: value, Data: payloadBuf}
+		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: new(big.Int).SetInt64(10), Value: value, Data: payloadBuf}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
@@ -722,22 +737,11 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 			gasLimit = uint64(float64(tempGasLimit) * 1.3)
 		}
 	}
-	var rawTx = types.NewTransaction(nonce, contractAddressObj, value, gasLimit, gasPrice, payloadBuf)
-	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
-	data, err := rlp.EncodeToBytes(signedTx)
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
-	return &BuildCallMethodTxResult{
-		SignedTx: signedTx,
-		TxHex:    hexutil.Encode(data),
-	}, nil
+
+	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, payloadBuf, opts)
 }
 
-func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodOpts) (*BuildCallMethodTxResult, error) {
+func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodOpts) (*BuildTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -749,16 +753,12 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	}
 
 	var value = big.NewInt(0)
-	var gasPrice *big.Int = nil
+
 	var gasLimit uint64 = 0
 	var nonce uint64 = 0
 	if opts != nil {
 		if opts.Value != nil {
 			value = opts.Value
-		}
-
-		if opts.GasPrice != nil {
-			gasPrice = opts.GasPrice
 		}
 
 		gasLimit = opts.GasLimit
@@ -781,26 +781,8 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
 	}
-	if gasPrice == nil {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		gasPrice, err = w.RemoteRpcClient.SuggestGasPrice(ctx)
-		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
-		}
-	}
-	var rawTx = types.NewTransaction(nonce, toAddressObj, value, gasLimit, gasPrice, make([]byte, 0))
-	signedTx, err := types.SignTx(rawTx, types.NewEIP155Signer(w.chainId), privateKeyECDSA)
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
-	data, err := rlp.EncodeToBytes(signedTx)
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
-	return &BuildCallMethodTxResult{
-		SignedTx: signedTx,
-		TxHex:    hexutil.Encode(data),
-	}, nil
+
+	return w.buildTx(privateKeyECDSA, nonce, toAddressObj, value, gasLimit, nil, opts)
 }
 
 func (w *Wallet) SendRawTransaction(txHex string) (string, error) {
@@ -915,6 +897,7 @@ type DeriveFromPathResult struct {
 	PrivateKey string
 }
 
+// 都不带 0x 前缀
 func (w *Wallet) DeriveFromPath(seed string, path string) (*DeriveFromPathResult, error) {
 	// 字符串转换成字节数组
 	seedBuf, err := hex.DecodeString(seed)
@@ -1029,6 +1012,7 @@ func (w *Wallet) RecoverSignerAddressFromMsgHash (msgHash, sig string) (*common.
 	return &recoveredAddr, nil
 }
 
+// 以太坊的 hash 专门在数据前面加上了一段话
 func (w *Wallet) SignHashForMsg(data string) (string, error) {
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
 	return hex.EncodeToString(crypto.Keccak256([]byte(msg))), nil
