@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	"math/big"
 	"sync"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/pefish/btcutil/hdkeychain"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -491,7 +491,7 @@ func (w *Wallet) derivePrivateKey(path accounts.DerivationPath) (*ecdsa.PrivateK
 	var err error
 	key := w.masterKey
 	for _, n := range path {
-		key, err = key.Child(n)
+		key, err = key.Derive(n)
 		if err != nil {
 			return nil, err
 		}
