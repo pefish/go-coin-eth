@@ -1317,6 +1317,7 @@ func TestWallet_Approve(t *testing.T) {
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
+
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	txHash, err := wallet1.Approve(
