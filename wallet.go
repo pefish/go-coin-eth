@@ -33,12 +33,10 @@ var (
 
 	Erc20AbiStr    = `[{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"address","name":"pauser","type":"address"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"uint8","name":"decimal","type":"uint8"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"new_operator","type":"address"},{"internalType":"address","name":"new_pauser","type":"address"}],"name":"changeUser","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"}]`
 	ZeroAddressStr = "0x0000000000000000000000000000000000000000"
-	ZeroAddress = common.HexToAddress(ZeroAddressStr)
+	ZeroAddress    = common.HexToAddress(ZeroAddressStr)
 	OneAddressStr  = "0x0000000000000000000000000000000000000001"
-	OneAddress  = common.HexToAddress(OneAddressStr)
+	OneAddress     = common.HexToAddress(OneAddressStr)
 )
-
-
 
 var (
 	MaxUint256, _ = new(big.Int).SetString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
@@ -66,7 +64,6 @@ var (
 		{Name: "_f", Type: "uint256"},
 		{Name: "__f", Type: "uint256"},
 		{Name: "f", Type: "uint256"}})
-
 )
 
 type Wallet struct {
@@ -79,13 +76,11 @@ type Wallet struct {
 	logger          go_logger.InterfaceLogger
 }
 
-
-
 func NewWallet() *Wallet {
 	timeout := 60 * time.Second
 	return &Wallet{
 		timeout: timeout,
-		logger:          go_logger.DefaultLogger,
+		logger:  go_logger.DefaultLogger,
 	}
 }
 
@@ -219,7 +214,8 @@ func (w *Wallet) CallContractConstantWithPayload(out interface{}, contractAddres
 	return nil
 }
 
-/**
+/*
+*
 是个同步方法
 
 只能获取以后的而且区块确认了的事件，即使 start 指定为过去的 block number，也不能获取到
@@ -322,16 +318,16 @@ func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, 
 }
 
 type FindLogsByScanApiResult struct {
-	Address string `json:"address"`
-	Topics []string `json:"topics"`
-	Data string `json:"data"`
-	BlockNumber string `json:"blockNumber"`  // 十六进制字符串
-	Timestamp string `json:"timeStamp"` // 十六进制字符串
-	GasPrice string `json:"gasPrice"`  // 十六进制字符串
-	GasUsed string `json:"gasUsed"` // 十六进制字符串
-	LogIndex string `json:"logIndex"`  // 十六进制字符串
-	TransactionHash string `json:"transactionHash"`
-	TransactionIndex string `json:"transactionIndex"` // 十六进制字符串
+	Address          string   `json:"address"`
+	Topics           []string `json:"topics"`
+	Data             string   `json:"data"`
+	BlockNumber      string   `json:"blockNumber"` // 十六进制字符串
+	Timestamp        string   `json:"timeStamp"`   // 十六进制字符串
+	GasPrice         string   `json:"gasPrice"`    // 十六进制字符串
+	GasUsed          string   `json:"gasUsed"`     // 十六进制字符串
+	LogIndex         string   `json:"logIndex"`    // 十六进制字符串
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"` // 十六进制字符串
 }
 
 // 通过 scan api 查询 logs（只支持以太坊）。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
@@ -352,29 +348,29 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 	}
 
 	params := map[string]interface{}{
-		"module": "logs",
-		"action": "getLogs",
+		"module":    "logs",
+		"action":    "getLogs",
 		"fromBlock": fromBlock,
-		"toBlock": toBlock,
-		"address": contractAddress,
-		"topic0": topic0,
-		"apikey": apikey,
+		"toBlock":   toBlock,
+		"address":   contractAddress,
+		"topic0":    topic0,
+		"apikey":    apikey,
 	}
 	for i, str := range query {
 		oprStr := fmt.Sprintf("topic%d_%d_opr", i, i+1)
 		params[oprStr] = "and"
-		params[fmt.Sprintf("topic%d", i + 1)] = str
+		params[fmt.Sprintf("topic%d", i+1)] = str
 	}
 
 	_, resStr, err := go_http.NewHttpRequester(go_http.WithLogger(w.logger), go_http.WithTimeout(timeout)).Get(go_http.RequestParam{
-		Url:       ScanApiUrl,
-		Params:    params,
+		Url:    ScanApiUrl,
+		Params: params,
 	})
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	var tempResult struct{
-		Status string `json:"status"`
+	var tempResult struct {
+		Status  string `json:"status"`
 		Message string `json:"message"`
 	}
 	err = json.Unmarshal([]byte(resStr), &tempResult)
@@ -382,10 +378,10 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 		return nil, go_error.WithStack(err)
 	}
 	if tempResult.Status != "1" && tempResult.Message != "No records found" {
-		var result struct{
-			Status string `json:"status"`
+		var result struct {
+			Status  string `json:"status"`
 			Message string `json:"message"`
-			Result string `json:"result"`
+			Result  string `json:"result"`
 		}
 		err = json.Unmarshal([]byte(resStr), &result)
 		if err != nil {
@@ -393,10 +389,10 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 		}
 		return nil, go_error.WithStack(errors.New(result.Message + ". " + result.Result))
 	}
-	var result struct{
-		Status string `json:"status"`
-		Message string `json:"message"`
-		Result []FindLogsByScanApiResult `json:"result"`
+	var result struct {
+		Status  string                    `json:"status"`
+		Message string                    `json:"message"`
+		Result  []FindLogsByScanApiResult `json:"result"`
 	}
 	err = json.Unmarshal([]byte(resStr), &result)
 	if err != nil {
@@ -406,11 +402,11 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 }
 
 type CallMethodOpts struct {
-	Nonce    uint64
-	Value    *big.Int
-	GasPrice *big.Int  // MaxFeePerGas
-	GasLimit uint64
-	IsPredictError bool
+	Nonce                uint64
+	Value                *big.Int
+	GasPrice             *big.Int // MaxFeePerGas
+	GasLimit             uint64
+	IsPredictError       bool
 	MaxPriorityFeePerGas *big.Int
 }
 
@@ -504,9 +500,10 @@ func (w *Wallet) Topic0FromEventName(abiStr, eventName string) (string, error) {
 	return parsedAbi.Events[eventName].ID.String(), nil
 }
 
-/**
+/*
+*
 返回结果不带 0x 前缀
- */
+*/
 func (w *Wallet) MethodIdFromMethodStr(methodStr string) string {
 	return hex.EncodeToString(crypto.Keccak256([]byte(methodStr))[:4])
 }
@@ -654,7 +651,7 @@ func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddr
 			Value:    value,
 			Gas:      gasLimit,
 			GasPrice: gasPrice,
-			Data: data,
+			Data:     data,
 		})
 	} else {
 		rawTx = types.NewTx(&types.DynamicFeeTx{
@@ -662,9 +659,9 @@ func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddr
 			To:        &toAddressObj,
 			Value:     value,
 			Gas:       gasLimit,
-			GasFeeCap: opts.GasPrice,  // maxFeePerGas 最大的 gasPrice（包含 baseFee），减去 baseFee 就是小费。gasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
-			GasTipCap: opts.MaxPriorityFeePerGas,  // maxPriorityFeePerGas，也就是最大的小费。GasTipCap 和 gasFeeCap - baseFee 的更小值才是真正的给矿工的，baseFee 是销毁的。
-			Data: data,
+			GasFeeCap: opts.GasPrice,             // maxFeePerGas 最大的 gasPrice（包含 baseFee），减去 baseFee 就是小费。gasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
+			GasTipCap: opts.MaxPriorityFeePerGas, // maxPriorityFeePerGas，也就是最大的小费。GasTipCap 和 gasFeeCap - baseFee 的更小值才是真正的给矿工的，baseFee 是销毁的。
+			Data:      data,
 		})
 	}
 	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
@@ -892,8 +889,8 @@ func (w *Wallet) Balance(address string) (*big.Int, error) {
 }
 
 type DeriveFromPathResult struct {
-	Address string
-	PublicKey string
+	Address    string
+	PublicKey  string
 	PrivateKey string
 }
 
@@ -966,7 +963,7 @@ func (w *Wallet) SignMsg(privateKey string, data string) (string, error) {
 	return hex.EncodeToString(signature), nil
 }
 
-func (w *Wallet) RecoverSignerAddress (msg, sig string) (*common.Address, error) {
+func (w *Wallet) RecoverSignerAddress(msg, sig string) (*common.Address, error) {
 	hash, err := w.SignHashForMsg(msg)
 	if err != nil {
 		return nil, err
@@ -974,7 +971,7 @@ func (w *Wallet) RecoverSignerAddress (msg, sig string) (*common.Address, error)
 	return w.RecoverSignerAddressFromMsgHash(hash, sig)
 }
 
-func (w *Wallet) RecoverSignerAddressFromMsgHash (msgHash, sig string) (*common.Address, error) {
+func (w *Wallet) RecoverSignerAddressFromMsgHash(msgHash, sig string) (*common.Address, error) {
 	if strings.HasPrefix(sig, "0x") {
 		sig = sig[2:]
 	}
@@ -1016,6 +1013,40 @@ func (w *Wallet) RecoverSignerAddressFromMsgHash (msgHash, sig string) (*common.
 func (w *Wallet) SignHashForMsg(data string) (string, error) {
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), data)
 	return hex.EncodeToString(crypto.Keccak256([]byte(msg))), nil
+}
+
+func (w *Wallet) SendEth(priv string, address string, amount *big.Int) (string, error) {
+	tx, err := w.BuildTransferTx(priv, address, &CallMethodOpts{
+		Value:    amount,
+		GasLimit: 200000,
+	})
+	if err != nil {
+		return "", err
+	}
+	txHash, err := w.SendRawTransaction(tx.TxHex)
+	if err != nil {
+		return "", err
+	}
+	return txHash, nil
+}
+
+func (w *Wallet) SendToken(priv string, contractAddress, address string, amount *big.Int, opts *CallMethodOpts) (string, error) {
+	tx, err := w.BuildCallMethodTx(
+		priv,
+		contractAddress,
+		`[{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}]`, "transfer",
+		opts,
+		common.HexToAddress(address),
+		amount,
+	)
+	if err != nil {
+		return "", err
+	}
+	txHash, err := w.SendRawTransaction(tx.TxHex)
+	if err != nil {
+		return "", err
+	}
+	return txHash, nil
 }
 
 func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error) {

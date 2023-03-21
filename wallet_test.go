@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	go_decimal "github.com/pefish/go-decimal"
 	"github.com/pefish/go-test-assert"
 	"math/big"
 	"strings"
@@ -99,7 +100,7 @@ func TestWallet_FindLogs1(t *testing.T) {
 		[]interface{}{
 			new(big.Int).SetUint64(6),
 		},
-		)
+	)
 	test.Equal(t, nil, err)
 	test.Equal(t, 1, len(logs))
 	test.Equal(t, "0x1A3f28CE6589dC9567dd895fe974E665C6A47547", logs[0]["to"].(common.Address).String())
@@ -163,17 +164,17 @@ func TestWallet_CallContractConstant1(t *testing.T) {
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 
-	type Asset struct{
-		Token common.Address `json:"token"`
-		TokenId *big.Int `json:"tokenId"`
-		AssetType uint8 `json:"assetType"`
+	type Asset struct {
+		Token     common.Address `json:"token"`
+		TokenId   *big.Int       `json:"tokenId"`
+		AssetType uint8          `json:"assetType"`
 	}
 
 	type OrderKey struct {
-		Owner common.Address `json:"owner"`
-		Salt *big.Int `json:"salt"`
-		SellAsset Asset `json:"sellAsset"`
-		BuyAsset Asset `json:"buyAsset"`
+		Owner     common.Address `json:"owner"`
+		Salt      *big.Int       `json:"salt"`
+		SellAsset Asset          `json:"sellAsset"`
+		BuyAsset  Asset          `json:"buyAsset"`
 	}
 
 	var result [32]byte
@@ -886,16 +887,16 @@ func TestWallet_CallContractConstant1(t *testing.T) {
 		&bind.CallOpts{
 			Pending: false,
 		}, OrderKey{
-			Owner:     common.HexToAddress("0xd9eb7d4dff36a2801d1ec42e75260b6e9e283e62"),
-			Salt:      new(big.Int).SetInt64(72567257245612),
+			Owner: common.HexToAddress("0xd9eb7d4dff36a2801d1ec42e75260b6e9e283e62"),
+			Salt:  new(big.Int).SetInt64(72567257245612),
 			SellAsset: Asset{
-				Token: common.HexToAddress("0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512"),
-				TokenId: new(big.Int).SetInt64(0),
+				Token:     common.HexToAddress("0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512"),
+				TokenId:   new(big.Int).SetInt64(0),
 				AssetType: 0,
 			},
-			BuyAsset:  Asset{
-				Token: common.HexToAddress("0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512"),
-				TokenId: new(big.Int).SetInt64(0),
+			BuyAsset: Asset{
+				Token:     common.HexToAddress("0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512"),
+				TokenId:   new(big.Int).SetInt64(0),
 				AssetType: 0,
 			},
 		})
@@ -911,15 +912,15 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	type TokenBank struct {
-		TokenAddr common.Address `json:"tokenAddr"`
-		PTokenAddr common.Address
-		IsOpen bool `json:"isOpen"`
-		CanDeposit bool `json:"canDeposit"`
-		CanWithdraw bool`json:"canWithdraw"`
-		TotalVal *big.Int `json:"totalVal"`
-		TotalDebt *big.Int `json:"totalDebt"`
-		TotalDebtShare *big.Int `json:"totalDebtShare"`
-		TotalReserve *big.Int `json:"totalReserve"`
+		TokenAddr        common.Address `json:"tokenAddr"`
+		PTokenAddr       common.Address
+		IsOpen           bool     `json:"isOpen"`
+		CanDeposit       bool     `json:"canDeposit"`
+		CanWithdraw      bool     `json:"canWithdraw"`
+		TotalVal         *big.Int `json:"totalVal"`
+		TotalDebt        *big.Int `json:"totalDebt"`
+		TotalDebtShare   *big.Int `json:"totalDebtShare"`
+		TotalReserve     *big.Int `json:"totalReserve"`
 		LastInterestTime *big.Int `json:"lastInterestTime"`
 	}
 	var tokenBank TokenBank
@@ -930,7 +931,7 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 		"banks",
 		nil,
 		common.HexToAddress("0x25d2e80cb6b86881fd7e07dd263fb79f4abe033c"),
-		)
+	)
 	test.Equal(t, nil, err)
 	test.Equal(t, "0x21AaF2b4973e8f437e45941b093b4149aB2513A6", tokenBank.PTokenAddr.String())
 }
@@ -1002,9 +1003,9 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	_, err = wallet1.BuildTransferTx("", "0x476fBB25d56B5dD4f1df03165498C403C4713069", &CallMethodOpts{
-		Value: new(big.Int).SetUint64(1000000000000000),
+		Value:                new(big.Int).SetUint64(1000000000000000),
 		MaxPriorityFeePerGas: new(big.Int).SetUint64(10000000000),
-		GasPrice: new(big.Int).SetUint64(100000000000),
+		GasPrice:             new(big.Int).SetUint64(100000000000),
 	})
 	test.Equal(t, "invalid length, need 256 bits", err.Error())
 }
@@ -1016,7 +1017,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 	})
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
-	var out struct{
+	var out struct {
 		Value *big.Int `json:"value"`
 	}
 	err = wallet1.UnpackParams(&out, abi.Arguments{
@@ -1105,9 +1106,9 @@ func TestWallet_FindLogsByScanApi(t *testing.T) {
 		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
 		"-1000",
 		"latest",
-		30 * time.Second,
+		30*time.Second,
 		"0x298637f684da70674f26509b10f07ec2fbc77a335ab1e7d6215a4b2484d8bb52",
-		)
+	)
 	test.Equal(t, nil, err)
 	fmt.Println(result)
 	//test.Equal(t, false, pending)
@@ -1140,7 +1141,7 @@ func TestWallet_EncodePayload(t *testing.T) {
 		},
 		common.HexToAddress("0x544fcA5EEF17d75A273955bA6Fd16fe3c6E620Aa"),
 		stringToBigInt("1609125230"),
-		)
+	)
 	test.Equal(t, nil, err)
 	test.Equal(t, "38ed1739000000000000000000000000000000000000000000005f4a8c8375d15540000000000000000000000000000000000000000000000000548c0320c33861a5e3fe00000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000544fca5eef17d75a273955ba6fd16fe3c6e620aa000000000000000000000000000000000000000000000000000000005fe94d6e00000000000000000000000000000000000000000000000000000000000000020000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000003449fc1cd036255ba1eb19d65ff4ba2b8903a69a", result)
 }
@@ -1167,9 +1168,9 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	}, common.HexToAddress("0x2117210296c2993Cfb4c6790FEa1bEB3ECe8Ac06"), big.NewInt(1000000000000000000))
 	test.Equal(t, nil, err)
 	test.Equal(t, "0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000", paramsStr)
-	tx, err := wallet1.BuildCallMethodTxWithPayload("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", contractAddress, "0x0b4c7e4d" + paramsStr, &CallMethodOpts{
+	tx, err := wallet1.BuildCallMethodTxWithPayload("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", contractAddress, "0x0b4c7e4d"+paramsStr, &CallMethodOpts{
 		GasPrice: new(big.Int).SetUint64(1000000000),
-		Nonce: 1,
+		Nonce:    1,
 		GasLimit: 5000000,
 	})
 	test.Equal(t, nil, err)
@@ -1206,7 +1207,7 @@ func TestWallet_MaxUint256(t *testing.T) {
 }
 
 func TestRecoverSignerAddress(t *testing.T) {
-	address, err := NewWallet().RecoverSignerAddressFromMsgHash("43aa0dee053b766817331315ab5440b144451f86d58f2d3b938e3de4dbca7ed8","c2f57c5b9c187b089c492ba216cbb28e1d3d59aa8b62178b58d5442cbfc45cf40769070dfee43a8dd3f721d9a7a514f27fff3e0efbe6d7a41a6b27b8093f4dce1b")
+	address, err := NewWallet().RecoverSignerAddressFromMsgHash("43aa0dee053b766817331315ab5440b144451f86d58f2d3b938e3de4dbca7ed8", "c2f57c5b9c187b089c492ba216cbb28e1d3d59aa8b62178b58d5442cbfc45cf40769070dfee43a8dd3f721d9a7a514f27fff3e0efbe6d7a41a6b27b8093f4dce1b")
 	test.Equal(t, nil, err)
 	test.Equal(t, "0xf93B52193658335DBfe7b9138a0Da4CCEb6aF466", address.String())
 }
@@ -1222,7 +1223,7 @@ func TestWallet_CallContractConstantWithPayload(t *testing.T) {
 		`[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_upgradedAddress","type":"address"}],"name":"deprecate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"deprecated","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_evilUser","type":"address"}],"name":"addBlackList","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"upgradedAddress","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"maximumFee","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"_totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"unpause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_maker","type":"address"}],"name":"getBlackListStatus","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowed","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"who","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"pause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getOwner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"newBasisPoints","type":"uint256"},{"name":"newMaxFee","type":"uint256"}],"name":"setParams","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"issue","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"redeem","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"basisPointsRate","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"isBlackListed","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_clearedUser","type":"address"}],"name":"removeBlackList","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"MAX_UINT","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_blackListedUser","type":"address"}],"name":"destroyBlackFunds","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_initialSupply","type":"uint256"},{"name":"_name","type":"string"},{"name":"_symbol","type":"string"},{"name":"_decimals","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"amount","type":"uint256"}],"name":"Issue","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"amount","type":"uint256"}],"name":"Redeem","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newAddress","type":"address"}],"name":"Deprecate","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"feeBasisPoints","type":"uint256"},{"indexed":false,"name":"maxFee","type":"uint256"}],"name":"Params","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_blackListedUser","type":"address"},{"indexed":false,"name":"_balance","type":"uint256"}],"name":"DestroyedBlackFunds","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_user","type":"address"}],"name":"AddedBlackList","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_user","type":"address"}],"name":"RemovedBlackList","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[],"name":"Pause","type":"event"},{"anonymous":false,"inputs":[],"name":"Unpause","type":"event"}]`,
 		"balanceOf",
 		common.HexToAddress("0xd9eb7d4dff36a2801d1ec42e75260b6e9e283e62"),
-		)
+	)
 	test.Equal(t, nil, err)
 	out := new(big.Int)
 	err = wallet1.CallContractConstantWithPayload(
@@ -1266,4 +1267,32 @@ func TestWallet_SignHashForMsg(t *testing.T) {
 func TestWallet_MethodIdFromMethodStr(t *testing.T) {
 	result := NewWallet().MethodIdFromMethodStr("cashChequeBeneficiary(address,uint256,bytes)")
 	test.Equal(t, "0d5f2659", result)
+}
+
+func TestWallet_SendEth(t *testing.T) {
+	wallet1, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://arb1.arbitrum.io/rpc",
+		WsUrl:  "",
+	})
+	test.Equal(t, nil, err)
+	defer wallet1.Close()
+	txHash, err := wallet1.SendEth("", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.Decimal.Start(0.00001).MustShiftedBy(18).EndForBigInt())
+	test.Equal(t, nil, err)
+
+	fmt.Println(txHash)
+}
+
+func TestWallet_SendToken(t *testing.T) {
+	wallet1, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://arb1.arbitrum.io/rpc",
+		WsUrl:  "",
+	})
+	test.Equal(t, nil, err)
+	defer wallet1.Close()
+	txHash, err := wallet1.SendToken("", "0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.Decimal.Start(1).MustShiftedBy(18).EndForBigInt(), &CallMethodOpts{
+		GasLimit: 500000,
+	})
+	test.Equal(t, nil, err)
+
+	fmt.Println(txHash)
 }
