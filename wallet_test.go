@@ -1276,7 +1276,10 @@ func TestWallet_SendEth(t *testing.T) {
 	})
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
-	txHash, err := wallet1.SendEth("", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.Decimal.Start(0.00001).MustShiftedBy(18).EndForBigInt())
+	txHash, err := wallet1.SendEth("", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", &CallMethodOpts{
+		Value:    go_decimal.Decimal.Start(0.00001).MustShiftedBy(18).EndForBigInt(),
+		GasLimit: 300000,
+	})
 	test.Equal(t, nil, err)
 
 	fmt.Println(txHash)

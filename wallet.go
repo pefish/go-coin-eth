@@ -1056,11 +1056,8 @@ func (w *Wallet) SignHashForMsg(data string) (string, error) {
 	return hex.EncodeToString(crypto.Keccak256([]byte(msg))), nil
 }
 
-func (w *Wallet) SendEth(priv string, address string, amount *big.Int) (string, error) {
-	tx, err := w.BuildTransferTx(priv, address, &CallMethodOpts{
-		Value:    amount,
-		GasLimit: 200000,
-	})
+func (w *Wallet) SendEth(priv string, address string, opts *CallMethodOpts) (string, error) {
+	tx, err := w.BuildTransferTx(priv, address, opts)
 	if err != nil {
 		return "", err
 	}
