@@ -1296,3 +1296,39 @@ func TestWallet_SendToken(t *testing.T) {
 
 	fmt.Println(txHash)
 }
+
+func TestWallet_ApproveAmount(t *testing.T) {
+	wallet1, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://arb1.arbitrum.io/rpc",
+		WsUrl:  "",
+	})
+	test.Equal(t, nil, err)
+	defer wallet1.Close()
+	amount, err := wallet1.ApproveAmount(
+		"0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F",
+		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
+		"0x16e71b13fe6079b4312063f7e81f76d165ad32ad",
+	)
+	test.Equal(t, "0", amount.String())
+}
+
+func TestWallet_Approve(t *testing.T) {
+	wallet1, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://arb1.arbitrum.io/rpc",
+		WsUrl:  "",
+	})
+	test.Equal(t, nil, err)
+	defer wallet1.Close()
+	txHash, err := wallet1.Approve(
+		"",
+		"0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F",
+		"0x000000Eb4761239232363e02025194102b7Ef30a",
+		nil,
+		&CallMethodOpts{
+			GasLimit: 400000,
+		},
+	)
+	test.Equal(t, nil, err)
+
+	fmt.Println(txHash)
+}

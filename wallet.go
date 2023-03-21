@@ -888,6 +888,47 @@ func (w *Wallet) Balance(address string) (*big.Int, error) {
 	return result, nil
 }
 
+func (w *Wallet) ApproveAmount(contractAddress, fromAddress, toAddress string) (*big.Int, error) {
+	result := new(big.Int)
+	err := w.CallContractConstant(
+		&result,
+		contractAddress,
+		Erc20AbiStr,
+		"allowance",
+		nil,
+		common.HexToAddress(fromAddress),
+		common.HexToAddress(toAddress),
+	)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return result, nil
+}
+
+func (w *Wallet) Approve(priv, contractAddress, toAddress string, amount *big.Int, opts *CallMethodOpts) (string, error) {
+	approveAmount := amount
+	if approveAmount == nil {
+		approveAmount = MaxUint256
+	}
+	tx, err := w.BuildCallMethodTx(
+		priv,
+		contractAddress,
+		Erc20AbiStr,
+		"approve",
+		opts,
+		common.HexToAddress(toAddress),
+		approveAmount,
+	)
+	if err != nil {
+		return "", err
+	}
+	txHash, err := w.SendRawTransaction(tx.TxHex)
+	if err != nil {
+		return "", err
+	}
+	return txHash, nil
+}
+
 type DeriveFromPathResult struct {
 	Address    string
 	PublicKey  string
@@ -1034,7 +1075,8 @@ func (w *Wallet) SendToken(priv string, contractAddress, address string, amount 
 	tx, err := w.BuildCallMethodTx(
 		priv,
 		contractAddress,
-		`[{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}]`, "transfer",
+		Erc20AbiStr,
+		"transfer",
 		opts,
 		common.HexToAddress(address),
 		amount,
