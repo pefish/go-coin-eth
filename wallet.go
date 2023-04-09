@@ -632,7 +632,7 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 
 func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddressObj common.Address, value *big.Int, gasLimit uint64, data []byte, opts *CallMethodOpts) (*BuildTxResult, error) {
 	var rawTx *types.Transaction
-	if opts.MaxPriorityFeePerGas == nil {
+	if opts == nil || opts.MaxPriorityFeePerGas == nil {
 		var gasPrice *big.Int = nil
 		if opts != nil && opts.GasPrice != nil {
 			gasPrice = opts.GasPrice
