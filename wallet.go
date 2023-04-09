@@ -831,6 +831,10 @@ func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Recei
 			timer.Reset(interval)
 			continue
 		}
+		if receipt.BlockNumber == nil {
+			timer.Reset(interval)
+			continue
+		}
 		timer.Stop()
 		return receipt
 	}
