@@ -825,17 +825,6 @@ func (w *Wallet) TransactionReceiptByHash(txHash string) (*types.Receipt, error)
 func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Receipt {
 	timer := time.NewTimer(0)
 	for range timer.C {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		_, isPending, err := w.RemoteRpcClient.TransactionByHash(ctx, common.HexToHash(txHash))
-		if err != nil {
-			w.logger.WarnF("TransactionByHash: %#v", err)
-			timer.Reset(interval)
-			continue
-		}
-		if isPending {
-			timer.Reset(interval)
-			continue
-		}
 		receipt, err := w.TransactionReceiptByHash(txHash)
 		if err != nil {
 			w.logger.WarnF("TransactionReceiptByHash: %#v", err)
