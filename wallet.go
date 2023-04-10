@@ -617,7 +617,12 @@ func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodNa
 		return nil, go_error.WithStack(err)
 	}
 	if gasLimit == 0 || isPredictError {
-		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: new(big.Int).SetInt64(10), Value: value, Data: input}
+		msg := ethereum.CallMsg{
+			From:  fromAddress,
+			To:    &contractAddressObj,
+			Value: value,
+			Data:  input,
+		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
@@ -725,7 +730,12 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 	}
 
 	if gasLimit == 0 || isPredictError {
-		msg := ethereum.CallMsg{From: fromAddress, To: &contractAddressObj, GasPrice: new(big.Int).SetInt64(10), Value: value, Data: payloadBuf}
+		msg := ethereum.CallMsg{
+			From:  fromAddress,
+			To:    &contractAddressObj,
+			Value: value,
+			Data:  payloadBuf,
+		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
