@@ -813,7 +813,8 @@ func (w *Wallet) TransactionByHash(txHash string) (*TransactionByHashResult, boo
 	if err != nil {
 		return nil, false, go_error.WithStack(err)
 	}
-	from, err := types.Sender(types.NewEIP155Signer(w.chainId), tx)
+
+	from, err := types.Sender(types.NewLondonSigner(w.chainId), tx)
 	if err != nil {
 		return nil, false, go_error.WithStack(err)
 	}
