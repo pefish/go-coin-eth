@@ -238,14 +238,13 @@ func (w *Wallet) SignTxEIP155(account accounts.Account, tx *types.Transaction, c
 		return nil, err
 	}
 
-	msg, err := signedTx.AsMessage(types.NewEIP155Signer(chainID), nil)
+	from, err := types.Sender(types.NewEIP155Signer(chainID), tx)
 	if err != nil {
 		return nil, err
 	}
 
-	sender := msg.From()
-	if sender != account.Address {
-		return nil, fmt.Errorf("signer mismatch: expected %s, got %s", account.Address.Hex(), sender.Hex())
+	if from != account.Address {
+		return nil, fmt.Errorf("signer mismatch: expected %s, got %s", account.Address.Hex(), from.Hex())
 	}
 
 	return signedTx, nil
@@ -273,14 +272,13 @@ func (w *Wallet) SignTx(account accounts.Account, tx *types.Transaction, chainID
 		return nil, err
 	}
 
-	msg, err := signedTx.AsMessage(types.HomesteadSigner{}, nil)
+	from, err := types.Sender(types.HomesteadSigner{}, tx)
 	if err != nil {
 		return nil, err
 	}
 
-	sender := msg.From()
-	if sender != account.Address {
-		return nil, fmt.Errorf("signer mismatch: expected %s, got %s", account.Address.Hex(), sender.Hex())
+	if from != account.Address {
+		return nil, fmt.Errorf("signer mismatch: expected %s, got %s", account.Address.Hex(), from.Hex())
 	}
 
 	return signedTx, nil

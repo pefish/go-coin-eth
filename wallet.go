@@ -813,13 +813,13 @@ func (w *Wallet) TransactionByHash(txHash string) (*TransactionByHashResult, boo
 	if err != nil {
 		return nil, false, go_error.WithStack(err)
 	}
-	msg, err := tx.AsMessage(types.NewEIP155Signer(w.chainId), nil)
+	from, err := types.Sender(types.NewEIP155Signer(w.chainId), tx)
 	if err != nil {
 		return nil, false, go_error.WithStack(err)
 	}
 	return &TransactionByHashResult{
 		tx,
-		msg.From(),
+		from,
 	}, isPending, nil
 }
 
