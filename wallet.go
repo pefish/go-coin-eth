@@ -270,26 +270,23 @@ retry:
 fromBlock；nil 就是 最新块号 - 4900，负数就是 pending ，正数就是 blockNumber
 toBlock；nil 就是 latest ，负数就是 pending ，正数就是 blockNumber
 */
-func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, toBlock *big.Int, query ...[]interface{}) ([]map[string]interface{}, error) {
-	result := make([]map[string]interface{}, 0)
-
+func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, toBlock *big.Int, query ...[]interface{}) (*bind.BoundContract, []types.Log, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, nil, go_error.WithStack(err)
 	}
 
 	query = append([][]interface{}{{parsedAbi.Events[eventName].ID}}, query...)
 
 	topics, err := abi.MakeTopics(query...)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, nil, go_error.WithStack(err)
 	}
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient)
 
 	if fromBlock == nil {
 		number, err := w.LatestBlockNumber()
 		if err != nil {
-			return nil, go_error.WithStack(err)
+			return nil, nil, go_error.WithStack(err)
 		}
 		fromBlock = number.Sub(number, new(big.Int).SetUint64(4900))
 	}
@@ -304,17 +301,11 @@ func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, 
 		Topics: topics,
 	})
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, nil, go_error.WithStack(err)
 	}
-	for _, log := range logs {
-		map_ := make(map[string]interface{})
-		err := contractInstance.UnpackLogIntoMap(map_, eventName, log)
-		if err != nil {
-			return nil, go_error.WithStack(err)
-		}
-		result = append(result, map_)
-	}
-	return result, nil
+	return bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient),
+		logs,
+		nil
 }
 
 type FindLogsByScanApiResult struct {
