@@ -1336,3 +1336,100 @@ func TestWallet_Approve(t *testing.T) {
 
 	fmt.Println(txHash)
 }
+
+func TestWallet_CallContractConstant3(t *testing.T) {
+	wallet1, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://arb1.arbitrum.io/rpc",
+		WsUrl:  "",
+	})
+
+	test.Equal(t, nil, err)
+	defer wallet1.Close()
+	var quotaResult struct {
+		AmountOut               *big.Int `json:"amountOut"`
+		SqrtPriceX96After       *big.Int `json:"sqrtPriceX96After"`
+		InitializedTicksCrossed uint32   `json:"initializedTicksCrossed"`
+		GasEstimate             *big.Int `json:"gasEstimate"`
+	}
+	err = wallet1.CallContractConstant(
+		&quotaResult,
+		"0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+		`[{
+        "inputs":[
+            {
+                "components":[
+                    {
+                        "internalType":"address",
+                        "name":"tokenIn",
+                        "type":"address"
+                    },
+                    {
+                        "internalType":"address",
+                        "name":"tokenOut",
+                        "type":"address"
+                    },
+                    {
+                        "internalType":"uint256",
+                        "name":"amountIn",
+                        "type":"uint256"
+                    },
+                    {
+                        "internalType":"uint24",
+                        "name":"fee",
+                        "type":"uint24"
+                    },
+                    {
+                        "internalType":"uint160",
+                        "name":"sqrtPriceLimitX96",
+                        "type":"uint160"
+                    }
+                ],
+                "internalType":"struct IQuoterV2.QuoteExactInputSingleParams",
+                "name":"params",
+                "type":"tuple"
+            }
+        ],
+        "name":"quoteExactInputSingle",
+        "outputs":[
+            {
+                "internalType":"uint256",
+                "name":"amountOut",
+                "type":"uint256"
+            },
+            {
+                "internalType":"uint160",
+                "name":"sqrtPriceX96After",
+                "type":"uint160"
+            },
+            {
+                "internalType":"uint32",
+                "name":"initializedTicksCrossed",
+                "type":"uint32"
+            },
+            {
+                "internalType":"uint256",
+                "name":"gasEstimate",
+                "type":"uint256"
+            }
+        ],
+        "stateMutability":"nonpayable",
+        "type":"function"
+    }]`,
+		"quoteExactInputSingle",
+		nil,
+		struct {
+			TokenIn           common.Address
+			TokenOut          common.Address
+			AmountIn          *big.Int
+			Fee               *big.Int
+			SqrtPriceLimitX96 *big.Int
+		}{
+			common.HexToAddress("0x915EA4A94B61B138b568169122903Ed707A8E704"),
+			common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+			go_decimal.Decimal.Start(1).MustShiftedBy(18).EndForBigInt(),
+			new(big.Int).SetUint64(3000),
+			new(big.Int).SetUint64(0),
+		},
+	)
+	test.Equal(t, nil, err)
+}
