@@ -1010,27 +1010,54 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 }
 
 func TestWallet_UnpackParams(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
-		RpcUrl: "https://ropsten.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
-		WsUrl:  "",
-	})
-	test.Equal(t, nil, err)
+	wallet1 := NewWallet()
 	defer wallet1.Close()
 	var out struct {
 		Value *big.Int `json:"value"`
 	}
-	err = wallet1.UnpackParams(&out, abi.Arguments{
+	err := wallet1.UnpackParams(&out, abi.Arguments{
 		abi.Argument{
 			Name:    "value",
 			Type:    TypeUint256,
 			Indexed: false,
 		},
-	}, "0000000000000000000000000000000000000000000000000000000000000001")
+	}, "0x0000000000000000000000000000000000000000000000000000000000000001")
 	test.Equal(t, nil, err)
 	test.Equal(t, "1", out.Value.String())
 
-	//tempValue, _ := big.NewInt(0).SetString("100000000000000000", 10)
-	//fmt.Println(tempValue.String())
+	//var out1 struct {
+	//	TokenContract common.Address
+	//}
+	var a common.Address
+	err = wallet1.UnpackParams(&a, abi.Arguments{
+		abi.Argument{
+			Name:    "",
+			Type:    TypeAddress,
+			Indexed: false,
+		},
+	}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
+	test.Equal(t, nil, err)
+	test.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", a.String())
+
+	var out2 struct {
+		Amount *big.Int
+		Fee    *big.Int
+	}
+	err = wallet1.UnpackParams(&out2, abi.Arguments{
+		abi.Argument{
+			Name:    "amount",
+			Type:    TypeUint256,
+			Indexed: false,
+		},
+		abi.Argument{
+			Name:    "fee",
+			Type:    TypeUint256,
+			Indexed: false,
+		},
+	}, "0x00000000000000000000000000000000000000000000004e47868d5c301000000000000000000000000000000000000000000000000000000048df335bd24400")
+	test.Equal(t, nil, err)
+	fmt.Println(out2)
+	//test.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", a.String())
 }
 
 func TestWallet_PackParams(t *testing.T) {

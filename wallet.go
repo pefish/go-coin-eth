@@ -44,6 +44,7 @@ var (
 	TypeUint256, _    = abi.NewType("uint256", "", nil)
 	TypeUint32, _     = abi.NewType("uint32", "", nil)
 	TypeUint16, _     = abi.NewType("uint16", "", nil)
+	TypeInt24, _      = abi.NewType("int24", "", nil)
 	TypeString, _     = abi.NewType("string", "", nil)
 	TypeBool, _       = abi.NewType("bool", "", nil)
 	TypeBytes, _      = abi.NewType("bytes", "", nil)
@@ -159,7 +160,13 @@ func (w *Wallet) CallContractConstant(out interface{}, contractAddress, abiStr, 
 	return w.CallContractConstantWithPayload(out, contractAddress, hex.EncodeToString(inputParams), method.Outputs, opts)
 }
 
-func (w *Wallet) CallContractConstantWithPayload(out interface{}, contractAddress, payload string, outputTypes abi.Arguments, opts *bind.CallOpts) error {
+func (w *Wallet) CallContractConstantWithPayload(
+	out interface{},
+	contractAddress,
+	payload string,
+	outputTypes abi.Arguments,
+	opts *bind.CallOpts,
+) error {
 	if opts == nil {
 		opts = new(bind.CallOpts)
 	}
@@ -407,20 +414,23 @@ type BuildTxResult struct {
 }
 
 // payload 除了 methodId 就是 params
-func (w *Wallet) UnpackParams(out interface{}, inputs abi.Arguments, paramsStr string) error {
+func (w *Wallet) UnpackParams(out interface{}, types abi.Arguments, paramsStr string) error {
 	if strings.HasPrefix(paramsStr, "0x") {
 		paramsStr = paramsStr[2:]
 	}
 
+	for i, _ := range types {
+		types[i].Indexed = false
+	}
 	data, err := hex.DecodeString(paramsStr)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	a, err := inputs.Unpack(data)
+	a, err := types.Unpack(data)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-	err = inputs.Copy(out, a)
+	err = types.Copy(out, a)
 	if err != nil {
 		return go_error.WithStack(err)
 	}
