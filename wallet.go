@@ -502,7 +502,6 @@ func (w *Wallet) Topic0FromEventName(abiStr, eventName string) (string, error) {
 }
 
 /*
-*
 返回结果不带 0x 前缀
 */
 func (w *Wallet) MethodIdFromMethodStr(methodStr string) string {
@@ -839,7 +838,7 @@ func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) *types.Recei
 	for range timer.C {
 		receipt, err := w.TransactionReceiptByHash(txHash)
 		if err != nil {
-			w.logger.WarnF("TransactionReceiptByHash: %#v", err)
+			w.logger.DebugF("TransactionReceiptByHash: %#v", err)
 			timer.Reset(interval)
 			continue
 		}
