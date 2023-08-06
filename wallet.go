@@ -279,10 +279,11 @@ func (w *Wallet) WatchLogsByLoop(
 	eventName string,
 	query ...[]interface{},
 ) error {
-	fromBlock, err := w.LatestBlockNumber()
+	latestBlockNumber, err := w.LatestBlockNumber()
 	if err != nil {
 		return err
 	}
+	fromBlock := go_decimal.Decimal.Start(latestBlockNumber).Sub(1000).EndForBigInt()
 
 	timer := time.NewTimer(0)
 	for {
