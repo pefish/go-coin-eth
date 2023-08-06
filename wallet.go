@@ -271,6 +271,58 @@ retry:
 	}
 }
 
+func (w *Wallet) WatchLogsByLoop(
+	logComming func(boundContract *bind.BoundContract, log types.Log) (stop bool, err error),
+	loopInterval time.Duration,
+	contractAddress,
+	abiStr,
+	eventName string,
+	query ...[]interface{},
+) error {
+	fromBlock, err := w.LatestBlockNumber()
+	if err != nil {
+		return err
+	}
+
+	timer := time.NewTimer(0)
+	for {
+		select {
+		case <-timer.C:
+			toBlock, err := w.LatestBlockNumber()
+			if err != nil {
+				return err
+			}
+			w.logger.DebugF("find logs... fromBlock: %s, toBlock: %s", fromBlock, toBlock)
+			contractInstance, logs, err := w.FindLogs(
+				contractAddress,
+				abiStr,
+				eventName,
+				fromBlock,
+				toBlock,
+				query...,
+			)
+			if err != nil {
+				return err
+			}
+			fromBlock = toBlock
+			for _, log := range logs {
+				stop, err := logComming(contractInstance, log)
+				if err != nil {
+					if stop {
+						return err
+					} else {
+						w.logger.Error(err)
+						continue
+					}
+				}
+			}
+
+			timer.Reset(loopInterval)
+			continue
+		}
+	}
+}
+
 /*
 查找历史的已经确认的事件，但不能实时接受后面的事件。取不到 pending 中的 logs
 
