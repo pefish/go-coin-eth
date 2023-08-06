@@ -274,16 +274,20 @@ retry:
 func (w *Wallet) WatchLogsByLoop(
 	logComming func(boundContract *bind.BoundContract, log types.Log) (stop bool, err error),
 	loopInterval time.Duration,
+	startFromBlock *big.Int,
 	contractAddress,
 	abiStr,
 	eventName string,
 	query ...[]interface{},
 ) error {
-	latestBlockNumber, err := w.LatestBlockNumber()
-	if err != nil {
-		return err
+	fromBlock := startFromBlock
+	if startFromBlock == nil {
+		latestBlockNumber, err := w.LatestBlockNumber()
+		if err != nil {
+			return err
+		}
+		fromBlock = go_decimal.Decimal.Start(latestBlockNumber).Sub(1000).EndForBigInt()
 	}
-	fromBlock := go_decimal.Decimal.Start(latestBlockNumber).Sub(1000).EndForBigInt()
 
 	timer := time.NewTimer(0)
 	for {
