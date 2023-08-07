@@ -272,6 +272,7 @@ retry:
 }
 
 func (w *Wallet) WatchLogsByLoop(
+	ctx context.Context,
 	logComming func(boundContract *bind.BoundContract, log types.Log) error,
 	loopInterval time.Duration,
 	startFromBlock *big.Int,
@@ -292,6 +293,8 @@ func (w *Wallet) WatchLogsByLoop(
 	timer := time.NewTimer(0)
 	for {
 		select {
+		case <-ctx.Done():
+			return nil
 		case <-timer.C:
 			toBlock, err := w.LatestBlockNumber()
 			if err != nil {
