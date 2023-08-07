@@ -272,7 +272,7 @@ retry:
 }
 
 func (w *Wallet) WatchLogsByLoop(
-	logComming func(boundContract *bind.BoundContract, log types.Log) (stop bool, err error),
+	logComming func(boundContract *bind.BoundContract, log types.Log) error,
 	loopInterval time.Duration,
 	startFromBlock *big.Int,
 	contractAddress,
@@ -311,14 +311,9 @@ func (w *Wallet) WatchLogsByLoop(
 			}
 			fromBlock = toBlock
 			for _, log := range logs {
-				stop, err := logComming(contractInstance, log)
+				err := logComming(contractInstance, log)
 				if err != nil {
-					if stop {
-						return err
-					} else {
-						w.logger.Error(err)
-						continue
-					}
+					return err
 				}
 			}
 
