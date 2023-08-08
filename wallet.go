@@ -313,7 +313,7 @@ func (w *Wallet) WatchLogsByLoop(
 			if err != nil {
 				return err
 			}
-			fromBlock = toBlock
+			fromBlock = go_decimal.Decimal.Start(toBlock).Add(1).EndForBigInt()
 			for _, log := range logs {
 				err := logComming(contractInstance, log)
 				if err != nil {
