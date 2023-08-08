@@ -139,8 +139,9 @@ func (w *Wallet) Close() {
 
 }
 
-func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) {
+func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) *Wallet {
 	w.logger = logger
+	return w
 }
 
 func (w *Wallet) CallContractConstant(out interface{}, contractAddress, abiStr, methodName string, opts *bind.CallOpts, params ...interface{}) error {
