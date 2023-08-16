@@ -351,7 +351,7 @@ fromBlock；nil 就是 最新块号 - maxRange，负数就是 pending ，正数�
 toBlock；nil 就是 latest ，负数就是 pending ，正数就是 blockNumber
 */
 func (w *Wallet) FindLogs(
-	logsComming func(*bind.BoundContract, []types.Log) error,
+	logsComming func(contractInstance *bind.BoundContract, logs []types.Log) error,
 	contractAddress,
 	abiStr,
 	eventName string,
@@ -371,7 +371,7 @@ func (w *Wallet) FindLogs(
 		return go_error.WithStack(err)
 	}
 
-	var maxRange uint64 = 5000
+	var maxRange uint64 = 4900
 
 	latestBlockNumber, err := w.LatestBlockNumber()
 	if err != nil {
