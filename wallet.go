@@ -389,11 +389,11 @@ func (w *Wallet) FindLogs(
 	_fromBlock := fromBlock
 	_toBlock := fromBlock
 	for {
-		if _toBlock == toBlock {
+		if go_decimal.Decimal.Start(_toBlock).Eq(toBlock) {
 			break
 		}
+		_fromBlock = _toBlock
 		if go_decimal.Decimal.Start(toBlock).Sub(_toBlock).Gt(maxRange) {
-			_fromBlock = _toBlock
 			_toBlock = go_decimal.Decimal.Start(_toBlock).Add(maxRange).EndForBigInt()
 		} else {
 			_toBlock = toBlock
