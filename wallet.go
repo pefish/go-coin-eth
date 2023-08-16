@@ -144,7 +144,14 @@ func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) *Wallet {
 	return w
 }
 
-func (w *Wallet) CallContractConstant(out interface{}, contractAddress, abiStr, methodName string, opts *bind.CallOpts, params ...interface{}) error {
+func (w *Wallet) CallContractConstant(
+	out interface{},
+	contractAddress,
+	abiStr,
+	methodName string,
+	opts *bind.CallOpts,
+	params []interface{},
+) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return go_error.WithStack(err)
@@ -230,7 +237,14 @@ func (w *Wallet) CallContractConstantWithPayload(
 
 query 的第一个 []interface{} 是指第一个 index ，第二个是指第二个 index
 */
-func (w *Wallet) WatchLogsByWs(resultChan chan map[string]interface{}, contractAddress, abiStr, eventName string, opts *bind.WatchOpts, query ...[]interface{}) error {
+func (w *Wallet) WatchLogsByWs(
+	resultChan chan map[string]interface{},
+	contractAddress,
+	abiStr,
+	eventName string,
+	opts *bind.WatchOpts,
+	query ...[]interface{},
+) error {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
 		return errors.New("please set ws url")
 	}
@@ -302,7 +316,17 @@ func (w *Wallet) WatchLogsByLoop(
 				return err
 			}
 			w.logger.DebugF("find logs... fromBlock: %s, toBlock: %s", fromBlock, toBlock)
-			contractInstance, logs, err := w.FindLogs(
+			err = w.FindLogs(
+				func(contract *bind.BoundContract, logs []types.Log) error {
+					fromBlock = go_decimal.Decimal.Start(toBlock).Add(1).EndForBigInt()
+					for _, log := range logs {
+						err := logComming(contract, log)
+						if err != nil {
+							return err
+						}
+					}
+					return nil
+				},
 				contractAddress,
 				abiStr,
 				eventName,
@@ -312,13 +336,6 @@ func (w *Wallet) WatchLogsByLoop(
 			)
 			if err != nil {
 				return err
-			}
-			fromBlock = go_decimal.Decimal.Start(toBlock).Add(1).EndForBigInt()
-			for _, log := range logs {
-				err := logComming(contractInstance, log)
-				if err != nil {
-					return err
-				}
 			}
 
 			timer.Reset(loopInterval)
@@ -330,45 +347,76 @@ func (w *Wallet) WatchLogsByLoop(
 /*
 查找历史的已经确认的事件，但不能实时接受后面的事件。取不到 pending 中的 logs
 
-fromBlock；nil 就是 最新块号 - 4900，负数就是 pending ，正数就是 blockNumber
+fromBlock；nil 就是 最新块号 - maxRange，负数就是 pending ，正数就是 blockNumber，range 太大自动分组处理
 toBlock；nil 就是 latest ，负数就是 pending ，正数就是 blockNumber
 */
-func (w *Wallet) FindLogs(contractAddress, abiStr, eventName string, fromBlock, toBlock *big.Int, query ...[]interface{}) (*bind.BoundContract, []types.Log, error) {
+func (w *Wallet) FindLogs(
+	logsComming func(*bind.BoundContract, []types.Log) error,
+	contractAddress,
+	abiStr,
+	eventName string,
+	fromBlock,
+	toBlock *big.Int,
+	query ...[]interface{},
+) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, nil, go_error.WithStack(err)
+		return go_error.WithStack(err)
 	}
 
 	query = append([][]interface{}{{parsedAbi.Events[eventName].ID}}, query...)
 
 	topics, err := abi.MakeTopics(query...)
 	if err != nil {
-		return nil, nil, go_error.WithStack(err)
+		return go_error.WithStack(err)
 	}
 
-	if fromBlock == nil {
-		number, err := w.LatestBlockNumber()
-		if err != nil {
-			return nil, nil, go_error.WithStack(err)
-		}
-		fromBlock = number.Sub(number, new(big.Int).SetUint64(4900))
-	}
+	var maxRange uint64 = 5000
 
-	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
-		FromBlock: fromBlock,
-		ToBlock:   toBlock,
-		Addresses: []common.Address{
-			common.HexToAddress(contractAddress),
-		},
-		Topics: topics,
-	})
+	latestBlockNumber, err := w.LatestBlockNumber()
 	if err != nil {
-		return nil, nil, go_error.WithStack(err)
+		return go_error.WithStack(err)
 	}
-	return bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient),
-		logs,
-		nil
+	if fromBlock == nil {
+		fromBlock = latestBlockNumber.Sub(latestBlockNumber, new(big.Int).SetUint64(maxRange))
+	}
+	if toBlock == nil {
+		toBlock = latestBlockNumber
+	}
+
+	boundContract := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteRpcClient, w.RemoteRpcClient, w.RemoteRpcClient)
+
+	_fromBlock := fromBlock
+	_toBlock := fromBlock
+	for {
+		if _toBlock == toBlock {
+			break
+		}
+		if go_decimal.Decimal.Start(toBlock).Sub(_toBlock).Gt(maxRange) {
+			_fromBlock = _toBlock
+			_toBlock = go_decimal.Decimal.Start(_toBlock).Add(maxRange).EndForBigInt()
+		} else {
+			_toBlock = toBlock
+		}
+		w.logger.DebugF("_fromBlock: %s, _toBlock: %s", _fromBlock.String(), _toBlock.String())
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
+			FromBlock: _fromBlock,
+			ToBlock:   _toBlock,
+			Addresses: []common.Address{
+				common.HexToAddress(contractAddress),
+			},
+			Topics: topics,
+		})
+		if err != nil {
+			return go_error.WithStack(err)
+		}
+		err = logsComming(boundContract, logs)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type FindLogsByScanApiResult struct {
@@ -494,7 +542,7 @@ func (w *Wallet) UnpackParams(out interface{}, types abi.Arguments, paramsStr st
 }
 
 // 不带 0x 前缀
-func (w *Wallet) PackParams(inputs abi.Arguments, args ...interface{}) (string, error) {
+func (w *Wallet) PackParams(inputs abi.Arguments, args []interface{}) (string, error) {
 	bytes_, err := inputs.Pack(args...)
 	if err != nil {
 		return "", go_error.WithStack(err)
@@ -503,7 +551,7 @@ func (w *Wallet) PackParams(inputs abi.Arguments, args ...interface{}) (string, 
 }
 
 // 不带 0x 前缀
-func (w *Wallet) EncodePayload(abiStr string, methodName string, params ...interface{}) (string, error) {
+func (w *Wallet) EncodePayload(abiStr string, methodName string, params []interface{}) (string, error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return "", go_error.WithStack(err)
@@ -626,7 +674,14 @@ func (w *Wallet) PrivateKeyToAddress(privateKey string) (string, error) {
 	return crypto.PubkeyToAddress(publicKeyECDSA).String(), nil
 }
 
-func (w *Wallet) BuildCallMethodTx(privateKey, contractAddress, abiStr, methodName string, opts *CallMethodOpts, params ...interface{}) (*BuildTxResult, error) {
+func (w *Wallet) BuildCallMethodTx(
+	privateKey,
+	contractAddress,
+	abiStr,
+	methodName string,
+	opts *CallMethodOpts,
+	params []interface{},
+) (*BuildTxResult, error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -957,8 +1012,10 @@ func (w *Wallet) ApproveAmount(contractAddress, fromAddress, toAddress string) (
 		Erc20AbiStr,
 		"allowance",
 		nil,
-		common.HexToAddress(fromAddress),
-		common.HexToAddress(toAddress),
+		[]interface{}{
+			common.HexToAddress(fromAddress),
+			common.HexToAddress(toAddress),
+		},
 	)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -977,8 +1034,10 @@ func (w *Wallet) Approve(priv, contractAddress, toAddress string, amount *big.In
 		Erc20AbiStr,
 		"approve",
 		opts,
-		common.HexToAddress(toAddress),
-		approveAmount,
+		[]interface{}{
+			common.HexToAddress(toAddress),
+			approveAmount,
+		},
 	)
 	if err != nil {
 		return "", err
@@ -1136,8 +1195,10 @@ func (w *Wallet) SendToken(priv string, contractAddress, address string, amount 
 		Erc20AbiStr,
 		"transfer",
 		opts,
-		common.HexToAddress(address),
-		amount,
+		[]interface{}{
+			common.HexToAddress(address),
+			amount,
+		},
 	)
 	if err != nil {
 		return "", err
@@ -1175,7 +1236,9 @@ func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error)
   }]`,
 		"balanceOf",
 		nil,
-		common.HexToAddress(address),
+		[]interface{}{
+			common.HexToAddress(address),
+		},
 	)
 	if err != nil {
 		return nil, err
