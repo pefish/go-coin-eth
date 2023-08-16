@@ -398,7 +398,7 @@ func (w *Wallet) FindLogs(
 		} else {
 			_toBlock = toBlock
 		}
-		w.logger.DebugF("_fromBlock: %s, _toBlock: %s", _fromBlock.String(), _toBlock.String())
+		w.logger.DebugF("_fromBlock: %s, _toBlock: %s, remain: %s", _fromBlock.String(), _toBlock.String(), go_decimal.Decimal.Start(toBlock).SubForString(_toBlock))
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
 			FromBlock: _fromBlock,
