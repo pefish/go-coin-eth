@@ -332,6 +332,7 @@ func (w *Wallet) WatchLogsByLoop(
 				eventName,
 				fromBlock,
 				toBlock,
+				4900,
 				query...,
 			)
 			if err != nil {
@@ -357,6 +358,7 @@ func (w *Wallet) FindLogs(
 	eventName string,
 	fromBlock,
 	toBlock *big.Int,
+	maxRange uint64,
 	query ...[]interface{},
 ) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
@@ -370,8 +372,6 @@ func (w *Wallet) FindLogs(
 	if err != nil {
 		return go_error.WithStack(err)
 	}
-
-	var maxRange uint64 = 4900
 
 	latestBlockNumber, err := w.LatestBlockNumber()
 	if err != nil {
