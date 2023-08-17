@@ -504,12 +504,12 @@ func (w *Wallet) FindLogsByScanApi(apikey string, contractAddress string, fromBl
 }
 
 type CallMethodOpts struct {
-	Nonce                uint64
-	Value                *big.Int
-	GasPrice             *big.Int // MaxFeePerGas
-	GasLimit             uint64
-	IsPredictError       bool
-	MaxPriorityFeePerGas *big.Int
+	Nonce          uint64
+	Value          *big.Int
+	GasFeeCap      *big.Int // MaxFeePerGas
+	GasLimit       uint64
+	IsPredictError bool
+	GasTipCap      *big.Int // MaxTipPerGas
 }
 
 type BuildTxResult struct {
@@ -748,38 +748,32 @@ func (w *Wallet) BuildCallMethodTx(
 
 func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddressObj common.Address, value *big.Int, gasLimit uint64, data []byte, opts *CallMethodOpts) (*BuildTxResult, error) {
 	var rawTx *types.Transaction
-	if opts == nil || opts.MaxPriorityFeePerGas == nil {
-		var gasPrice *big.Int = nil
-		if opts != nil && opts.GasPrice != nil {
-			gasPrice = opts.GasPrice
-		}
-		if gasPrice == nil {
-			ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-			_gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
-			if err != nil {
-				return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
-			}
-			gasPrice = _gasPrice
-		}
-		rawTx = types.NewTx(&types.LegacyTx{
-			Nonce:    nonce,
-			To:       &toAddressObj,
-			Value:    value,
-			Gas:      gasLimit,
-			GasPrice: gasPrice,
-			Data:     data,
-		})
+	var gasPrice *big.Int
+	if opts != nil && opts.GasFeeCap != nil {
+		gasPrice = opts.GasFeeCap
 	} else {
-		rawTx = types.NewTx(&types.DynamicFeeTx{
-			Nonce:     nonce,
-			To:        &toAddressObj,
-			Value:     value,
-			Gas:       gasLimit,
-			GasFeeCap: opts.GasPrice,             // maxFeePerGas 最大的 gasPrice（包含 baseFee），减去 baseFee 就是小费。gasPrice = min(maxFeePerGas, baseFee + maxPriorityFeePerGas)
-			GasTipCap: opts.MaxPriorityFeePerGas, // maxPriorityFeePerGas，也就是最大的小费。GasTipCap 和 gasFeeCap - baseFee 的更小值才是真正的给矿工的，baseFee 是销毁的。
-			Data:      data,
-		})
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		_gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
+		if err != nil {
+			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+		}
+		gasPrice = _gasPrice
 	}
+	var gasTipCap *big.Int
+	if opts != nil && opts.GasTipCap != nil {
+		gasTipCap = opts.GasTipCap
+	} else {
+		gasTipCap = gasPrice
+	}
+	rawTx = types.NewTx(&types.DynamicFeeTx{
+		Nonce:     nonce,
+		To:        &toAddressObj,
+		Value:     value,
+		Gas:       gasLimit,
+		GasFeeCap: gasPrice,  // baseFee（是由网络决定的） + 小费（小费越高确认越快）
+		GasTipCap: gasTipCap, // 限制最高能给多少小费
+		Data:      data,
+	})
 	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
 	if err != nil {
 		return nil, go_error.WithStack(err)

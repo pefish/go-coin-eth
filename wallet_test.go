@@ -31,7 +31,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	tx, err := wallet1.BuildCallMethodTx("", contractAddress, abiStr, "transfer", &CallMethodOpts{
-		GasPrice: new(big.Int).SetUint64(1000000000),
+		GasFeeCap: new(big.Int).SetUint64(1000000000),
 	}, common.HexToAddress("0x2117210296c2993Cfb4c6790FEa1bEB3ECe8Ac06"), big.NewInt(1000000000000000000))
 	test.Equal(t, true, tx == nil)
 	test.Equal(t, true, err != nil)
@@ -1010,9 +1010,9 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
 	_, err = wallet1.BuildTransferTx("", "0x476fBB25d56B5dD4f1df03165498C403C4713069", &CallMethodOpts{
-		Value:                new(big.Int).SetUint64(1000000000000000),
-		MaxPriorityFeePerGas: new(big.Int).SetUint64(10000000000),
-		GasPrice:             new(big.Int).SetUint64(100000000000),
+		Value:     new(big.Int).SetUint64(1000000000000000),
+		GasTipCap: new(big.Int).SetUint64(10000000000),
+		GasFeeCap: new(big.Int).SetUint64(100000000000),
 	})
 	test.Equal(t, "invalid length, need 256 bits", err.Error())
 }
@@ -1203,9 +1203,9 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, "0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000", paramsStr)
 	tx, err := wallet1.BuildCallMethodTxWithPayload("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", contractAddress, "0x0b4c7e4d"+paramsStr, &CallMethodOpts{
-		GasPrice: new(big.Int).SetUint64(1000000000),
-		Nonce:    1,
-		GasLimit: 5000000,
+		GasFeeCap: new(big.Int).SetUint64(1000000000),
+		Nonce:     1,
+		GasLimit:  5000000,
 	})
 	test.Equal(t, nil, err)
 	test.Equal(t, "0xf8a901843b9aca00834c4b4094d384946c4054d53635cb9462eed7d106101ad44980b8440b4c7e4d0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a76400001ba0ddf312004ff8bc93f407e89ba550f22f9bf7c0f87d234e9c60ddd0cbfeee82eaa06a43ceffb68dc057a681ed92d406d87e4ac13eaaadb354e2f4161f91e0d1c5f5", tx.TxHex)
