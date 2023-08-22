@@ -674,6 +674,19 @@ func (w *Wallet) PrivateKeyToAddress(privateKey string) (string, error) {
 	return crypto.PubkeyToAddress(publicKeyECDSA).String(), nil
 }
 
+func (w *Wallet) IsContract(address string) (bool, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	codeBytes, err := w.RemoteRpcClient.CodeAt(ctx, common.HexToAddress(address), nil)
+	if err != nil {
+		return false, go_error.WithStack(err)
+	}
+	if len(codeBytes) == 0 {
+		return false, nil
+	} else {
+		return true, nil
+	}
+}
+
 func (w *Wallet) BuildCallMethodTx(
 	privateKey,
 	contractAddress,
@@ -682,6 +695,14 @@ func (w *Wallet) BuildCallMethodTx(
 	opts *CallMethodOpts,
 	params []interface{},
 ) (*BuildTxResult, error) {
+	isContract, err := w.IsContract(contractAddress)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	if !isContract {
+		return nil, fmt.Errorf("to address not contract. address: %s", contractAddress)
+	}
+
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -691,6 +712,7 @@ func (w *Wallet) BuildCallMethodTx(
 		return nil, go_error.WithStack(err)
 	}
 	contractAddressObj := common.HexToAddress(contractAddress)
+
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -789,6 +811,13 @@ func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddr
 }
 
 func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, payload string, opts *CallMethodOpts) (*BuildTxResult, error) {
+	isContract, err := w.IsContract(contractAddress)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	if !isContract {
+		return nil, fmt.Errorf("to address not contract. address: %s", contractAddress)
+	}
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
 	}
@@ -1051,6 +1080,9 @@ type DeriveFromPathResult struct {
 
 // 都不带 0x 前缀
 func (w *Wallet) DeriveFromPath(seed string, path string) (*DeriveFromPathResult, error) {
+	if len(strings.Split(path, "/")) != 6 || !strings.HasPrefix(path, `m/44'/60'/0'`) {
+		return nil, fmt.Errorf("path may be wrong, check it. path: %s", path)
+	}
 	// 字符串转换成字节数组
 	seedBuf, err := hex.DecodeString(seed)
 	if err != nil {
