@@ -1236,6 +1236,34 @@ func (w *Wallet) SendToken(priv string, contractAddress, address string, amount 
 	return txHash, nil
 }
 
+func (w *Wallet) GetTokenDecimals(tokenAddress string) (uint64, error) {
+	var result uint8
+	err := w.CallContractConstant(
+		&result,
+		tokenAddress,
+		`[{
+      "inputs": [],
+      "name": "decimals",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }]`,
+		"decimals",
+		nil,
+		nil,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return uint64(result), nil
+}
+
 func (w *Wallet) TokenBalance(contractAddress, address string) (*big.Int, error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(

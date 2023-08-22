@@ -1540,3 +1540,15 @@ func TestWallet_IsContract(t *testing.T) {
 	test.Equal(t, nil, err)
 	test.Equal(t, false, isContract1)
 }
+
+func TestWallet_GetTokenDecimals(t *testing.T) {
+	wallet, err := NewWallet().InitRemote(UrlParam{
+		RpcUrl: "https://rpc.ankr.com/eth_goerli",
+		WsUrl:  "",
+	})
+	test.Equal(t, nil, err)
+	defer wallet.Close()
+	decimals, err := wallet.GetTokenDecimals("0x1319D23c2F7034F52Eb07399702B040bA278Ca49")
+	test.Equal(t, nil, err)
+	test.Equal(t, true, decimals == 18)
+}
