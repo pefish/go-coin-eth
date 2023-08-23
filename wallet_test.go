@@ -1396,7 +1396,7 @@ func TestWallet_ApproveAmount(t *testing.T) {
 	})
 	test.Equal(t, nil, err)
 	defer wallet1.Close()
-	amount, err := wallet1.ApproveAmount(
+	amount, err := wallet1.ApprovedAmount(
 		"0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F",
 		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
 		"0x16e71b13fe6079b4312063f7e81f76d165ad32ad",
