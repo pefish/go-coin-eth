@@ -739,8 +739,7 @@ func (w *Wallet) BuildCallMethodTx(
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		nonce, err = w.RemoteRpcClient.PendingNonceAt(ctx, fromAddress)
+		nonce, err = w.getNextNonce(fromAddress.String())
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
@@ -766,6 +765,15 @@ func (w *Wallet) BuildCallMethodTx(
 	}
 
 	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, input, opts)
+}
+
+func (w *Wallet) getNextNonce(address string) (uint64, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	nonce, err := w.RemoteRpcClient.PendingNonceAt(ctx, common.HexToAddress(address))
+	if err != nil {
+		return 0, fmt.Errorf("failed to retrieve account nonce: %v", err)
+	}
+	return nonce, nil
 }
 
 func (w *Wallet) buildTx(privateKeyECDSA *ecdsa.PrivateKey, nonce uint64, toAddressObj common.Address, value *big.Int, gasLimit uint64, data []byte, opts *CallMethodOpts) (*BuildTxResult, error) {
@@ -856,8 +864,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		nonce, err = w.RemoteRpcClient.PendingNonceAt(ctx, fromAddress)
+		nonce, err = w.getNextNonce(fromAddress.String())
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
@@ -916,8 +923,7 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		nonce, err = w.RemoteRpcClient.PendingNonceAt(ctx, fromAddress)
+		nonce, err = w.getNextNonce(fromAddress.String())
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
