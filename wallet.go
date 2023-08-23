@@ -739,7 +739,7 @@ func (w *Wallet) BuildCallMethodTx(
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.getNextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
@@ -767,7 +767,7 @@ func (w *Wallet) BuildCallMethodTx(
 	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, input, opts)
 }
 
-func (w *Wallet) getNextNonce(address string) (uint64, error) {
+func (w *Wallet) NextNonce(address string) (uint64, error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	nonce, err := w.RemoteRpcClient.PendingNonceAt(ctx, common.HexToAddress(address))
 	if err != nil {
@@ -864,7 +864,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(privateKey, contractAddress, paylo
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.getNextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
@@ -923,7 +923,7 @@ func (w *Wallet) BuildTransferTx(privateKey, toAddress string, opts *CallMethodO
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.getNextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
 		}
