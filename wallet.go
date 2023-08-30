@@ -1316,7 +1316,7 @@ func (w *Wallet) SendAllToken(
 	contractAddress,
 	address string,
 	opts *CallMethodOpts,
-) (amount_ *big.Int, hash_ string, err_ error) {
+) (amountWithDecimals_ *big.Int, hash_ string, err_ error) {
 	fromAddressStr, err := w.PrivateKeyToAddress(priv)
 	if err != nil {
 		return nil, "", err
@@ -1337,16 +1337,16 @@ func (w *Wallet) SendAllTokenWait(
 	contractAddress,
 	address string,
 	opts *CallMethodOpts,
-) (amount_ *big.Int, txReceipt_ *types.Receipt, err_ error) {
-	amount, hash, err := w.SendAllToken(priv, contractAddress, address, opts)
+) (amountWithDecimals_ *big.Int, txReceipt_ *types.Receipt, err_ error) {
+	amountWithDecimals, hash, err := w.SendAllToken(priv, contractAddress, address, opts)
 	if err != nil {
-		return amount, nil, err
+		return amountWithDecimals, nil, err
 	}
 	txr := w.WaitConfirm(hash, time.Second)
 	if txr.Status == 0 {
-		return amount, txr, fmt.Errorf("Tx failed.")
+		return amountWithDecimals, txr, fmt.Errorf("Tx failed.")
 	}
-	return amount, txr, nil
+	return amountWithDecimals, txr, nil
 }
 
 func (w *Wallet) SendToken(
