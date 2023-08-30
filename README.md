@@ -4,7 +4,6 @@
 
 go-coin-eth
 
-
 ## Document
 
 [doc](https://godoc.org/github.com/pefish/go-coin-eth)
