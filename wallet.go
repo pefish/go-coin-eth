@@ -1316,16 +1316,20 @@ func (w *Wallet) SendAllToken(
 	contractAddress,
 	address string,
 	opts *CallMethodOpts,
-) (hash_ string, err_ error) {
+) (amount_ *big.Int, hash_ string, err_ error) {
 	fromAddressStr, err := w.PrivateKeyToAddress(priv)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 	bal, err := w.TokenBalance(contractAddress, fromAddressStr)
 	if err != nil {
-		return "", err
+		return bal, "", err
 	}
-	return w.SendToken(priv, contractAddress, address, bal, opts)
+	hash, err := w.SendToken(priv, contractAddress, address, bal, opts)
+	if err != nil {
+		return bal, hash, err
+	}
+	return bal, hash, nil
 }
 
 func (w *Wallet) SendAllTokenWait(
@@ -1333,16 +1337,16 @@ func (w *Wallet) SendAllTokenWait(
 	contractAddress,
 	address string,
 	opts *CallMethodOpts,
-) (txReceipt_ *types.Receipt, err_ error) {
-	hash, err := w.SendAllToken(priv, contractAddress, address, opts)
+) (amount_ *big.Int, txReceipt_ *types.Receipt, err_ error) {
+	amount, hash, err := w.SendAllToken(priv, contractAddress, address, opts)
 	if err != nil {
-		return nil, err
+		return amount, nil, err
 	}
 	txr := w.WaitConfirm(hash, time.Second)
 	if txr.Status == 0 {
-		return txr, fmt.Errorf("Tx failed.")
+		return amount, txr, fmt.Errorf("Tx failed.")
 	}
-	return txr, nil
+	return amount, txr, nil
 }
 
 func (w *Wallet) SendToken(
