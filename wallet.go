@@ -1325,6 +1325,9 @@ func (w *Wallet) SendAllToken(
 	if err != nil {
 		return bal, "", err
 	}
+	if go_decimal.Decimal.Start(bal).Eq(0) {
+		return bal, "", fmt.Errorf("Balance not enough.")
+	}
 	hash, err := w.SendToken(priv, contractAddress, address, bal, opts)
 	if err != nil {
 		return bal, hash, err
