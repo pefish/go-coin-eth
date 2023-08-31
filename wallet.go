@@ -393,7 +393,9 @@ func (w *Wallet) FindLogs(
 			break
 		}
 		_fromBlock = _toBlock
-		if go_decimal.Decimal.Start(toBlock).Sub(_toBlock).Gt(maxRange) {
+		if maxRange == 0 {
+			_toBlock = toBlock
+		} else if go_decimal.Decimal.Start(toBlock).Sub(_toBlock).Gt(maxRange) {
 			_toBlock = go_decimal.Decimal.Start(_toBlock).Add(maxRange).EndForBigInt()
 		} else {
 			_toBlock = toBlock
