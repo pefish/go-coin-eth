@@ -518,6 +518,7 @@ type CallMethodOpts struct {
 	GasLimit       uint64
 	IsPredictError bool
 	GasTipCap      *big.Int // MaxTipPerGas
+	GasAccelerate  float64
 }
 
 type BuildTxResult struct {
@@ -660,13 +661,16 @@ func (w *Wallet) MethodFromPayload(
 	return method, err
 }
 
-func (w *Wallet) SuggestGasPrice() (gasPrice_ *big.Int, err_ error) {
+func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
 	if err != nil {
 		return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 	}
-	return gasPrice, nil
+	if gasAccelerate == 0 {
+		return gasPrice, nil
+	}
+	return go_decimal.Decimal.Start(gasPrice).Multi(gasAccelerate).Round(0).EndForBigInt(), nil
 }
 
 func (w *Wallet) LatestBlockNumber() (blockNumber_ *big.Int, err_ error) {
@@ -816,8 +820,7 @@ func (w *Wallet) buildTx(
 	if opts != nil && opts.GasFeeCap != nil {
 		gasPrice = opts.GasFeeCap
 	} else {
-		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-		_gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
+		_gasPrice, err := w.SuggestGasPrice(opts.GasAccelerate)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 		}
