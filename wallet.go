@@ -1292,7 +1292,7 @@ func (w *Wallet) SignHashForMsg(data string) (hexStr_ string, err_ error) {
 	return hex.EncodeToString(crypto.Keccak256([]byte(msg))), nil
 }
 
-func (w *Wallet) SendEth(priv string, address string, opts *CallMethodOpts) (hash_ string, err_ error) {
+func (w *Wallet) SendEth(priv string, address string, opts *BuildTransferTxOpts) (hash_ string, err_ error) {
 	tx, err := w.BuildTransferTx(priv, address, opts)
 	if err != nil {
 		return "", err
@@ -1304,7 +1304,7 @@ func (w *Wallet) SendEth(priv string, address string, opts *CallMethodOpts) (has
 	return txHash, nil
 }
 
-func (w *Wallet) SendEthWait(priv string, address string, opts *CallMethodOpts) (txReceipt_ *types.Receipt, err_ error) {
+func (w *Wallet) SendEthWait(priv string, address string, opts *BuildTransferTxOpts) (txReceipt_ *types.Receipt, err_ error) {
 	hash, err := w.SendEth(priv, address, opts)
 	if err != nil {
 		return nil, err
