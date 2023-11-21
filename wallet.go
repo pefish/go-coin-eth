@@ -928,10 +928,15 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, payloadBuf, opts)
 }
 
+type BuildTransferTxOpts struct {
+	CallMethodOpts
+	Payload []byte
+}
+
 func (w *Wallet) BuildTransferTx(
 	privateKey,
 	toAddress string,
-	opts *CallMethodOpts,
+	opts *BuildTransferTxOpts,
 ) (btr_ *BuildTxResult, err_ error) {
 	if strings.HasPrefix(privateKey, "0x") {
 		privateKey = privateKey[2:]
@@ -972,7 +977,7 @@ func (w *Wallet) BuildTransferTx(
 		}
 	}
 
-	return w.buildTx(privateKeyECDSA, nonce, toAddressObj, value, gasLimit, nil, opts)
+	return w.buildTx(privateKeyECDSA, nonce, toAddressObj, value, gasLimit, opts.Payload, &opts.CallMethodOpts)
 }
 
 func (w *Wallet) SendRawTransaction(txHex string) (hash_ string, err_ error) {
