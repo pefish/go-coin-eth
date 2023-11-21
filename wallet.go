@@ -473,19 +473,17 @@ func (w *Wallet) FindLogsByScanApi(
 		params[oprStr] = "and"
 		params[fmt.Sprintf("topic%d", i+1)] = str
 	}
-
-	_, resStr, err := go_http.NewHttpRequester(go_http.WithLogger(w.logger), go_http.WithTimeout(timeout)).Get(go_http.RequestParam{
-		Url:    ScanApiUrl,
-		Params: params,
-	})
-	if err != nil {
-		return nil, go_error.WithStack(err)
-	}
 	var tempResult struct {
 		Status  string `json:"status"`
 		Message string `json:"message"`
 	}
-	err = json.Unmarshal([]byte(resStr), &tempResult)
+	_, resStr, err := go_http.NewHttpRequester(
+		go_http.WithLogger(w.logger),
+		go_http.WithTimeout(timeout),
+	).GetForStruct(go_http.RequestParam{
+		Url:    ScanApiUrl,
+		Params: params,
+	}, &tempResult)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}

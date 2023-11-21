@@ -6,10 +6,10 @@ require (
 	github.com/ethereum/go-ethereum v1.12.0
 	github.com/pefish/go-decimal v0.2.8
 	github.com/pefish/go-error v1.0.4
-	github.com/pefish/go-http v0.5.10
-	github.com/pefish/go-logger v0.4.15
+	github.com/pefish/go-http v0.5.14
+	github.com/pefish/go-logger v0.5.0
 	github.com/pefish/go-random v0.2.2
-	github.com/pefish/go-test-assert v0.0.1
+	github.com/pefish/go-test v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/tyler-smith/go-bip39 v1.1.0
 )
@@ -29,7 +29,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/pefish/go-format v0.1.3 // indirect
+	github.com/pefish/go-format v0.2.2 // indirect
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible // indirect
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
