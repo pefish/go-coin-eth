@@ -1047,7 +1047,7 @@ out:
 		case <-timer.C:
 			receipt, err := w.TransactionReceiptByHash(txHash)
 			if err != nil {
-				w.logger.DebugF("TransactionReceiptByHash: %+v, hash: %s", err, receipt.TxHash)
+				w.logger.DebugF("TransactionReceiptByHash: %+v, hash: %s", err, txHash)
 				timer.Reset(interval)
 				continue
 			}
