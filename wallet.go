@@ -999,6 +999,9 @@ func (w *Wallet) SendRawTransactionWait(ctx context.Context, txHex string) (txRe
 		return nil, err
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
+	if txr == nil {
+		return nil, errors.New("Canceled wait.")
+	}
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
@@ -1166,6 +1169,9 @@ func (w *Wallet) ApproveWait(
 		return nil, err
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
+	if txr == nil {
+		return nil, errors.New("Canceled wait.")
+	}
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
@@ -1325,6 +1331,9 @@ func (w *Wallet) SendEthWait(
 		return nil, err
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
+	if txr == nil {
+		return nil, errors.New("Canceled wait.")
+	}
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
@@ -1367,6 +1376,9 @@ func (w *Wallet) SendAllTokenWait(
 		return amountWithDecimals, nil, err
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
+	if txr == nil {
+		return nil, nil, errors.New("Canceled wait.")
+	}
 	if txr.Status == 0 {
 		return amountWithDecimals, txr, fmt.Errorf("Tx failed.")
 	}
@@ -1414,6 +1426,9 @@ func (w *Wallet) SendTokenWait(
 		return nil, err
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
+	if txr == nil {
+		return nil, errors.New("Canceled wait.")
+	}
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
