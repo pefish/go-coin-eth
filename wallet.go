@@ -993,12 +993,12 @@ func (w *Wallet) SendRawTransaction(txHex string) (hash_ string, err_ error) {
 	return hash.String(), nil
 }
 
-func (w *Wallet) SendRawTransactionWait(txHex string) (txReceipt_ *types.Receipt, err_ error) {
+func (w *Wallet) SendRawTransactionWait(ctx context.Context, txHex string) (txReceipt_ *types.Receipt, err_ error) {
 	hash, err := w.SendRawTransaction(txHex)
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(hash, time.Second)
+	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
@@ -1036,21 +1036,27 @@ func (w *Wallet) TransactionReceiptByHash(txHash string) (txReceipt_ *types.Rece
 	return receipt, nil
 }
 
-func (w *Wallet) WaitConfirm(txHash string, interval time.Duration) (txReceipt_ *types.Receipt) {
+func (w *Wallet) WaitConfirm(ctx context.Context, txHash string, interval time.Duration) (txReceipt_ *types.Receipt) {
 	timer := time.NewTimer(0)
-	for range timer.C {
-		receipt, err := w.TransactionReceiptByHash(txHash)
-		if err != nil {
-			w.logger.DebugF("TransactionReceiptByHash: %#v", err)
-			timer.Reset(interval)
-			continue
+out:
+	for {
+		select {
+		case <-timer.C:
+			receipt, err := w.TransactionReceiptByHash(txHash)
+			if err != nil {
+				w.logger.DebugF("TransactionReceiptByHash: %#v", err)
+				timer.Reset(interval)
+				continue
+			}
+			if receipt.BlockNumber == nil {
+				timer.Reset(interval)
+				continue
+			}
+			timer.Stop()
+			return receipt
+		case <-ctx.Done():
+			break out
 		}
-		if receipt.BlockNumber == nil {
-			timer.Reset(interval)
-			continue
-		}
-		timer.Stop()
-		return receipt
 	}
 	return nil
 }
@@ -1148,6 +1154,7 @@ func (w *Wallet) Approve(
 }
 
 func (w *Wallet) ApproveWait(
+	ctx context.Context,
 	priv,
 	contractAddress,
 	toAddress string,
@@ -1158,7 +1165,7 @@ func (w *Wallet) ApproveWait(
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(hash, time.Second)
+	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
@@ -1307,12 +1314,17 @@ func (w *Wallet) SendEth(priv string, address string, opts *BuildTransferTxOpts)
 	return txHash, nil
 }
 
-func (w *Wallet) SendEthWait(priv string, address string, opts *BuildTransferTxOpts) (txReceipt_ *types.Receipt, err_ error) {
+func (w *Wallet) SendEthWait(
+	ctx context.Context,
+	priv string,
+	address string,
+	opts *BuildTransferTxOpts,
+) (txReceipt_ *types.Receipt, err_ error) {
 	hash, err := w.SendEth(priv, address, opts)
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(hash, time.Second)
+	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
@@ -1344,6 +1356,7 @@ func (w *Wallet) SendAllToken(
 }
 
 func (w *Wallet) SendAllTokenWait(
+	ctx context.Context,
 	priv string,
 	contractAddress,
 	address string,
@@ -1353,7 +1366,7 @@ func (w *Wallet) SendAllTokenWait(
 	if err != nil {
 		return amountWithDecimals, nil, err
 	}
-	txr := w.WaitConfirm(hash, time.Second)
+	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr.Status == 0 {
 		return amountWithDecimals, txr, fmt.Errorf("Tx failed.")
 	}
@@ -1389,6 +1402,7 @@ func (w *Wallet) SendToken(
 }
 
 func (w *Wallet) SendTokenWait(
+	ctx context.Context,
 	priv string,
 	contractAddress,
 	address string,
@@ -1399,7 +1413,7 @@ func (w *Wallet) SendTokenWait(
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(hash, time.Second)
+	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr.Status == 0 {
 		return txr, fmt.Errorf("Tx failed.")
 	}
