@@ -583,6 +583,26 @@ func (w *Wallet) EncodePayload(
 	return hex.EncodeToString(input), nil
 }
 
+func (w *Wallet) ToTopicHash(
+	data interface{},
+) (*common.Hash, error) {
+	hashes, err := abi.MakeTopics([]interface{}{data})
+	if err != nil {
+		return nil, err
+	}
+	return &hashes[0][0], nil
+}
+
+func (w *Wallet) ToTopicHashes(
+	datas ...interface{},
+) ([]common.Hash, error) {
+	hashes, err := abi.MakeTopics(datas)
+	if err != nil {
+		return nil, err
+	}
+	return hashes[0], nil
+}
+
 func (w *Wallet) DecodePayload(
 	abiStr string,
 	out interface{},
