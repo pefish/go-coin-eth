@@ -81,7 +81,7 @@ func NewWallet() *Wallet {
 	timeout := 60 * time.Second
 	return &Wallet{
 		timeout: timeout,
-		logger:  go_logger.DefaultLogger,
+		logger:  go_logger.Logger,
 	}
 }
 
