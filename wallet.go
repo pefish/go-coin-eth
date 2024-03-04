@@ -6,6 +6,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,16 +20,13 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	chain "github.com/pefish/go-coin-eth/util"
-	"github.com/pefish/go-decimal"
-	"github.com/pefish/go-error"
-	"github.com/pefish/go-http"
-	"github.com/pefish/go-logger"
-	"github.com/pefish/go-random"
+	go_decimal "github.com/pefish/go-decimal"
+	go_error "github.com/pefish/go-error"
+	go_http "github.com/pefish/go-http"
+	go_logger "github.com/pefish/go-logger"
+	go_random "github.com/pefish/go-random"
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
-	"math/big"
-	"strings"
-	"time"
 )
 
 var (
@@ -180,9 +181,7 @@ func (w *Wallet) CallContractConstantWithPayload(
 	}
 
 	contractAddressObj := common.HexToAddress(contractAddress)
-	if strings.HasPrefix(payload, "0x") {
-		payload = payload[2:]
-	}
+	payload = strings.TrimPrefix(payload, "0x")
 	payloadBuf, err := hex.DecodeString(payload)
 	if err != nil {
 		return go_error.WithStack(err)
@@ -302,7 +301,7 @@ func (w *Wallet) WatchLogsByLoop(
 		if err != nil {
 			return err
 		}
-		fromBlock = go_decimal.Decimal.Start(latestBlockNumber).Sub(1000).EndForBigInt()
+		fromBlock = go_decimal.Decimal.MustStart(latestBlockNumber).MustSub(1000).MustEndForBigInt()
 	}
 
 	timer := time.NewTimer(0)
@@ -318,7 +317,7 @@ func (w *Wallet) WatchLogsByLoop(
 			w.logger.DebugF("find logs... fromBlock: %s, toBlock: %s", fromBlock, toBlock)
 			err = w.FindLogs(
 				func(contract *bind.BoundContract, logs []types.Log) error {
-					fromBlock = go_decimal.Decimal.Start(toBlock).Add(1).EndForBigInt()
+					fromBlock = go_decimal.Decimal.MustStart(toBlock).MustAdd(1).MustEndForBigInt()
 					for _, log := range logs {
 						err := logComming(contract, log)
 						if err != nil {
@@ -389,18 +388,18 @@ func (w *Wallet) FindLogs(
 	_fromBlock := fromBlock
 	_toBlock := fromBlock
 	for {
-		if go_decimal.Decimal.Start(_toBlock).Eq(toBlock) {
+		if go_decimal.Decimal.MustStart(_toBlock).MustEq(toBlock) {
 			break
 		}
 		_fromBlock = _toBlock
 		if maxRange == 0 {
 			_toBlock = toBlock
-		} else if go_decimal.Decimal.Start(toBlock).Sub(_toBlock).Gt(maxRange) {
-			_toBlock = go_decimal.Decimal.Start(_toBlock).Add(maxRange).EndForBigInt()
+		} else if go_decimal.Decimal.MustStart(toBlock).MustSub(_toBlock).MustGt(maxRange) {
+			_toBlock = go_decimal.Decimal.MustStart(_toBlock).MustAdd(maxRange).MustEndForBigInt()
 		} else {
 			_toBlock = toBlock
 		}
-		w.logger.DebugF("_fromBlock: %s, _toBlock: %s, remain: %s", _fromBlock.String(), _toBlock.String(), go_decimal.Decimal.Start(toBlock).SubForString(_toBlock))
+		w.logger.DebugF("_fromBlock: %s, _toBlock: %s, remain: %s", _fromBlock.String(), _toBlock.String(), go_decimal.Decimal.MustStart(toBlock).MustSubForString(_toBlock))
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
 			FromBlock: _fromBlock,
@@ -447,7 +446,7 @@ func (w *Wallet) FindLogsByScanApi(
 	topic0 string,
 	query ...string,
 ) (results_ []FindLogsByScanApiResult, err_ error) {
-	if go_decimal.Decimal.Start(fromBlock).Lt(0) {
+	if go_decimal.Decimal.MustStart(fromBlock).MustLt(0) {
 		result, err := w.LatestBlockNumber()
 		if err != nil {
 			return nil, go_error.WithStack(err)
@@ -532,9 +531,7 @@ func (w *Wallet) UnpackParams(
 	types abi.Arguments,
 	paramsStr string,
 ) error {
-	if strings.HasPrefix(paramsStr, "0x") {
-		paramsStr = paramsStr[2:]
-	}
+	paramsStr = strings.TrimPrefix(paramsStr, "0x")
 
 	for i, _ := range types {
 		types[i].Indexed = false
@@ -611,9 +608,7 @@ func (w *Wallet) DecodePayload(
 	if len(payloadStr) < 8 {
 		return nil, errors.New("payloadStr error")
 	}
-	if strings.HasPrefix(payloadStr, "0x") {
-		payloadStr = payloadStr[2:]
-	}
+	payloadStr = strings.TrimPrefix(payloadStr, "0x")
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -663,9 +658,7 @@ func (w *Wallet) MethodFromPayload(
 	if len(payloadStr) < 8 {
 		return nil, errors.New("payloadStr error")
 	}
-	if strings.HasPrefix(payloadStr, "0x") {
-		payloadStr = payloadStr[2:]
-	}
+	payloadStr = strings.TrimPrefix(payloadStr, "0x")
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -690,7 +683,7 @@ func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err
 	if gasAccelerate == 0 {
 		return gasPrice, nil
 	}
-	return go_decimal.Decimal.Start(gasPrice).Multi(gasAccelerate).Round(0).EndForBigInt(), nil
+	return go_decimal.Decimal.MustStart(gasPrice).MustMulti(gasAccelerate).Round(0).MustEndForBigInt(), nil
 }
 
 func (w *Wallet) LatestBlockNumber() (blockNumber_ *big.Int, err_ error) {
@@ -753,9 +746,7 @@ func (w *Wallet) BuildCallMethodTx(
 		return nil, fmt.Errorf("to address not contract. address: %s", contractAddress)
 	}
 
-	if strings.HasPrefix(privateKey, "0x") {
-		privateKey = privateKey[2:]
-	}
+	privateKey = strings.TrimPrefix(privateKey, "0x")
 
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
@@ -888,16 +879,12 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	if !isContract {
 		return nil, fmt.Errorf("to address not contract. address: %s", contractAddress)
 	}
-	if strings.HasPrefix(privateKey, "0x") {
-		privateKey = privateKey[2:]
-	}
+	privateKey = strings.TrimPrefix(privateKey, "0x")
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
 		return nil, go_error.WithStack(err)
 	}
-	if strings.HasPrefix(payload, "0x") {
-		payload = payload[2:]
-	}
+	payload = strings.TrimPrefix(payload, "0x")
 	payloadBuf, err := hex.DecodeString(payload)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -961,9 +948,7 @@ func (w *Wallet) BuildTransferTx(
 	toAddress string,
 	opts *BuildTransferTxOpts,
 ) (btr_ *BuildTxResult, err_ error) {
-	if strings.HasPrefix(privateKey, "0x") {
-		privateKey = privateKey[2:]
-	}
+	privateKey = strings.TrimPrefix(privateKey, "0x")
 
 	toAddressObj := common.HexToAddress(toAddress)
 	privateKeyBuf, err := hex.DecodeString(privateKey)
@@ -1251,9 +1236,7 @@ func (w *Wallet) DeriveFromPath(seed string, path string) (result_ *DeriveFromPa
 }
 
 func (w *Wallet) SignMsg(privateKey string, data string) (hexStr_ string, err_ error) {
-	if strings.HasPrefix(privateKey, "0x") {
-		privateKey = privateKey[2:]
-	}
+	privateKey = strings.TrimPrefix(privateKey, "0x")
 
 	privateKeyHex, err := hex.DecodeString(privateKey)
 	if err != nil {
@@ -1285,16 +1268,12 @@ func (w *Wallet) RecoverSignerAddress(msg, sig string) (address_ *common.Address
 }
 
 func (w *Wallet) RecoverSignerAddressFromMsgHash(msgHash, sig string) (address_ *common.Address, err_ error) {
-	if strings.HasPrefix(sig, "0x") {
-		sig = sig[2:]
-	}
+	sig = strings.TrimPrefix(sig, "0x")
 	sigHex, err := hex.DecodeString(sig)
 	if err != nil {
 		return nil, err
 	}
-	if strings.HasPrefix(msgHash, "0x") {
-		msgHash = msgHash[2:]
-	}
+	msgHash = strings.TrimPrefix(msgHash, "0x")
 	msgHashHex, err := hex.DecodeString(msgHash)
 	if err != nil {
 		return nil, err
@@ -1374,7 +1353,7 @@ func (w *Wallet) SendAllToken(
 	if err != nil {
 		return bal, "", err
 	}
-	if go_decimal.Decimal.Start(bal).Eq(0) {
+	if go_decimal.Decimal.MustStart(bal).MustEq(0) {
 		return bal, "", fmt.Errorf("Balance not enough.")
 	}
 	hash, err := w.SendToken(priv, contractAddress, address, bal, opts)

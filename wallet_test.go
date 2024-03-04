@@ -3,16 +3,17 @@ package go_coin_eth
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	go_decimal "github.com/pefish/go-decimal"
 	go_test_ "github.com/pefish/go-test"
-	"math/big"
-	"strings"
-	"testing"
-	"time"
 )
 
 var contractAddress = "0x509Ee0d083DdF8AC028f2a56731412edD63223B9"
@@ -1376,7 +1377,7 @@ func TestWallet_SendEth(t *testing.T) {
 		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
 		&BuildTransferTxOpts{
 			CallMethodOpts: CallMethodOpts{
-				Value:    go_decimal.Decimal.Start(0.00001).MustShiftedBy(18).EndForBigInt(),
+				Value:    go_decimal.Decimal.MustStart(0.00001).MustShiftedBy(18).MustEndForBigInt(),
 				GasLimit: 300000,
 			},
 		},
@@ -1393,7 +1394,7 @@ func TestWallet_SendToken(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
-	txHash, err := wallet1.SendToken("", "0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.Decimal.Start(1).MustShiftedBy(18).EndForBigInt(), &CallMethodOpts{
+	txHash, err := wallet1.SendToken("", "0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.Decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(), &CallMethodOpts{
 		GasLimit: 500000,
 	})
 	go_test_.Equal(t, nil, err)
@@ -1413,6 +1414,7 @@ func TestWallet_ApproveAmount(t *testing.T) {
 		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
 		"0x16e71b13fe6079b4312063f7e81f76d165ad32ad",
 	)
+	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0", amount.String())
 }
 
@@ -1528,7 +1530,7 @@ func TestWallet_CallContractConstant3(t *testing.T) {
 			}{
 				common.HexToAddress("0x915EA4A94B61B138b568169122903Ed707A8E704"),
 				common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
-				go_decimal.Decimal.Start(1).MustShiftedBy(18).EndForBigInt(),
+				go_decimal.Decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(),
 				new(big.Int).SetUint64(3000),
 				new(big.Int).SetUint64(0),
 			},
