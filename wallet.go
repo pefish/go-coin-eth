@@ -513,6 +513,7 @@ func (w *Wallet) FindLogsByScanApi(
 type CallMethodOpts struct {
 	Nonce          uint64
 	Value          *big.Int
+	GasPrice       *big.Int // for legacy tx
 	GasFeeCap      *big.Int // MaxFeePerGas
 	GasLimit       uint64
 	IsPredictError bool
@@ -805,7 +806,17 @@ func (w *Wallet) BuildCallMethodTx(
 		}
 	}
 
-	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, input, opts)
+	return w.buildTx(
+		privateKeyECDSA,
+		nonce,
+		contractAddressObj,
+		value,
+		gasLimit,
+		input,
+		opts.GasFeeCap,
+		opts.GasTipCap,
+		opts.GasAccelerate,
+	)
 }
 
 func (w *Wallet) NextNonce(address string) (nonce_ uint64, err_ error) {
@@ -824,33 +835,69 @@ func (w *Wallet) buildTx(
 	value *big.Int,
 	gasLimit uint64,
 	data []byte,
-	opts *CallMethodOpts,
+	gasFeeCap *big.Int, // MaxFeePerGas
+	gasTipCap *big.Int, // MaxTipPerGas
+	gasAccelerate float64,
 ) (btr_ *BuildTxResult, err_ error) {
 	var rawTx *types.Transaction
-	var gasPrice *big.Int
-	if opts != nil && opts.GasFeeCap != nil {
-		gasPrice = opts.GasFeeCap
-	} else {
-		_gasPrice, err := w.SuggestGasPrice(opts.GasAccelerate)
+	if gasFeeCap == nil {
+		gasPrice, err := w.SuggestGasPrice(gasAccelerate)
 		if err != nil {
 			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
 		}
-		gasPrice = _gasPrice
+		gasFeeCap = gasPrice
 	}
-	var gasTipCap *big.Int
-	if opts != nil && opts.GasTipCap != nil {
-		gasTipCap = opts.GasTipCap
-	} else {
-		gasTipCap = gasPrice
+	if gasTipCap == nil {
+		gasTipCap = gasFeeCap
 	}
 	rawTx = types.NewTx(&types.DynamicFeeTx{
 		Nonce:     nonce,
 		To:        &toAddressObj,
 		Value:     value,
 		Gas:       gasLimit,
-		GasFeeCap: gasPrice,  // baseFee（是由网络决定的） + 小费（小费越高确认越快）
+		GasFeeCap: gasFeeCap, // baseFee（是由网络决定的） + 小费（小费越高确认越快）
 		GasTipCap: gasTipCap, // 限制最高能给多少小费
 		Data:      data,
+	})
+	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	txBytes, err := signedTx.MarshalBinary()
+	if err != nil {
+		return nil, go_error.WithStack(err)
+	}
+	return &BuildTxResult{
+		SignedTx: signedTx,
+		TxHex:    hexutil.Encode(txBytes),
+	}, nil
+}
+
+func (w *Wallet) buildLegacyTx(
+	privateKeyECDSA *ecdsa.PrivateKey,
+	nonce uint64,
+	toAddressObj common.Address,
+	value *big.Int,
+	gasLimit uint64,
+	data []byte,
+	gasPrice *big.Int,
+	gasAccelerate float64,
+) (btr_ *BuildTxResult, err_ error) {
+	var rawTx *types.Transaction
+	if gasPrice == nil {
+		_gasPrice, err := w.SuggestGasPrice(gasAccelerate)
+		if err != nil {
+			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+		}
+		gasPrice = _gasPrice
+	}
+	rawTx = types.NewTx(&types.LegacyTx{
+		Nonce:    nonce,
+		GasPrice: gasPrice,
+		Gas:      gasLimit,
+		To:       &toAddressObj,
+		Value:    value,
+		Data:     data,
 	})
 	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
 	if err != nil {
@@ -935,12 +982,23 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		}
 	}
 
-	return w.buildTx(privateKeyECDSA, nonce, contractAddressObj, value, gasLimit, payloadBuf, opts)
+	return w.buildTx(
+		privateKeyECDSA,
+		nonce,
+		contractAddressObj,
+		value,
+		gasLimit,
+		payloadBuf,
+		opts.GasFeeCap,
+		opts.GasTipCap,
+		opts.GasAccelerate,
+	)
 }
 
 type BuildTransferTxOpts struct {
 	CallMethodOpts
-	Payload []byte
+	Payload  []byte
+	IsLegacy bool
 }
 
 func (w *Wallet) BuildTransferTx(
@@ -985,7 +1043,30 @@ func (w *Wallet) BuildTransferTx(
 		}
 	}
 
-	return w.buildTx(privateKeyECDSA, nonce, toAddressObj, value, gasLimit, opts.Payload, &opts.CallMethodOpts)
+	if opts.IsLegacy {
+		return w.buildLegacyTx(
+			privateKeyECDSA,
+			nonce,
+			toAddressObj,
+			value,
+			gasLimit,
+			opts.Payload,
+			opts.GasPrice,
+			opts.GasAccelerate,
+		)
+	}
+
+	return w.buildTx(
+		privateKeyECDSA,
+		nonce,
+		toAddressObj,
+		value,
+		gasLimit,
+		opts.Payload,
+		opts.GasFeeCap,
+		opts.GasTipCap,
+		opts.GasAccelerate,
+	)
 }
 
 func (w *Wallet) SendRawTransaction(txHex string) (hash_ string, err_ error) {
