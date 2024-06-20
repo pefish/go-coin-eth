@@ -26,7 +26,7 @@ func init() {
 }
 
 func TestContract_BuildCallMethodTx(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://rpc.ankr.com/eth_goerli",
 		WsUrl:  "",
 	})
@@ -51,7 +51,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 }
 
 func TestWallet_WatchLogs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(UrlParam{
+	wallet, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "wss://mainnet.infura.io/ws/v3/7594e560416349f79c8ef6ff286d83fc",
 	})
@@ -76,7 +76,7 @@ exit:
 }
 
 func TestWallet_FindLogs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(UrlParam{
+	wallet, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -105,7 +105,7 @@ func TestWallet_FindLogs(t *testing.T) {
 }
 
 //func TestWallet_FindLogs1(t *testing.T) {
-//	wallet, err := NewWallet().InitRemote(UrlParam{
+//	wallet, err := NewWallet().InitRemote(&UrlParam{
 //		RpcUrl: "https://data-seed-prebsc-2-s1.binance.org:8545/",
 //		WsUrl:  "",
 //	})
@@ -134,7 +134,7 @@ func TestWallet_FindLogs(t *testing.T) {
 //}
 
 func TestWallet_SendRawTransaction(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -146,7 +146,7 @@ func TestWallet_SendRawTransaction(t *testing.T) {
 }
 
 func TestWallet_WatchPendingTxByWs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(UrlParam{
+	wallet, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -164,7 +164,7 @@ func TestWallet_WatchPendingTxByWs(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -188,7 +188,7 @@ func TestWallet_CallContractConstant(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant1(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
 		WsUrl:  "",
 	})
@@ -213,242 +213,6 @@ func TestWallet_CallContractConstant1(t *testing.T) {
 		&result,
 		"0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512",
 		`[
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sellToken",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "sellTokenId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "sellValue",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "buyToken",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "buyTokenId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "buyValue",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "buyer",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "salt",
-          "type": "uint256"
-        }
-      ],
-      "name": "Buy",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sellToken",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "sellTokenId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "owner",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "address",
-          "name": "buyToken",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "buyTokenId",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "salt",
-          "type": "uint256"
-        }
-      ],
-      "name": "Cancel",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "previousOwner",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "OwnershipTransferred",
-      "type": "event"
-    },
-    {
-      "inputs": [],
-      "name": "beneficiary",
-      "outputs": [
-        {
-          "internalType": "address payable",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "completed",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "salt",
-              "type": "uint256"
-            },
-            {
-              "components": [
-                {
-                  "internalType": "address",
-                  "name": "token",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "enum ExchangeDomain.AssetType",
-                  "name": "assetType",
-                  "type": "uint8"
-                }
-              ],
-              "internalType": "struct ExchangeDomain.Asset",
-              "name": "sellAsset",
-              "type": "tuple"
-            },
-            {
-              "components": [
-                {
-                  "internalType": "address",
-                  "name": "token",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "enum ExchangeDomain.AssetType",
-                  "name": "assetType",
-                  "type": "uint8"
-                }
-              ],
-              "internalType": "struct ExchangeDomain.Asset",
-              "name": "buyAsset",
-              "type": "tuple"
-            }
-          ],
-          "internalType": "struct ExchangeDomain.OrderKey",
-          "name": "key",
-          "type": "tuple"
-        }
-      ],
-      "name": "getCompleted",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
     {
       "inputs": [
         {
@@ -523,395 +287,6 @@ func TestWallet_CallContractConstant1(t *testing.T) {
       ],
       "stateMutability": "pure",
       "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "isOwner",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "owner",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "renounceOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "newOwner",
-          "type": "address"
-        }
-      ],
-      "name": "transferOwnership",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "transferProxy",
-      "outputs": [
-        {
-          "internalType": "contract ITransferProxy",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "__Exchange_init",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "contract ITransferProxy",
-          "name": "_transferProxy",
-          "type": "address"
-        },
-        {
-          "internalType": "address payable",
-          "name": "_beneficiary",
-          "type": "address"
-        }
-      ],
-      "name": "initData",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_transferProxy",
-          "type": "address"
-        }
-      ],
-      "name": "setTransferProxy",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address payable",
-          "name": "_newBeneficiary",
-          "type": "address"
-        }
-      ],
-      "name": "setBeneficiary",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "components": [
-                {
-                  "internalType": "address",
-                  "name": "owner",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "salt",
-                  "type": "uint256"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "address",
-                      "name": "token",
-                      "type": "address"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "tokenId",
-                      "type": "uint256"
-                    },
-                    {
-                      "internalType": "enum ExchangeDomain.AssetType",
-                      "name": "assetType",
-                      "type": "uint8"
-                    }
-                  ],
-                  "internalType": "struct ExchangeDomain.Asset",
-                  "name": "sellAsset",
-                  "type": "tuple"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "address",
-                      "name": "token",
-                      "type": "address"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "tokenId",
-                      "type": "uint256"
-                    },
-                    {
-                      "internalType": "enum ExchangeDomain.AssetType",
-                      "name": "assetType",
-                      "type": "uint8"
-                    }
-                  ],
-                  "internalType": "struct ExchangeDomain.Asset",
-                  "name": "buyAsset",
-                  "type": "tuple"
-                }
-              ],
-              "internalType": "struct ExchangeDomain.OrderKey",
-              "name": "key",
-              "type": "tuple"
-            },
-            {
-              "internalType": "uint256",
-              "name": "sellPrice",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "sellerFee",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ExchangeDomain.Order",
-          "name": "order",
-          "type": "tuple"
-        },
-        {
-          "components": [
-            {
-              "internalType": "uint8",
-              "name": "v",
-              "type": "uint8"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "r",
-              "type": "bytes32"
-            },
-            {
-              "internalType": "bytes32",
-              "name": "s",
-              "type": "bytes32"
-            }
-          ],
-          "internalType": "struct ExchangeDomain.Sig",
-          "name": "sig",
-          "type": "tuple"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
-          "internalType": "address",
-          "name": "buyer",
-          "type": "address"
-        }
-      ],
-      "name": "exchange",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "internalType": "address",
-              "name": "owner",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "salt",
-              "type": "uint256"
-            },
-            {
-              "components": [
-                {
-                  "internalType": "address",
-                  "name": "token",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "enum ExchangeDomain.AssetType",
-                  "name": "assetType",
-                  "type": "uint8"
-                }
-              ],
-              "internalType": "struct ExchangeDomain.Asset",
-              "name": "sellAsset",
-              "type": "tuple"
-            },
-            {
-              "components": [
-                {
-                  "internalType": "address",
-                  "name": "token",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "tokenId",
-                  "type": "uint256"
-                },
-                {
-                  "internalType": "enum ExchangeDomain.AssetType",
-                  "name": "assetType",
-                  "type": "uint8"
-                }
-              ],
-              "internalType": "struct ExchangeDomain.Asset",
-              "name": "buyAsset",
-              "type": "tuple"
-            }
-          ],
-          "internalType": "struct ExchangeDomain.OrderKey",
-          "name": "key",
-          "type": "tuple"
-        }
-      ],
-      "name": "cancel",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "components": [
-            {
-              "components": [
-                {
-                  "internalType": "address",
-                  "name": "owner",
-                  "type": "address"
-                },
-                {
-                  "internalType": "uint256",
-                  "name": "salt",
-                  "type": "uint256"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "address",
-                      "name": "token",
-                      "type": "address"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "tokenId",
-                      "type": "uint256"
-                    },
-                    {
-                      "internalType": "enum ExchangeDomain.AssetType",
-                      "name": "assetType",
-                      "type": "uint8"
-                    }
-                  ],
-                  "internalType": "struct ExchangeDomain.Asset",
-                  "name": "sellAsset",
-                  "type": "tuple"
-                },
-                {
-                  "components": [
-                    {
-                      "internalType": "address",
-                      "name": "token",
-                      "type": "address"
-                    },
-                    {
-                      "internalType": "uint256",
-                      "name": "tokenId",
-                      "type": "uint256"
-                    },
-                    {
-                      "internalType": "enum ExchangeDomain.AssetType",
-                      "name": "assetType",
-                      "type": "uint8"
-                    }
-                  ],
-                  "internalType": "struct ExchangeDomain.Asset",
-                  "name": "buyAsset",
-                  "type": "tuple"
-                }
-              ],
-              "internalType": "struct ExchangeDomain.OrderKey",
-              "name": "key",
-              "type": "tuple"
-            },
-            {
-              "internalType": "uint256",
-              "name": "sellPrice",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "sellerFee",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct ExchangeDomain.Order",
-          "name": "order",
-          "type": "tuple"
-        }
-      ],
-      "name": "prepareMessage",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "pure",
-      "type": "function"
     }
   ]`,
 		"getCompletedKey",
@@ -940,7 +315,7 @@ func TestWallet_CallContractConstant1(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant2(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://http-mainnet.hecochain.com",
 		WsUrl:  "",
 	})
@@ -974,7 +349,7 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 }
 
 func TestWallet_DecodePayload(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -1009,7 +384,7 @@ func TestWallet_DecodePayload(t *testing.T) {
 }
 
 func TestWallet_TxsInPool(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -1020,7 +395,7 @@ func TestWallet_TxsInPool(t *testing.T) {
 }
 
 func TestWallet_SuggestGasPrice(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -1033,7 +408,7 @@ func TestWallet_SuggestGasPrice(t *testing.T) {
 }
 
 func TestWallet_BuildTransferTx(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://rinkeby.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -1105,7 +480,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 }
 
 func TestWallet_PackParams(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -1151,7 +526,7 @@ func TestWallet_PackParams(t *testing.T) {
 }
 
 func TestWallet_TokenBalance(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -1165,7 +540,7 @@ func TestWallet_TokenBalance(t *testing.T) {
 }
 
 func TestWallet_TransactionByHash(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -1307,7 +682,7 @@ func TestRecoverSignerAddress(t *testing.T) {
 }
 
 func TestWallet_CallContractConstantWithPayload(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -1366,7 +741,7 @@ func TestWallet_MethodIdFromMethodStr(t *testing.T) {
 }
 
 func TestWallet_SendEth(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -1388,7 +763,7 @@ func TestWallet_SendEth(t *testing.T) {
 }
 
 func TestWallet_SendToken(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -1403,7 +778,7 @@ func TestWallet_SendToken(t *testing.T) {
 }
 
 func TestWallet_ApproveAmount(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -1419,7 +794,7 @@ func TestWallet_ApproveAmount(t *testing.T) {
 }
 
 func TestWallet_Approve(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -1441,7 +816,7 @@ func TestWallet_Approve(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant3(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(UrlParam{
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -1540,7 +915,7 @@ func TestWallet_CallContractConstant3(t *testing.T) {
 }
 
 func TestWallet_IsContract(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(UrlParam{
+	wallet, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://rpc.ankr.com/eth_goerli",
 		WsUrl:  "",
 	})
@@ -1556,7 +931,7 @@ func TestWallet_IsContract(t *testing.T) {
 }
 
 func TestWallet_GetTokenDecimals(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(UrlParam{
+	wallet, err := NewWallet().InitRemote(&UrlParam{
 		RpcUrl: "https://rpc.ankr.com/eth_goerli",
 		WsUrl:  "",
 	})

@@ -91,7 +91,7 @@ type UrlParam struct {
 	WsUrl  string
 }
 
-func (w *Wallet) InitRemote(urlParam UrlParam) (wallet_ *Wallet, err_ error) {
+func (w *Wallet) InitRemote(urlParam *UrlParam) (wallet_ *Wallet, err_ error) {
 	if urlParam.RpcUrl == "" {
 		return nil, errors.New("rpc url must be set")
 	}
