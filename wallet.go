@@ -479,7 +479,7 @@ func (w *Wallet) FindLogsByScanApi(
 	_, resStr, err := go_http.NewHttpRequester(
 		go_http.WithLogger(w.logger),
 		go_http.WithTimeout(timeout),
-	).GetForStruct(go_http.RequestParam{
+	).GetForStruct(&go_http.RequestParams{
 		Url:    ScanApiUrl,
 		Params: params,
 	}, &tempResult)
