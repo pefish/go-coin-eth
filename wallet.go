@@ -314,7 +314,7 @@ func (w *Wallet) WatchLogsByLoop(
 			if err != nil {
 				return err
 			}
-			w.logger.DebugF("find logs... fromBlock: %s, toBlock: %s", fromBlock, toBlock)
+			w.logger.DebugF("Find logs... fromBlock: %s, toBlock: %s", fromBlock, toBlock)
 			err = w.FindLogs(
 				func(contract *bind.BoundContract, logs []types.Log) error {
 					fromBlock = go_decimal.Decimal.MustStart(toBlock).MustAdd(1).MustEndForBigInt()
@@ -524,6 +524,31 @@ type CallMethodOpts struct {
 type BuildTxResult struct {
 	SignedTx *types.Transaction
 	TxHex    string
+}
+
+func (w *Wallet) UnpackLog(
+	out interface{},
+	abiStr string,
+	event string,
+	log *types.Log,
+) error {
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return err
+	}
+	boundContract := bind.NewBoundContract(
+		common.HexToAddress(""),
+		parsedAbi,
+		w.RemoteRpcClient,
+		w.RemoteRpcClient,
+		w.RemoteRpcClient,
+	)
+	err = boundContract.UnpackLog(&out, event, *log)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // payload 除了 methodId 就是 params
