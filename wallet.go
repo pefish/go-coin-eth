@@ -543,7 +543,7 @@ func (w *Wallet) UnpackLog(
 		w.RemoteRpcClient,
 		w.RemoteRpcClient,
 	)
-	err = boundContract.UnpackLog(&out, event, *log)
+	err = boundContract.UnpackLog(out, event, *log)
 	if err != nil {
 		return err
 	}
