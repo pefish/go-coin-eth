@@ -23,7 +23,7 @@ import (
 	go_decimal "github.com/pefish/go-decimal"
 	go_error "github.com/pefish/go-error"
 	go_http "github.com/pefish/go-http"
-	go_logger "github.com/pefish/go-logger"
+	i_logger "github.com/pefish/go-interface/i-logger"
 	go_random "github.com/pefish/go-random"
 	"github.com/pkg/errors"
 	"github.com/tyler-smith/go-bip39"
@@ -75,14 +75,14 @@ type Wallet struct {
 	chainId         *big.Int
 	RpcClient       *rpc.Client
 	WsClient        *rpc.Client
-	logger          go_logger.InterfaceLogger
+	logger          i_logger.ILogger
 }
 
 func NewWallet() *Wallet {
 	timeout := 60 * time.Second
 	return &Wallet{
 		timeout: timeout,
-		logger:  go_logger.Logger,
+		logger:  &i_logger.DefaultLogger,
 	}
 }
 
@@ -140,7 +140,7 @@ func (w *Wallet) Close() {
 
 }
 
-func (w *Wallet) SetLogger(logger go_logger.InterfaceLogger) (wallet_ *Wallet) {
+func (w *Wallet) SetLogger(logger i_logger.ILogger) (wallet_ *Wallet) {
 	w.logger = logger
 	return w
 }
