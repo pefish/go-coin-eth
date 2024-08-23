@@ -764,6 +764,11 @@ func (w *Wallet) BuildCallMethodTx(
 	opts *CallMethodOpts,
 	params []interface{},
 ) (btr_ *BuildTxResult, err_ error) {
+	var realOpts CallMethodOpts
+	if opts != nil {
+		realOpts = *opts
+	}
+
 	isContract, err := w.IsContract(contractAddress)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -786,17 +791,14 @@ func (w *Wallet) BuildCallMethodTx(
 	}
 
 	var value = big.NewInt(0)
-	var gasLimit uint64 = 0
-	var nonce uint64 = 0
+	var gasLimit uint64 = realOpts.GasLimit
+	var nonce uint64 = realOpts.Nonce
 	var isPredictError = true
-	if opts != nil {
-		if opts.Value != nil {
-			value = opts.Value
-		}
-
-		gasLimit = opts.GasLimit
-		nonce = opts.Nonce
-		isPredictError = opts.IsPredictError
+	if realOpts.Value != nil {
+		value = realOpts.Value
+	}
+	if !realOpts.IsPredictError {
+		isPredictError = false
 	}
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
@@ -838,9 +840,9 @@ func (w *Wallet) BuildCallMethodTx(
 		value,
 		gasLimit,
 		input,
-		opts.GasFeeCap,
-		opts.GasTipCap,
-		opts.GasAccelerate,
+		realOpts.GasFeeCap,
+		realOpts.GasTipCap,
+		realOpts.GasAccelerate,
 	)
 }
 
@@ -944,6 +946,11 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	payload string,
 	opts *CallMethodOpts,
 ) (btr_ *BuildTxResult, err_ error) {
+	var realOpts CallMethodOpts
+	if opts != nil {
+		realOpts = *opts
+	}
+
 	isContract, err := w.IsContract(contractAddress)
 	if err != nil {
 		return nil, go_error.WithStack(err)
@@ -965,17 +972,14 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	contractAddressObj := common.HexToAddress(contractAddress)
 
 	var value = big.NewInt(0)
-	var gasLimit uint64 = 0
-	var nonce uint64 = 0
+	var gasLimit uint64 = realOpts.GasLimit
+	var nonce uint64 = realOpts.Nonce
 	var isPredictError = true
-	if opts != nil {
-		if opts.Value != nil {
-			value = opts.Value
-		}
-
-		gasLimit = opts.GasLimit
-		nonce = opts.Nonce
-		isPredictError = opts.IsPredictError
+	if realOpts.Value != nil {
+		value = realOpts.Value
+	}
+	if !realOpts.IsPredictError {
+		isPredictError = false
 	}
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
@@ -1014,9 +1018,9 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		value,
 		gasLimit,
 		payloadBuf,
-		opts.GasFeeCap,
-		opts.GasTipCap,
-		opts.GasAccelerate,
+		realOpts.GasFeeCap,
+		realOpts.GasTipCap,
+		realOpts.GasAccelerate,
 	)
 }
 
@@ -1031,6 +1035,11 @@ func (w *Wallet) BuildTransferTx(
 	toAddress string,
 	opts *BuildTransferTxOpts,
 ) (btr_ *BuildTxResult, err_ error) {
+	var realOpts BuildTransferTxOpts
+	if opts != nil {
+		realOpts = *opts
+	}
+
 	privateKey = strings.TrimPrefix(privateKey, "0x")
 
 	toAddressObj := common.HexToAddress(toAddress)
@@ -1041,15 +1050,10 @@ func (w *Wallet) BuildTransferTx(
 
 	var value = big.NewInt(0)
 
-	var gasLimit uint64 = 0
-	var nonce uint64 = 0
-	if opts != nil {
-		if opts.Value != nil {
-			value = opts.Value
-		}
-
-		gasLimit = opts.GasLimit
-		nonce = opts.Nonce
+	var gasLimit uint64 = opts.GasLimit
+	var nonce uint64 = opts.Nonce
+	if realOpts.Value != nil {
+		value = realOpts.Value
 	}
 	if gasLimit == 0 {
 		gasLimit = 21000
@@ -1068,16 +1072,16 @@ func (w *Wallet) BuildTransferTx(
 		}
 	}
 
-	if opts.IsLegacy {
+	if realOpts.IsLegacy {
 		return w.buildLegacyTx(
 			privateKeyECDSA,
 			nonce,
 			toAddressObj,
 			value,
 			gasLimit,
-			opts.Payload,
-			opts.GasPrice,
-			opts.GasAccelerate,
+			realOpts.Payload,
+			realOpts.GasPrice,
+			realOpts.GasAccelerate,
 		)
 	}
 
@@ -1087,10 +1091,10 @@ func (w *Wallet) BuildTransferTx(
 		toAddressObj,
 		value,
 		gasLimit,
-		opts.Payload,
-		opts.GasFeeCap,
-		opts.GasTipCap,
-		opts.GasAccelerate,
+		realOpts.Payload,
+		realOpts.GasFeeCap,
+		realOpts.GasTipCap,
+		realOpts.GasAccelerate,
 	)
 }
 
