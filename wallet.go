@@ -176,8 +176,9 @@ func (w *Wallet) CallContractConstantWithPayload(
 	outputTypes abi.Arguments,
 	opts *bind.CallOpts,
 ) error {
-	if opts == nil {
-		opts = new(bind.CallOpts)
+	var realOpts bind.CallOpts
+	if opts != nil {
+		realOpts = *opts
 	}
 
 	contractAddressObj := common.HexToAddress(contractAddress)
@@ -187,8 +188,8 @@ func (w *Wallet) CallContractConstantWithPayload(
 		return go_error.WithStack(err)
 	}
 	var (
-		msg    = ethereum.CallMsg{From: opts.From, To: &contractAddressObj, Data: payloadBuf}
-		ctx    = opts.Context
+		msg    = ethereum.CallMsg{From: realOpts.From, To: &contractAddressObj, Data: payloadBuf}
+		ctx    = realOpts.Context
 		code   []byte
 		output []byte
 	)
@@ -196,7 +197,7 @@ func (w *Wallet) CallContractConstantWithPayload(
 		ctxTemp, _ := context.WithTimeout(context.Background(), w.timeout)
 		ctx = ctxTemp
 	}
-	if opts.Pending {
+	if realOpts.Pending {
 		pb := bind.PendingContractCaller(w.RemoteRpcClient)
 		output, err = pb.PendingCallContract(ctx, msg)
 		if err == nil && len(output) == 0 {
@@ -208,15 +209,17 @@ func (w *Wallet) CallContractConstantWithPayload(
 			}
 		}
 	} else {
-		output, err = bind.ContractCaller(w.RemoteRpcClient).CallContract(ctx, msg, opts.BlockNumber)
+		output, err = bind.ContractCaller(w.RemoteRpcClient).CallContract(ctx, msg, realOpts.BlockNumber)
 		if err != nil {
 			return go_error.WithStack(err)
 		}
 		if len(output) == 0 {
 			// Make sure we have a contract to operate on, and bail out otherwise.
-			if code, err = bind.ContractCaller(w.RemoteRpcClient).CodeAt(ctx, contractAddressObj, opts.BlockNumber); err != nil {
+			code, err = bind.ContractCaller(w.RemoteRpcClient).CodeAt(ctx, contractAddressObj, realOpts.BlockNumber)
+			if err != nil {
 				return go_error.WithStack(err)
-			} else if len(code) == 0 {
+			}
+			if len(code) == 0 {
 				return go_error.WithStack(bind.ErrNoCode)
 			}
 		}
@@ -1050,8 +1053,8 @@ func (w *Wallet) BuildTransferTx(
 
 	var value = big.NewInt(0)
 
-	var gasLimit uint64 = opts.GasLimit
-	var nonce uint64 = opts.Nonce
+	var gasLimit uint64 = realOpts.GasLimit
+	var nonce uint64 = realOpts.Nonce
 	if realOpts.Value != nil {
 		value = realOpts.Value
 	}
