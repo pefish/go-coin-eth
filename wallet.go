@@ -1059,7 +1059,7 @@ func (w *Wallet) BuildTransferTx(
 		value = realOpts.Value
 	}
 	if gasLimit == 0 {
-		gasLimit = 21000
+		gasLimit = 30000
 	}
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
