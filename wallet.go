@@ -1642,7 +1642,7 @@ func (w *Wallet) SeedHexByMnemonic(mnemonic string, pass string) (seed_ string) 
 }
 
 func (w *Wallet) RandomMnemonic() (mnemonic_ string, err_ error) {
-	entropy, err := go_random.RandomInstance.RandomBytes(16)
+	entropy, err := go_random.RandomBytes(16)
 	if err != nil {
 		return "", go_error.WithStack(err)
 	}

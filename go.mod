@@ -9,7 +9,7 @@ require (
 	github.com/pefish/go-decimal v0.4.0
 	github.com/pefish/go-error v1.0.8
 	github.com/pefish/go-http v0.8.1
-	github.com/pefish/go-random v0.2.7
+	github.com/pefish/go-random v0.2.8
 	github.com/pefish/go-test v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/tyler-smith/go-bip39 v1.1.0
