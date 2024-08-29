@@ -9,17 +9,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-const API_URL = "https://api.etherscan.io/api"
+const (
+	EthereumUrl = "https://api.etherscan.io/api"
+	BaseUrl     = "https://api.basescan.org/api"
+)
 
 type EtherscanApiClient struct {
 	logger i_logger.ILogger
 	apiKey string
+	url    string
 }
 
-func NewEthscanApiClient(logger i_logger.ILogger, apiKey string) *EtherscanApiClient {
+type OptionsType struct {
+	Url    string
+	ApiKey string
+}
+
+func NewEthscanApiClient(logger i_logger.ILogger, opts *OptionsType) *EtherscanApiClient {
 	return &EtherscanApiClient{
 		logger: logger,
-		apiKey: apiKey,
+		apiKey: opts.ApiKey,
+		url:    opts.Url,
 	}
 }
 
@@ -79,7 +89,7 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
-			Url:    API_URL,
+			Url:    e.url,
 			Params: paramsMap,
 		},
 		&httpResult,
