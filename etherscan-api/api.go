@@ -98,7 +98,7 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		return nil, err
 	}
 	if httpResult.Status != "1" {
-		return nil, errors.New(httpResult.Result.(string))
+		return nil, errors.New(go_format.FormatInstance.ToString(httpResult.Result))
 	}
 
 	results := make([]ListTokenTxResult, 0)
@@ -111,4 +111,53 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		results = append(results, d)
 	}
 	return results, nil
+}
+
+type GetSourceCodeResult struct {
+	SourceCode           string `json:"SourceCode"`
+	ABI                  string `json:"ABI"`
+	ContractName         string `json:"ContractName"`
+	CompilerVersion      string `json:"CompilerVersion"`
+	OptimizationUsed     string `json:"OptimizationUsed"`
+	Runs                 string `json:"Runs"`
+	ConstructorArguments string `json:"ConstructorArguments"`
+	EVMVersion           string `json:"EVMVersion"`
+	Library              string `json:"Library"`
+	LicenseType          string `json:"LicenseType"`
+	Proxy                string `json:"Proxy"`
+	Implementation       string `json:"Implementation"`
+	SwarmSource          string `json:"SwarmSource"`
+}
+
+func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult, error) {
+	paramsMap := make(map[string]interface{}, 0)
+
+	paramsMap["module"] = "contract"
+	paramsMap["action"] = "getsourcecode"
+	paramsMap["apikey"] = e.apiKey
+	paramsMap["address"] = address
+
+	var httpResult struct {
+		Status  string                `json:"status"`
+		Message string                `json:"message"`
+		Result  []GetSourceCodeResult `json:"result"`
+	}
+	_, _, err := go_http.NewHttpRequester(
+		go_http.WithTimeout(10*time.Second),
+		go_http.WithLogger(e.logger),
+	).GetForStruct(
+		&go_http.RequestParams{
+			Url:    e.url,
+			Params: paramsMap,
+		},
+		&httpResult,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if httpResult.Status != "1" {
+		return nil, errors.New(go_format.FormatInstance.ToString(httpResult.Result))
+	}
+
+	return &httpResult.Result[0], nil
 }
