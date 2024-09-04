@@ -708,7 +708,7 @@ func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to suggest gas price: %v", err)
+		return nil, errors.Wrap(err, "Failed to suggest gas price.")
 	}
 	if gasAccelerate == 0 {
 		return gasPrice, nil
@@ -720,7 +720,7 @@ func (w *Wallet) LatestBlockNumber() (blockNumber_ *big.Int, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	number, err := w.RemoteRpcClient.BlockNumber(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to get latest block number: %v", err)
+		return nil, errors.Wrap(err, "Failed to get latest block number.")
 	}
 	return new(big.Int).SetUint64(number), nil
 }
@@ -729,7 +729,7 @@ func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (gasCount_ uint64, err_ error
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasCount, err := w.RemoteRpcClient.EstimateGas(ctx, msg)
 	if err != nil {
-		return 0, errors.Errorf("failed to estimate gas needed: %v", err)
+		return 0, errors.Wrap(err, "Failed to estimate gas needed.")
 	}
 	return gasCount, nil
 }
@@ -778,7 +778,7 @@ func (w *Wallet) BuildCallMethodTx(
 		return nil, errors.Wrap(err, "")
 	}
 	if !isContract {
-		return nil, errors.Errorf("to address not contract. address: %s", contractAddress)
+		return nil, errors.Errorf("To address not contract. address: %s", contractAddress)
 	}
 
 	privateKey = strings.TrimPrefix(privateKey, "0x")
@@ -814,7 +814,7 @@ func (w *Wallet) BuildCallMethodTx(
 	if nonce == 0 {
 		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
-			return nil, errors.Errorf("failed to retrieve account nonce: %v", err)
+			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
 	}
 	input, err := parsedAbi.Pack(methodName, params...)
@@ -830,7 +830,7 @@ func (w *Wallet) BuildCallMethodTx(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, errors.Errorf("failed to estimate gas: %v", err)
+			return nil, errors.Wrap(err, "Failed to estimate gas.")
 		}
 		if gasLimit == 0 {
 			gasLimit = uint64(float64(tempGasLimit) * 1.3)
@@ -885,7 +885,7 @@ func (w *Wallet) EstimateCall(
 	}
 	_, err = w.EstimateGas(msg)
 	if err != nil {
-		return errors.Errorf("Failed to estimate gas: %+v", err)
+		return errors.Wrap(err, "Failed to estimate gas.")
 	}
 
 	return nil
@@ -895,7 +895,7 @@ func (w *Wallet) NextNonce(address string) (nonce_ uint64, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	nonce, err := w.RemoteRpcClient.PendingNonceAt(ctx, common.HexToAddress(address))
 	if err != nil {
-		return 0, errors.Errorf("failed to retrieve account nonce: %v", err)
+		return 0, errors.Wrap(err, "Failed to retrieve account nonce.")
 	}
 	return nonce, nil
 }
@@ -915,7 +915,7 @@ func (w *Wallet) buildTx(
 	if gasFeeCap == nil {
 		gasPrice, err := w.SuggestGasPrice(gasAccelerate)
 		if err != nil {
-			return nil, errors.Errorf("failed to suggest gas price: %v", err)
+			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
 		gasFeeCap = gasPrice
 	}
@@ -959,7 +959,7 @@ func (w *Wallet) buildLegacyTx(
 	if gasPrice == nil {
 		_gasPrice, err := w.SuggestGasPrice(gasAccelerate)
 		if err != nil {
-			return nil, errors.Errorf("failed to suggest gas price: %v", err)
+			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
 		gasPrice = _gasPrice
 	}
@@ -1001,7 +1001,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		return nil, errors.Wrap(err, "")
 	}
 	if !isContract {
-		return nil, errors.Errorf("to address not contract. address: %s", contractAddress)
+		return nil, errors.Errorf("To address not contract. address: %s", contractAddress)
 	}
 	privateKey = strings.TrimPrefix(privateKey, "0x")
 	privateKeyBuf, err := hex.DecodeString(privateKey)
@@ -1036,7 +1036,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	if nonce == 0 {
 		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
-			return nil, errors.Errorf("failed to retrieve account nonce: %v", err)
+			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
 	}
 
@@ -1049,7 +1049,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, errors.Errorf("failed to estimate gas: %v", err)
+			return nil, errors.Wrap(err, "Failed to estimate gas.")
 		}
 		if gasLimit == 0 {
 			gasLimit = uint64(float64(tempGasLimit) * 1.3)
@@ -1113,7 +1113,7 @@ func (w *Wallet) BuildTransferTx(
 	if nonce == 0 {
 		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
-			return nil, errors.Errorf("failed to retrieve account nonce: %v", err)
+			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
 	}
 
@@ -1347,7 +1347,7 @@ type DeriveFromPathResult struct {
 // 都不带 0x 前缀
 func (w *Wallet) DeriveFromPath(seed string, path string) (result_ *DeriveFromPathResult, err_ error) {
 	if len(strings.Split(path, "/")) != 6 || !strings.HasPrefix(path, `m/44'/60'/0'`) {
-		return nil, errors.Errorf("path may be wrong, check it. path: %s", path)
+		return nil, errors.Errorf("Path may be wrong, check it. path: %s", path)
 	}
 	// 字符串转换成字节数组
 	seedBuf, err := hex.DecodeString(seed)
