@@ -21,7 +21,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	chain "github.com/pefish/go-coin-eth/util"
 	go_decimal "github.com/pefish/go-decimal"
-	go_error "github.com/pefish/go-error"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_random "github.com/pefish/go-random"
@@ -101,14 +100,14 @@ func (w *Wallet) InitRemote(urlParam *UrlParam) (wallet_ *Wallet, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	rpcClient, err := rpc.DialContext(ctx, urlParam.RpcUrl)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	remoteRpcClient := ethclient.NewClient(rpcClient)
 
 	ctx, _ = context.WithTimeout(context.Background(), w.timeout)
 	chainId, err := remoteRpcClient.ChainID(ctx)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	w.RemoteRpcClient = remoteRpcClient
 	w.chainId = chainId
@@ -117,7 +116,7 @@ func (w *Wallet) InitRemote(urlParam *UrlParam) (wallet_ *Wallet, err_ error) {
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		wsClient, err := rpc.DialContext(ctx, urlParam.WsUrl)
 		if err != nil {
-			return nil, go_error.WithStack(err)
+			return nil, errors.Wrap(err, "")
 		}
 		remoteWsClient := ethclient.NewClient(wsClient)
 		w.RemoteWsClient = remoteWsClient
@@ -157,16 +156,16 @@ func (w *Wallet) CallContractConstant(
 ) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	inputParams, err := parsedAbi.Pack(methodName, params...)
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 
 	method, ok := parsedAbi.Methods[methodName]
 	if !ok {
-		return go_error.WithStack(errors.New("method not found"))
+		return errors.New("Method not found.")
 	}
 	return w.CallContractConstantWithPayload(out, contractAddress, hex.EncodeToString(inputParams), method.Outputs, opts)
 }
@@ -187,7 +186,7 @@ func (w *Wallet) CallContractConstantWithPayload(
 	payload = strings.TrimPrefix(payload, "0x")
 	payloadBuf, err := hex.DecodeString(payload)
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	var (
 		msg    = ethereum.CallMsg{From: realOpts.From, To: &contractAddressObj, Data: payloadBuf}
@@ -205,30 +204,30 @@ func (w *Wallet) CallContractConstantWithPayload(
 		if err == nil && len(output) == 0 {
 			// Make sure we have a contract to operate on, and bail out otherwise.
 			if code, err = pb.PendingCodeAt(ctx, contractAddressObj); err != nil {
-				return go_error.WithStack(err)
+				return errors.Wrap(err, "")
 			} else if len(code) == 0 {
-				return go_error.WithStack(bind.ErrNoCode)
+				return errors.Wrap(bind.ErrNoCode, "")
 			}
 		}
 	} else {
 		output, err = bind.ContractCaller(w.RemoteRpcClient).CallContract(ctx, msg, realOpts.BlockNumber)
 		if err != nil {
-			return go_error.WithStack(err)
+			return errors.Wrap(err, "")
 		}
 		if len(output) == 0 {
 			// Make sure we have a contract to operate on, and bail out otherwise.
 			code, err = bind.ContractCaller(w.RemoteRpcClient).CodeAt(ctx, contractAddressObj, realOpts.BlockNumber)
 			if err != nil {
-				return go_error.WithStack(err)
+				return errors.Wrap(err, "")
 			}
 			if len(code) == 0 {
-				return go_error.WithStack(bind.ErrNoCode)
+				return errors.Wrap(bind.ErrNoCode, "")
 			}
 		}
 	}
 	err = w.UnpackParams(out, outputTypes, hex.EncodeToString(output))
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	return nil
 }
@@ -254,7 +253,7 @@ func (w *Wallet) WatchLogsByWs(
 	}
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteWsClient, w.RemoteWsClient, w.RemoteWsClient)
 retry:
@@ -273,7 +272,7 @@ retry:
 				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
 				if err != nil {
 					sub.Unsubscribe()
-					return go_error.WithStack(err)
+					return errors.Wrap(err, "")
 				}
 				resultChan <- map_
 			case err := <-sub.Err():
@@ -367,19 +366,19 @@ func (w *Wallet) FindLogs(
 ) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 
 	query = append([][]interface{}{{parsedAbi.Events[eventName].ID}}, query...)
 
 	topics, err := abi.MakeTopics(query...)
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 
 	latestBlockNumber, err := w.LatestBlockNumber()
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	if fromBlock == nil {
 		fromBlock = latestBlockNumber.Sub(latestBlockNumber, new(big.Int).SetUint64(maxRange))
@@ -415,7 +414,7 @@ func (w *Wallet) FindLogs(
 			Topics: topics,
 		})
 		if err != nil {
-			return go_error.WithStack(err)
+			return errors.Wrap(err, "")
 		}
 		err = logsComming(boundContract, logs)
 		if err != nil {
@@ -454,7 +453,7 @@ func (w *Wallet) FindLogsByScanApi(
 	if go_decimal.Decimal.MustStart(fromBlock).MustLt(0) {
 		result, err := w.LatestBlockNumber()
 		if err != nil {
-			return nil, go_error.WithStack(err)
+			return nil, errors.Wrap(err, "")
 		}
 		delta, ok := new(big.Int).SetString(fromBlock[1:], 10)
 		if !ok {
@@ -489,7 +488,7 @@ func (w *Wallet) FindLogsByScanApi(
 		Params: params,
 	}, &tempResult)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	if tempResult.Status != "1" && tempResult.Message != "No records found" {
 		var result struct {
@@ -499,9 +498,9 @@ func (w *Wallet) FindLogsByScanApi(
 		}
 		err = json.Unmarshal([]byte(resStr), &result)
 		if err != nil {
-			return nil, go_error.WithStack(err)
+			return nil, errors.Wrap(err, "")
 		}
-		return nil, go_error.WithStack(errors.New(result.Message + ". " + result.Result))
+		return nil, errors.New(result.Message + ". " + result.Result)
 	}
 	var result struct {
 		Status  string                    `json:"status"`
@@ -510,7 +509,7 @@ func (w *Wallet) FindLogsByScanApi(
 	}
 	err = json.Unmarshal([]byte(resStr), &result)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return result.Result, nil
 }
@@ -569,15 +568,15 @@ func (w *Wallet) UnpackParams(
 	}
 	data, err := hex.DecodeString(paramsStr)
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	a, err := types.Unpack(data)
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	err = types.Copy(out, a)
 	if err != nil {
-		return go_error.WithStack(err)
+		return errors.Wrap(err, "")
 	}
 	return nil
 }
@@ -589,7 +588,7 @@ func (w *Wallet) PackParams(
 ) (hexStr_ string, err_ error) {
 	bytes_, err := inputs.Pack(args...)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	return hex.EncodeToString(bytes_), nil
 }
@@ -602,11 +601,11 @@ func (w *Wallet) EncodePayload(
 ) (hexStr_ string, err_ error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	input, err := parsedAbi.Pack(methodName, params...)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	return hex.EncodeToString(input), nil
 }
@@ -642,24 +641,24 @@ func (w *Wallet) DecodePayload(
 	payloadStr = strings.TrimPrefix(payloadStr, "0x")
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	data, err := hex.DecodeString(payloadStr)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	method, err := parsedAbi.MethodById(data[:4])
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	if len(data[4:]) > 0 {
 		a, err := method.Inputs.Unpack(data[4:])
 		if err != nil {
-			return nil, go_error.WithStack(err)
+			return nil, errors.Wrap(err, "")
 		}
 		err = method.Inputs.Copy(out, a)
 		if err != nil {
-			return nil, go_error.WithStack(err)
+			return nil, errors.Wrap(err, "")
 		}
 	}
 	return method, err
@@ -669,7 +668,7 @@ func (w *Wallet) DecodePayload(
 func (w *Wallet) Topic0FromEventName(abiStr, eventName string) (topic0_ string, err_ error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 
 	return parsedAbi.Events[eventName].ID.String(), nil
@@ -692,15 +691,15 @@ func (w *Wallet) MethodFromPayload(
 	payloadStr = strings.TrimPrefix(payloadStr, "0x")
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	data, err := hex.DecodeString(payloadStr)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	method, err := parsedAbi.MethodById(data[:4])
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return method, err
 }
@@ -709,7 +708,7 @@ func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
 	if err != nil {
-		return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+		return nil, errors.Errorf("failed to suggest gas price: %v", err)
 	}
 	if gasAccelerate == 0 {
 		return gasPrice, nil
@@ -721,7 +720,7 @@ func (w *Wallet) LatestBlockNumber() (blockNumber_ *big.Int, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	number, err := w.RemoteRpcClient.BlockNumber(ctx)
 	if err != nil {
-		return nil, go_error.WithStack(fmt.Errorf("failed to get latest block number: %v", err))
+		return nil, errors.Errorf("failed to get latest block number: %v", err)
 	}
 	return new(big.Int).SetUint64(number), nil
 }
@@ -730,7 +729,7 @@ func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (gasCount_ uint64, err_ error
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasCount, err := w.RemoteRpcClient.EstimateGas(ctx, msg)
 	if err != nil {
-		return 0, go_error.WithStack(fmt.Errorf("failed to estimate gas needed: %v", err))
+		return 0, errors.Errorf("failed to estimate gas needed: %v", err)
 	}
 	return gasCount, nil
 }
@@ -738,11 +737,11 @@ func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (gasCount_ uint64, err_ error
 func (w *Wallet) PrivateKeyToAddress(privateKey string) (address_ string, err_ error) {
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	return crypto.PubkeyToAddress(publicKeyECDSA).String(), nil
@@ -752,7 +751,7 @@ func (w *Wallet) IsContract(address string) (isContract_ bool, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	codeBytes, err := w.RemoteRpcClient.CodeAt(ctx, common.HexToAddress(address), nil)
 	if err != nil {
-		return false, go_error.WithStack(err)
+		return false, errors.Wrap(err, "")
 	}
 	if len(codeBytes) == 0 {
 		return false, nil
@@ -776,23 +775,23 @@ func (w *Wallet) BuildCallMethodTx(
 
 	isContract, err := w.IsContract(contractAddress)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	if !isContract {
-		return nil, fmt.Errorf("to address not contract. address: %s", contractAddress)
+		return nil, errors.Errorf("to address not contract. address: %s", contractAddress)
 	}
 
 	privateKey = strings.TrimPrefix(privateKey, "0x")
 
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	contractAddressObj := common.HexToAddress(contractAddress)
 
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 
 	var value = big.NewInt(0)
@@ -808,19 +807,19 @@ func (w *Wallet) BuildCallMethodTx(
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
 		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
+			return nil, errors.Errorf("failed to retrieve account nonce: %v", err)
 		}
 	}
 	input, err := parsedAbi.Pack(methodName, params...)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	if gasLimit == 0 || isPredictError {
 		msg := ethereum.CallMsg{
@@ -831,7 +830,7 @@ func (w *Wallet) BuildCallMethodTx(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
+			return nil, errors.Errorf("failed to estimate gas: %v", err)
 		}
 		if gasLimit == 0 {
 			gasLimit = uint64(float64(tempGasLimit) * 1.3)
@@ -851,11 +850,52 @@ func (w *Wallet) BuildCallMethodTx(
 	)
 }
 
+func (w *Wallet) EstimateCall(
+	fromAddress string,
+	contractAddress string,
+	abiStr string,
+	value float64,
+	methodName string,
+	params []interface{},
+) error {
+
+	isContract, err := w.IsContract(contractAddress)
+	if err != nil {
+		return err
+	}
+	if !isContract {
+		return errors.Errorf("To address not contract. address: %s", contractAddress)
+	}
+
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
+	contractAddressObj := common.HexToAddress(contractAddress)
+
+	input, err := parsedAbi.Pack(methodName, params...)
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
+	msg := ethereum.CallMsg{
+		From:  common.HexToAddress(fromAddress),
+		To:    &contractAddressObj,
+		Value: go_decimal.Decimal.MustStart(value).MustShiftedBy(18).MustEndForBigInt(),
+		Data:  input,
+	}
+	_, err = w.EstimateGas(msg)
+	if err != nil {
+		return errors.Errorf("Failed to estimate gas: %+v", err)
+	}
+
+	return nil
+}
+
 func (w *Wallet) NextNonce(address string) (nonce_ uint64, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	nonce, err := w.RemoteRpcClient.PendingNonceAt(ctx, common.HexToAddress(address))
 	if err != nil {
-		return 0, fmt.Errorf("failed to retrieve account nonce: %v", err)
+		return 0, errors.Errorf("failed to retrieve account nonce: %v", err)
 	}
 	return nonce, nil
 }
@@ -875,7 +915,7 @@ func (w *Wallet) buildTx(
 	if gasFeeCap == nil {
 		gasPrice, err := w.SuggestGasPrice(gasAccelerate)
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+			return nil, errors.Errorf("failed to suggest gas price: %v", err)
 		}
 		gasFeeCap = gasPrice
 	}
@@ -893,11 +933,11 @@ func (w *Wallet) buildTx(
 	})
 	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	txBytes, err := signedTx.MarshalBinary()
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return &BuildTxResult{
 		SignedTx: signedTx,
@@ -919,7 +959,7 @@ func (w *Wallet) buildLegacyTx(
 	if gasPrice == nil {
 		_gasPrice, err := w.SuggestGasPrice(gasAccelerate)
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to suggest gas price: %v", err))
+			return nil, errors.Errorf("failed to suggest gas price: %v", err)
 		}
 		gasPrice = _gasPrice
 	}
@@ -933,11 +973,11 @@ func (w *Wallet) buildLegacyTx(
 	})
 	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	txBytes, err := signedTx.MarshalBinary()
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return &BuildTxResult{
 		SignedTx: signedTx,
@@ -958,20 +998,20 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 
 	isContract, err := w.IsContract(contractAddress)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	if !isContract {
-		return nil, fmt.Errorf("to address not contract. address: %s", contractAddress)
+		return nil, errors.Errorf("to address not contract. address: %s", contractAddress)
 	}
 	privateKey = strings.TrimPrefix(privateKey, "0x")
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	payload = strings.TrimPrefix(payload, "0x")
 	payloadBuf, err := hex.DecodeString(payload)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 
 	contractAddressObj := common.HexToAddress(contractAddress)
@@ -989,14 +1029,14 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
 		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
+			return nil, errors.Errorf("failed to retrieve account nonce: %v", err)
 		}
 	}
 
@@ -1009,7 +1049,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to estimate gas: %v", err))
+			return nil, errors.Errorf("failed to estimate gas: %v", err)
 		}
 		if gasLimit == 0 {
 			gasLimit = uint64(float64(tempGasLimit) * 1.3)
@@ -1050,7 +1090,7 @@ func (w *Wallet) BuildTransferTx(
 	toAddressObj := common.HexToAddress(toAddress)
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 
 	var value = big.NewInt(0)
@@ -1066,14 +1106,14 @@ func (w *Wallet) BuildTransferTx(
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
 		nonce, err = w.NextNonce(fromAddress.String())
 		if err != nil {
-			return nil, go_error.WithStack(fmt.Errorf("failed to retrieve account nonce: %v", err))
+			return nil, errors.Errorf("failed to retrieve account nonce: %v", err)
 		}
 	}
 
@@ -1108,7 +1148,7 @@ func (w *Wallet) SendRawTransaction(txHex string) (hash_ string, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	err := w.RpcClient.CallContext(ctx, &hash, "eth_sendRawTransaction", txHex)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	return hash.String(), nil
 }
@@ -1123,7 +1163,7 @@ func (w *Wallet) SendRawTransactionWait(ctx context.Context, txHex string) (txRe
 		return nil, errors.New("Canceled wait.")
 	}
 	if txr.Status == 0 {
-		return txr, fmt.Errorf("Tx failed.")
+		return txr, errors.Errorf("Tx failed.")
 	}
 	return txr, nil
 }
@@ -1137,12 +1177,12 @@ func (w *Wallet) TransactionByHash(txHash string) (result_ *TransactionByHashRes
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	tx, isPending, err := w.RemoteRpcClient.TransactionByHash(ctx, common.HexToHash(txHash))
 	if err != nil {
-		return nil, false, go_error.WithStack(err)
+		return nil, false, errors.Wrap(err, "")
 	}
 
 	from, err := types.Sender(types.NewLondonSigner(w.chainId), tx)
 	if err != nil {
-		return nil, false, go_error.WithStack(err)
+		return nil, false, errors.Wrap(err, "")
 	}
 	return &TransactionByHashResult{
 		tx,
@@ -1154,7 +1194,7 @@ func (w *Wallet) TransactionReceiptByHash(txHash string) (txReceipt_ *types.Rece
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	receipt, err := w.RemoteRpcClient.TransactionReceipt(ctx, common.HexToHash(txHash))
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return receipt, nil
 }
@@ -1211,7 +1251,7 @@ func (w *Wallet) TxsInPool() (txs_ *TxsInPoolResult, err_ error) {
 	var result TxsInPoolResult
 	err := w.RpcClient.CallContext(ctx, &result, "txpool_content")
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return &result, nil
 }
@@ -1220,7 +1260,7 @@ func (w *Wallet) Balance(address string) (bal_ *big.Int, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	result, err := w.RemoteRpcClient.BalanceAt(ctx, common.HexToAddress(address), nil)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return result, nil
 }
@@ -1239,7 +1279,7 @@ func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) 
 		},
 	)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	return result, nil
 }
@@ -1293,7 +1333,7 @@ func (w *Wallet) ApproveWait(
 		return nil, errors.New("Canceled wait.")
 	}
 	if txr.Status == 0 {
-		return txr, fmt.Errorf("Tx failed.")
+		return txr, errors.Errorf("Tx failed.")
 	}
 	return txr, nil
 }
@@ -1307,38 +1347,38 @@ type DeriveFromPathResult struct {
 // 都不带 0x 前缀
 func (w *Wallet) DeriveFromPath(seed string, path string) (result_ *DeriveFromPathResult, err_ error) {
 	if len(strings.Split(path, "/")) != 6 || !strings.HasPrefix(path, `m/44'/60'/0'`) {
-		return nil, fmt.Errorf("path may be wrong, check it. path: %s", path)
+		return nil, errors.Errorf("path may be wrong, check it. path: %s", path)
 	}
 	// 字符串转换成字节数组
 	seedBuf, err := hex.DecodeString(seed)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	// 通过种子生成 hdwallet
 	wallet, err := chain.NewFromSeed(seedBuf)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	// 解析派生路径
 	hdPath, err := chain.ParseDerivationPath(path)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	// 派生账号
 	account, err := wallet.Derive(hdPath, true)
 	// 获取私钥 hex 字符串
 	privateKeyStr, err := wallet.PrivateKeyHex(account)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 
 	privateKey, err := hex.DecodeString(privateKeyStr)
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	privateKeyECDSA, err := crypto.ToECDSA(privateKey[:])
 	if err != nil {
-		return nil, go_error.WithStack(err)
+		return nil, errors.Wrap(err, "")
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	publicKeyStr := hex.EncodeToString(crypto.CompressPubkey(&publicKeyECDSA))
@@ -1395,10 +1435,10 @@ func (w *Wallet) RecoverSignerAddressFromMsgHash(msgHash, sig string) (address_ 
 	}
 
 	if len(sigHex) != 65 {
-		return nil, fmt.Errorf("signature must be 65 bytes long")
+		return nil, errors.Errorf("signature must be 65 bytes long")
 	}
 	if sigHex[64] != 27 && sigHex[64] != 28 {
-		return nil, fmt.Errorf("invalid Ethereum signature (V is not 27 or 28)")
+		return nil, errors.Errorf("invalid Ethereum signature (V is not 27 or 28)")
 	}
 	sigHex[64] -= 27 // Transform yellow paper V from 27/28 to 0/1
 
@@ -1449,7 +1489,7 @@ func (w *Wallet) SendEthWait(
 		return nil, errors.New("Canceled wait.")
 	}
 	if txr.Status == 0 {
-		return txr, fmt.Errorf("Tx failed.")
+		return txr, errors.Errorf("Tx failed.")
 	}
 	return txr, nil
 }
@@ -1469,7 +1509,7 @@ func (w *Wallet) SendAllToken(
 		return bal, "", err
 	}
 	if go_decimal.Decimal.MustStart(bal).MustEq(0) {
-		return bal, "", fmt.Errorf("Balance not enough.")
+		return bal, "", errors.Errorf("Balance not enough.")
 	}
 	hash, err := w.SendToken(priv, contractAddress, address, bal, opts)
 	if err != nil {
@@ -1494,7 +1534,7 @@ func (w *Wallet) SendAllTokenWait(
 		return nil, nil, errors.New("Canceled wait.")
 	}
 	if txr.Status == 0 {
-		return amountWithDecimals, txr, fmt.Errorf("Tx failed.")
+		return amountWithDecimals, txr, errors.Errorf("Tx failed.")
 	}
 	return amountWithDecimals, txr, nil
 }
@@ -1544,7 +1584,7 @@ func (w *Wallet) SendTokenWait(
 		return nil, errors.New("Canceled wait.")
 	}
 	if txr.Status == 0 {
-		return txr, fmt.Errorf("Tx failed.")
+		return txr, errors.Errorf("Tx failed.")
 	}
 	return txr, nil
 }
@@ -1624,7 +1664,7 @@ func (w *Wallet) WatchPendingTxByWs(resultChan chan<- string) error {
 			if subscription != nil {
 				subscription.Unsubscribe()
 			}
-			return go_error.WithStack(err)
+			return errors.Wrap(err, "")
 		}
 		w.logger.Info("connected. watching...")
 		err = <-subscription.Err()
@@ -1644,11 +1684,11 @@ func (w *Wallet) SeedHexByMnemonic(mnemonic string, pass string) (seed_ string) 
 func (w *Wallet) RandomMnemonic() (mnemonic_ string, err_ error) {
 	entropy, err := go_random.RandomBytes(16)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	mnemonic, err := bip39.NewMnemonic(entropy)
 	if err != nil {
-		return "", go_error.WithStack(err)
+		return "", errors.Wrap(err, "")
 	}
 	return mnemonic, nil
 }

@@ -7,8 +7,7 @@ toolchain go1.21.9
 require (
 	github.com/ethereum/go-ethereum v1.14.8
 	github.com/pefish/go-decimal v0.4.0
-	github.com/pefish/go-error v1.0.8
-	github.com/pefish/go-http v0.8.1
+	github.com/pefish/go-http v0.8.3
 	github.com/pefish/go-random v0.2.8
 	github.com/pefish/go-test v0.0.4
 	github.com/pkg/errors v0.9.1
@@ -17,7 +16,7 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/bits-and-blooms/bitset v1.13.0 // indirect
+	github.com/bits-and-blooms/bitset v1.14.2 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
@@ -44,7 +43,7 @@ require (
 	github.com/tklauser/numcpus v0.8.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	golang.org/x/crypto v0.26.0 // indirect
-	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948 // indirect
 	golang.org/x/net v0.28.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
@@ -55,6 +54,6 @@ require (
 require (
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcutil v1.1.6
-	github.com/pefish/go-format v0.3.2
-	github.com/pefish/go-interface v0.0.11
+	github.com/pefish/go-format v0.3.3
+	github.com/pefish/go-interface v0.1.2
 )
