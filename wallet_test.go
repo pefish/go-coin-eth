@@ -961,3 +961,48 @@ func TestWallet_ToTopicHashes(t *testing.T) {
 	go_test_.Equal(t, "0x680f10f06595d3d707241f604672ec4b6ae50eb82728ec2f3c65f6789e897760", hashes[0].String())
 	go_test_.Equal(t, "0x000000000000000000000000c8ee91a54287db53897056e12d9819156d3822fb", hashes[1].String())
 }
+
+func TestWallet_UnpackLog(t *testing.T) {
+	wallet, err := NewWallet().InitRemote(&UrlParam{
+		RpcUrl: "https://mainnet.base.org",
+		WsUrl:  "",
+	})
+	go_test_.Equal(t, nil, err)
+	tr, err := wallet.TransactionReceiptByHash("0x866b3a1b7790b08e0642214399d030c1d30ab5c8b60f9dfdcabda75bab177112")
+	go_test_.Equal(t, nil, err)
+	var a struct {
+		From  common.Address `json:"from"`
+		Value *big.Int       `json:"value"`
+		To    common.Address `json:"to"`
+	}
+	err = wallet.UnpackLog(&a, Erc20AbiStr, "Transfer", tr.Logs[1])
+	go_test_.Equal(t, nil, err)
+
+	fmt.Println(a)
+}
+
+// Filters logs correctly when both topic0 and logAddress match
+func TestWallet_FilterLogs(t *testing.T) {
+	wallet, err := NewWallet().InitRemote(&UrlParam{
+		RpcUrl: "https://mainnet.base.org",
+		WsUrl:  "",
+	})
+	go_test_.Equal(t, nil, err)
+	topic0 := "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
+	logAddress := "0x4200000000000000000000000000000000000006"
+	tr, err := wallet.TransactionReceiptByHash("0x866b3a1b7790b08e0642214399d030c1d30ab5c8b60f9dfdcabda75bab177112")
+	go_test_.Equal(t, nil, err)
+	filteredLogs, err := wallet.FilterLogs(topic0, logAddress, tr.Logs)
+
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, 1, len(filteredLogs))
+
+	var a struct {
+		Src common.Address
+		Wad *big.Int
+	}
+	err = wallet.UnpackLog(&a, WETHAbiStr, "Withdrawal", filteredLogs[0])
+	go_test_.Equal(t, nil, err)
+
+	fmt.Println(a)
+}

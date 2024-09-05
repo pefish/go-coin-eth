@@ -28,47 +28,6 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
-var (
-	ScanApiUrl = "https://api.etherscan.io/api"
-
-	Erc20AbiStr         = `[{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"address","name":"pauser","type":"address"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"uint8","name":"decimal","type":"uint8"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"account","type":"address"}],"name":"Unpaused","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"new_operator","type":"address"},{"internalType":"address","name":"new_pauser","type":"address"}],"name":"changeUser","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"unpause","outputs":[],"stateMutability":"nonpayable","type":"function"}]`
-	ZeroAddressStr      = "0x0000000000000000000000000000000000000000"
-	ZeroAddress         = common.HexToAddress(ZeroAddressStr)
-	OneAddressStr       = "0x0000000000000000000000000000000000000001"
-	OneAddress          = common.HexToAddress(OneAddressStr)
-	BlackHoleAddressStr = "0x000000000000000000000000000000000000dEaD"
-	BlackHoleAddress    = common.HexToAddress(BlackHoleAddressStr)
-)
-
-var (
-	MaxUint256, _ = new(big.Int).SetString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
-
-	TypeUint256, _    = abi.NewType("uint256", "", nil)
-	TypeUint32, _     = abi.NewType("uint32", "", nil)
-	TypeUint16, _     = abi.NewType("uint16", "", nil)
-	TypeInt24, _      = abi.NewType("int24", "", nil)
-	TypeString, _     = abi.NewType("string", "", nil)
-	TypeBool, _       = abi.NewType("bool", "", nil)
-	TypeBytes, _      = abi.NewType("bytes", "", nil)
-	TypeAddress, _    = abi.NewType("address", "", nil)
-	TypeUint64Arr, _  = abi.NewType("uint64[]", "", nil)
-	TypeAddressArr, _ = abi.NewType("address[]", "", nil)
-	TypeInt8, _       = abi.NewType("int8", "", nil)
-	// Special types for testing
-	TypeUint32Arr2, _       = abi.NewType("uint32[2]", "", nil)
-	TypeUint64Arr2, _       = abi.NewType("uint64[2]", "", nil)
-	TypeUint256Arr, _       = abi.NewType("uint256[]", "", nil)
-	TypeUint256Arr2, _      = abi.NewType("uint256[2]", "", nil)
-	TypeUint256Arr3, _      = abi.NewType("uint256[3]", "", nil)
-	TypeUint256ArrNested, _ = abi.NewType("uint256[2][2]", "", nil)
-	TypeUint8ArrNested, _   = abi.NewType("uint8[][2]", "", nil)
-	TypeUint8SliceNested, _ = abi.NewType("uint8[][]", "", nil)
-	TypeTupleF, _           = abi.NewType("tuple", "struct Overloader.F", []abi.ArgumentMarshaling{
-		{Name: "_f", Type: "uint256"},
-		{Name: "__f", Type: "uint256"},
-		{Name: "f", Type: "uint256"}})
-)
-
 type Wallet struct {
 	RemoteRpcClient *ethclient.Client
 	RemoteWsClient  *ethclient.Client
@@ -530,6 +489,7 @@ type BuildTxResult struct {
 	TxHex    string
 }
 
+// 通过字段名识别的，而不是 json tag
 func (w *Wallet) UnpackLog(
 	out interface{},
 	abiStr string,
@@ -555,6 +515,25 @@ func (w *Wallet) UnpackLog(
 	return nil
 }
 
+func (w *Wallet) FilterLogs(
+	topic0 string,
+	logAddress string,
+	logs []*types.Log,
+) ([]*types.Log, error) {
+	results := make([]*types.Log, 0)
+	for _, log := range logs {
+		if log.Address.Cmp(common.HexToAddress(logAddress)) != 0 {
+			continue
+		}
+		if log.Topics[0].Cmp(common.HexToHash(topic0)) != 0 {
+			continue
+		}
+		results = append(results, log)
+	}
+
+	return results, nil
+}
+
 // payload 除了 methodId 就是 params
 func (w *Wallet) UnpackParams(
 	out interface{},
@@ -563,7 +542,7 @@ func (w *Wallet) UnpackParams(
 ) error {
 	paramsStr = strings.TrimPrefix(paramsStr, "0x")
 
-	for i, _ := range types {
+	for i := range types {
 		types[i].Indexed = false
 	}
 	data, err := hex.DecodeString(paramsStr)
