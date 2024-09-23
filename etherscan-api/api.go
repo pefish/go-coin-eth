@@ -205,7 +205,7 @@ func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCrea
 	return &httpResult.Result[0], nil
 }
 
-type FindLogsByScanApiResult struct {
+type FindLogsResult struct {
 	Address          string   `json:"address"`
 	Topics           []string `json:"topics"`
 	Data             string   `json:"data"`
@@ -225,7 +225,7 @@ func (e *EtherscanApiClient) FindLogs(
 	fromBlock uint64,
 	toBlock uint64,
 	topics []string,
-) (results_ []FindLogsByScanApiResult, err_ error) {
+) (results_ []FindLogsResult, err_ error) {
 	params := map[string]interface{}{
 		"module":    "logs",
 		"action":    "getLogs",
@@ -269,9 +269,9 @@ func (e *EtherscanApiClient) FindLogs(
 		return nil, errors.New(result.Message + ". " + result.Result)
 	}
 	var result struct {
-		Status  string                    `json:"status"`
-		Message string                    `json:"message"`
-		Result  []FindLogsByScanApiResult `json:"result"`
+		Status  string           `json:"status"`
+		Message string           `json:"message"`
+		Result  []FindLogsResult `json:"result"`
 	}
 	err = json.Unmarshal([]byte(resStr), &result)
 	if err != nil {

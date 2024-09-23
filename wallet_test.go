@@ -430,51 +430,18 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 func TestWallet_UnpackParams(t *testing.T) {
 	wallet1 := NewWallet()
 	defer wallet1.Close()
-	var out struct {
-		Value *big.Int `json:"value"`
-	}
-	err := wallet1.UnpackParams(&out, abi.Arguments{
-		abi.Argument{
-			Name:    "value",
-			Type:    TypeUint256,
-			Indexed: false,
-		},
-	}, "0x0000000000000000000000000000000000000000000000000000000000000001")
+	datas, err := wallet1.UnpackParams([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
 	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, "1", out.Value.String())
+	go_test_.Equal(t, "1", datas[0].(*big.Int).String())
 
-	//var out1 struct {
-	//	TokenContract common.Address
-	//}
-	var a common.Address
-	err = wallet1.UnpackParams(&a, abi.Arguments{
-		abi.Argument{
-			Name:    "",
-			Type:    TypeAddress,
-			Indexed: false,
-		},
-	}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
+	datas, err = wallet1.UnpackParams([]abi.Type{TypeAddress}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
 	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", a.String())
+	go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", datas[0].(common.Address).String())
 
-	var out2 struct {
-		Amount *big.Int
-		Fee    *big.Int
-	}
-	err = wallet1.UnpackParams(&out2, abi.Arguments{
-		abi.Argument{
-			Name:    "amount",
-			Type:    TypeUint256,
-			Indexed: false,
-		},
-		abi.Argument{
-			Name:    "fee",
-			Type:    TypeUint256,
-			Indexed: false,
-		},
-	}, "0x00000000000000000000000000000000000000000000004e47868d5c301000000000000000000000000000000000000000000000000000000048df335bd24400")
+	datas, err = wallet1.UnpackParams(
+		[]abi.Type{TypeUint256, TypeUint256}, "0x00000000000000000000000000000000000000000000004e47868d5c301000000000000000000000000000000000000000000000000000000048df335bd24400")
 	go_test_.Equal(t, nil, err)
-	fmt.Println(out2)
+	fmt.Println(datas)
 	//go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", a.String())
 }
 

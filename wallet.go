@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -182,7 +183,12 @@ func (w *Wallet) CallContractConstantWithPayload(
 			}
 		}
 	}
-	err = w.UnpackParams(out, outputTypes, hex.EncodeToString(output))
+
+	datas, err := outputTypes.Unpack(output)
+	if err != nil {
+		return errors.Wrap(err, "")
+	}
+	err = outputTypes.Copy(out, datas)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
@@ -466,28 +472,29 @@ func (w *Wallet) FilterLogs(
 
 // payload 除了 methodId 就是 params
 func (w *Wallet) UnpackParams(
-	out interface{},
-	types abi.Arguments,
+	types_ []abi.Type,
 	paramsStr string,
-) error {
+) ([]interface{}, error) {
 	paramsStr = strings.TrimPrefix(paramsStr, "0x")
 
-	for i := range types {
-		types[i].Indexed = false
+	argTypes := make(abi.Arguments, 0)
+	for _, t := range types_ {
+		argTypes = append(argTypes, abi.Argument{
+			Name:    "",
+			Type:    t,
+			Indexed: false,
+		})
 	}
+
 	data, err := hex.DecodeString(paramsStr)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return nil, errors.Wrap(err, "")
 	}
-	a, err := types.Unpack(data)
+	datas, err := argTypes.Unpack(data)
 	if err != nil {
-		return errors.Wrap(err, "")
+		return nil, errors.Wrap(err, "")
 	}
-	err = types.Copy(out, a)
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-	return nil
+	return datas, nil
 }
 
 // 不带 0x 前缀

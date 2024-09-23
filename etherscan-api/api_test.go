@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	go_coin_eth "github.com/pefish/go-coin-eth"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
 )
@@ -34,21 +35,22 @@ func TestEtherscanApiClient_GetSourceCode(t *testing.T) {
 
 func TestWallet_FindLogs(t *testing.T) {
 	client := NewEthscanApiClient(&i_logger.DefaultLogger, &OptionsType{
-		Url: BaseUrl,
+		Url:    EthereumUrl,
+		ApiKey: "WDF9SBXFCPJKSBD9QEA59B2FDJIFMYTDGJ",
 	})
 
 	result, err := client.FindLogs(
-		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
-		323827,
-		424726,
+		"0xD38Eca38703B9472Bf2f46dF56e6F7cCA03F60ed",
+		20811900,
+		20811950,
 		[]string{
-			"a",
-			"b",
-			"c",
+			"0x4c209b5fc8ad50758f13e2e1088ba56a560dff690a1c6fef26394f4c03821c4f",
+			"0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	fmt.Println(result)
+	fmt.Println(result[0].Data)
+	go_coin_eth.NewWallet().UnpackParams()
 	//go_test_.Equal(t, false, pending)
 	//go_test_.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
 }
