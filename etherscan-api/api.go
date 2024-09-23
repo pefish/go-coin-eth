@@ -161,3 +161,42 @@ func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult
 
 	return &httpResult.Result[0], nil
 }
+
+type GetCreatorAndTxIdResult struct {
+	ContractAddress string `json:"contractAddress"`
+	ContractCreator string `json:"contractCreator"`
+	TxId            string `json:"txHash"`
+}
+
+func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCreatorAndTxIdResult, error) {
+	paramsMap := make(map[string]interface{}, 0)
+
+	paramsMap["module"] = "contract"
+	paramsMap["action"] = "getcontractcreation"
+	paramsMap["apikey"] = e.apiKey
+	paramsMap["contractaddresses"] = contractAddress
+
+	var httpResult struct {
+		Status  string                    `json:"status"`
+		Message string                    `json:"message"`
+		Result  []GetCreatorAndTxIdResult `json:"result"`
+	}
+	_, _, err := go_http.NewHttpRequester(
+		go_http.WithTimeout(10*time.Second),
+		go_http.WithLogger(e.logger),
+	).GetForStruct(
+		&go_http.RequestParams{
+			Url:    e.url,
+			Params: paramsMap,
+		},
+		&httpResult,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if httpResult.Status != "1" {
+		return nil, errors.New(go_format.ToString(httpResult.Result))
+	}
+
+	return &httpResult.Result[0], nil
+}
