@@ -516,7 +516,7 @@ func (w *Wallet) UnpackLog(
 }
 
 func (w *Wallet) FilterLogs(
-	topic0 string,
+	topic0Hex string,
 	logAddress string,
 	logs []*types.Log,
 ) ([]*types.Log, error) {
@@ -525,7 +525,7 @@ func (w *Wallet) FilterLogs(
 		if log.Address.Cmp(common.HexToAddress(logAddress)) != 0 {
 			continue
 		}
-		if log.Topics[0].Cmp(common.HexToHash(topic0)) != 0 {
+		if log.Topics[0].Cmp(common.HexToHash(topic0Hex)) != 0 {
 			continue
 		}
 		results = append(results, log)
