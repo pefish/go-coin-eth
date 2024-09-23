@@ -515,6 +515,28 @@ func (w *Wallet) UnpackLog(
 	return nil
 }
 
+type TransferLogData struct {
+	From  common.Address
+	To    common.Address
+	Value *big.Int
+}
+
+func (w *Wallet) UnpackTransferLog(log *types.Log) (*TransferLogData, error) {
+	var transferData TransferLogData
+	err := w.UnpackLog(
+		&transferData,
+		Erc20AbiStr,
+		"Transfer",
+		log,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &transferData, nil
+}
+
 func (w *Wallet) FilterLogs(
 	topic0Hex string,
 	logAddress string,
