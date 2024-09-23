@@ -73,7 +73,7 @@ type ListTokenTxResult struct {
 }
 
 func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListTokenTxResult, error) {
-	paramsMap := go_format.FormatInstance.StructToMap(params)
+	paramsMap := go_format.StructToMap(params)
 
 	paramsMap["module"] = "account"
 	paramsMap["action"] = "tokentx"
@@ -98,13 +98,13 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		return nil, err
 	}
 	if httpResult.Status != "1" {
-		return nil, errors.New(go_format.FormatInstance.ToString(httpResult.Result))
+		return nil, errors.New(go_format.ToString(httpResult.Result))
 	}
 
 	results := make([]ListTokenTxResult, 0)
 	for _, result := range httpResult.Result.([]interface{}) {
 		var d ListTokenTxResult
-		err := go_format.FormatInstance.MapToStruct(&d, result.(map[string]interface{}))
+		err := go_format.MapToStruct(&d, result.(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult
 		return nil, err
 	}
 	if httpResult.Status != "1" {
-		return nil, errors.New(go_format.FormatInstance.ToString(httpResult.Result))
+		return nil, errors.New(go_format.ToString(httpResult.Result))
 	}
 
 	return &httpResult.Result[0], nil
