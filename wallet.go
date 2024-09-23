@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -21,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	chain "github.com/pefish/go-coin-eth/util"
 	go_decimal "github.com/pefish/go-decimal"
-	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_random "github.com/pefish/go-random"
 	"github.com/pkg/errors"
@@ -381,96 +379,6 @@ func (w *Wallet) FindLogs(
 		}
 	}
 	return nil
-}
-
-type FindLogsByScanApiResult struct {
-	Address          string   `json:"address"`
-	Topics           []string `json:"topics"`
-	Data             string   `json:"data"`
-	BlockNumber      string   `json:"blockNumber"` // 十六进制字符串
-	Timestamp        string   `json:"timeStamp"`   // 十六进制字符串
-	GasPrice         string   `json:"gasPrice"`    // 十六进制字符串
-	GasUsed          string   `json:"gasUsed"`     // 十六进制字符串
-	LogIndex         string   `json:"logIndex"`    // 十六进制字符串
-	TransactionHash  string   `json:"transactionHash"`
-	TransactionIndex string   `json:"transactionIndex"` // 十六进制字符串
-}
-
-// 通过 scan api 查询 logs（只支持以太坊）。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
-// apikey：可以为空，但频率受限，每 5s 才能执行一次
-// fromBlock: 如果是负数，则是最新高度加上这个负数
-// toBlock：可以设置为 latest ，表示最新块
-func (w *Wallet) FindLogsByScanApi(
-	apikey string,
-	contractAddress string,
-	fromBlock string,
-	toBlock string,
-	timeout time.Duration,
-	topic0 string,
-	query ...string,
-) (results_ []FindLogsByScanApiResult, err_ error) {
-	if go_decimal.Decimal.MustStart(fromBlock).MustLt(0) {
-		result, err := w.LatestBlockNumber()
-		if err != nil {
-			return nil, errors.Wrap(err, "")
-		}
-		delta, ok := new(big.Int).SetString(fromBlock[1:], 10)
-		if !ok {
-			return nil, errors.New("string to bigint error")
-		}
-		fromBlock = result.Sub(result, delta).String()
-	}
-
-	params := map[string]interface{}{
-		"module":    "logs",
-		"action":    "getLogs",
-		"fromBlock": fromBlock,
-		"toBlock":   toBlock,
-		"address":   contractAddress,
-		"topic0":    topic0,
-		"apikey":    apikey,
-	}
-	for i, str := range query {
-		oprStr := fmt.Sprintf("topic%d_%d_opr", i, i+1)
-		params[oprStr] = "and"
-		params[fmt.Sprintf("topic%d", i+1)] = str
-	}
-	var tempResult struct {
-		Status  string `json:"status"`
-		Message string `json:"message"`
-	}
-	_, resStr, err := go_http.NewHttpRequester(
-		go_http.WithLogger(w.logger),
-		go_http.WithTimeout(timeout),
-	).GetForStruct(&go_http.RequestParams{
-		Url:    ScanApiUrl,
-		Params: params,
-	}, &tempResult)
-	if err != nil {
-		return nil, errors.Wrap(err, "")
-	}
-	if tempResult.Status != "1" && tempResult.Message != "No records found" {
-		var result struct {
-			Status  string `json:"status"`
-			Message string `json:"message"`
-			Result  string `json:"result"`
-		}
-		err = json.Unmarshal([]byte(resStr), &result)
-		if err != nil {
-			return nil, errors.Wrap(err, "")
-		}
-		return nil, errors.New(result.Message + ". " + result.Result)
-	}
-	var result struct {
-		Status  string                    `json:"status"`
-		Message string                    `json:"message"`
-		Result  []FindLogsByScanApiResult `json:"result"`
-	}
-	err = json.Unmarshal([]byte(resStr), &result)
-	if err != nil {
-		return nil, errors.Wrap(err, "")
-	}
-	return result.Result, nil
 }
 
 type CallMethodOpts struct {

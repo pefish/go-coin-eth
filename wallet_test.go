@@ -553,24 +553,6 @@ func TestWallet_TransactionByHash(t *testing.T) {
 	go_test_.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
 }
 
-func TestWallet_FindLogsByScanApi(t *testing.T) {
-	wallet1 := NewWallet()
-	defer wallet1.Close()
-
-	result, err := wallet1.FindLogsByScanApi(
-		"",
-		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
-		"-1000",
-		"latest",
-		30*time.Second,
-		"0x298637f684da70674f26509b10f07ec2fbc77a335ab1e7d6215a4b2484d8bb52",
-	)
-	go_test_.Equal(t, nil, err)
-	fmt.Println(result)
-	//go_test_.Equal(t, false, pending)
-	//go_test_.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
-}
-
 func TestWallet_DeriveFromPath(t *testing.T) {
 	wallet1 := NewWallet()
 	defer wallet1.Close()

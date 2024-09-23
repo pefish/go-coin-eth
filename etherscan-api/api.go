@@ -1,6 +1,8 @@
 package etherscan_api
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	go_format "github.com/pefish/go-format"
@@ -15,9 +17,10 @@ const (
 )
 
 type EtherscanApiClient struct {
-	logger i_logger.ILogger
-	apiKey string
-	url    string
+	logger  i_logger.ILogger
+	apiKey  string
+	url     string
+	timeout time.Duration
 }
 
 type OptionsType struct {
@@ -27,9 +30,10 @@ type OptionsType struct {
 
 func NewEthscanApiClient(logger i_logger.ILogger, opts *OptionsType) *EtherscanApiClient {
 	return &EtherscanApiClient{
-		logger: logger,
-		apiKey: opts.ApiKey,
-		url:    opts.Url,
+		logger:  logger,
+		apiKey:  opts.ApiKey,
+		url:     opts.Url,
+		timeout: 10 * time.Second,
 	}
 }
 
@@ -85,7 +89,7 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		Result  interface{} `json:"result"`
 	}
 	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(10*time.Second),
+		go_http.WithTimeout(e.timeout),
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
@@ -143,7 +147,7 @@ func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult
 		Result  []GetSourceCodeResult `json:"result"`
 	}
 	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(10*time.Second),
+		go_http.WithTimeout(e.timeout),
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
@@ -182,7 +186,7 @@ func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCrea
 		Result  []GetCreatorAndTxIdResult `json:"result"`
 	}
 	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(10*time.Second),
+		go_http.WithTimeout(e.timeout),
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
@@ -199,4 +203,80 @@ func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCrea
 	}
 
 	return &httpResult.Result[0], nil
+}
+
+type FindLogsByScanApiResult struct {
+	Address          string   `json:"address"`
+	Topics           []string `json:"topics"`
+	Data             string   `json:"data"`
+	BlockNumber      string   `json:"blockNumber"` // 十六进制字符串
+	Timestamp        string   `json:"timeStamp"`   // 十六进制字符串
+	GasPrice         string   `json:"gasPrice"`    // 十六进制字符串
+	GasUsed          string   `json:"gasUsed"`     // 十六进制字符串
+	LogIndex         string   `json:"logIndex"`    // 十六进制字符串
+	TransactionHash  string   `json:"transactionHash"`
+	TransactionIndex string   `json:"transactionIndex"` // 十六进制字符串
+}
+
+// 通过 scan api 查询 logs。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
+// topics 是 and 的关系
+func (e *EtherscanApiClient) FindLogs(
+	apikey string,
+	contractAddress string,
+	fromBlock uint64,
+	toBlock uint64,
+	topics []string,
+) (results_ []FindLogsByScanApiResult, err_ error) {
+	params := map[string]interface{}{
+		"module":    "logs",
+		"action":    "getLogs",
+		"fromBlock": fromBlock,
+		"toBlock":   toBlock,
+		"address":   contractAddress,
+		"apikey":    apikey,
+	}
+	for i, str := range topics {
+		params[fmt.Sprintf("topic%d", i)] = str
+		if i < len(topics)-1 {
+			oprStr := fmt.Sprintf("topic%d_%d_opr", i, i+1)
+			params[oprStr] = "and"
+		}
+	}
+
+	var tempResult struct {
+		Status  string `json:"status"`
+		Message string `json:"message"`
+	}
+	_, resStr, err := go_http.NewHttpRequester(
+		go_http.WithLogger(e.logger),
+		go_http.WithTimeout(e.timeout),
+	).GetForStruct(&go_http.RequestParams{
+		Url:    e.url,
+		Params: params,
+	}, &tempResult)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	if tempResult.Status != "1" && tempResult.Message != "No records found" {
+		var result struct {
+			Status  string `json:"status"`
+			Message string `json:"message"`
+			Result  string `json:"result"`
+		}
+		err = json.Unmarshal([]byte(resStr), &result)
+		if err != nil {
+			return nil, errors.Wrap(err, "")
+		}
+		return nil, errors.New(result.Message + ". " + result.Result)
+	}
+	var result struct {
+		Status  string                    `json:"status"`
+		Message string                    `json:"message"`
+		Result  []FindLogsByScanApiResult `json:"result"`
+	}
+	err = json.Unmarshal([]byte(resStr), &result)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	return result.Result, nil
 }
