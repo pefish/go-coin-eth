@@ -492,10 +492,19 @@ func (w *Wallet) UnpackParams(
 
 // 不带 0x 前缀
 func (w *Wallet) PackParams(
-	inputs abi.Arguments,
+	types []abi.Type,
 	args []interface{},
 ) (hexStr_ string, err_ error) {
-	bytes_, err := inputs.Pack(args...)
+	argTypes := make(abi.Arguments, 0)
+	for _, t := range types {
+		argTypes = append(argTypes, abi.Argument{
+			Name:    "",
+			Type:    t,
+			Indexed: false,
+		})
+	}
+
+	bytes_, err := argTypes.Pack(args...)
 	if err != nil {
 		return "", errors.Wrap(err, "")
 	}

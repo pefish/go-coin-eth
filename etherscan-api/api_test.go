@@ -38,7 +38,6 @@ func TestWallet_FindLogs(t *testing.T) {
 	})
 
 	result, err := client.FindLogs(
-		"",
 		"0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
 		323827,
 		424726,

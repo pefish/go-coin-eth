@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -487,12 +486,8 @@ func TestWallet_PackParams(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
 	result, err := wallet1.PackParams(
-		abi.Arguments{
-			abi.Argument{
-				Name:    "value",
-				Type:    TypeUint256,
-				Indexed: false,
-			},
+		[]abi.Type{
+			TypeUint256,
 		},
 		[]interface{}{
 			new(big.Int).SetUint64(1),
@@ -504,17 +499,9 @@ func TestWallet_PackParams(t *testing.T) {
 	data, err := hex.DecodeString("b872dd0e")
 	go_test_.Equal(t, nil, err)
 	result1, err := wallet1.PackParams(
-		abi.Arguments{
-			abi.Argument{
-				Name:    "token",
-				Type:    TypeAddress,
-				Indexed: false,
-			},
-			abi.Argument{
-				Name:    "data",
-				Type:    TypeBytes,
-				Indexed: false,
-			},
+		[]abi.Type{
+			TypeAddress,
+			TypeBytes,
 		},
 		[]interface{}{
 			common.HexToAddress("0x7373c42502874C88954bDd6D50b53061F018422e"),
@@ -595,17 +582,9 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	wallet1 := NewWallet()
 	defer wallet1.Close()
 	paramsStr, err := wallet1.PackParams(
-		abi.Arguments{
-			abi.Argument{
-				Name:    "a",
-				Type:    TypeAddress,
-				Indexed: false,
-			},
-			abi.Argument{
-				Name:    "b",
-				Type:    TypeUint256,
-				Indexed: false,
-			},
+		[]abi.Type{
+			TypeAddress,
+			TypeUint256,
 		},
 		[]interface{}{
 			common.HexToAddress("0x2117210296c2993Cfb4c6790FEa1bEB3ECe8Ac06"),
@@ -642,12 +621,8 @@ func TestWallet_MaxUint256(t *testing.T) {
 	wallet1 := NewWallet()
 	defer wallet1.Close()
 	result, err := wallet1.PackParams(
-		abi.Arguments{
-			abi.Argument{
-				Name:    "",
-				Type:    TypeUint256,
-				Indexed: false,
-			},
+		[]abi.Type{
+			TypeUint256,
 		},
 		[]interface{}{
 			MaxUint256,
