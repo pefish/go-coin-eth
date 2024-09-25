@@ -222,14 +222,14 @@ type FindLogsResult struct {
 // topics 是 and 的关系
 // 结果是按时间升序排列的
 // page 从 1 开始的
-// offset 最大为 1000
+// pageSize 最大为 1000
 func (e *EtherscanApiClient) FindLogs(
 	contractAddress string,
 	fromBlock uint64,
 	toBlock uint64,
 	topics []string,
 	page int,
-	offset int,
+	pageSize int,
 ) (results_ []FindLogsResult, err_ error) {
 	params := map[string]interface{}{
 		"module":    "logs",
@@ -239,7 +239,7 @@ func (e *EtherscanApiClient) FindLogs(
 		"address":   contractAddress,
 		"apikey":    e.apiKey,
 		"page":      page,
-		"offset":    offset,
+		"offset":    pageSize,
 	}
 	for i, str := range topics {
 		params[fmt.Sprintf("topic%d", i)] = str
