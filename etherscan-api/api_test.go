@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	go_coin_eth "github.com/pefish/go-coin-eth"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
 )
@@ -47,10 +46,11 @@ func TestWallet_FindLogs(t *testing.T) {
 			"0x4c209b5fc8ad50758f13e2e1088ba56a560dff690a1c6fef26394f4c03821c4f",
 			"0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d",
 		},
+		1,
+		1000,
 	)
 	go_test_.Equal(t, nil, err)
 	fmt.Println(result[0].Data)
-	go_coin_eth.NewWallet().UnpackParams()
 	//go_test_.Equal(t, false, pending)
 	//go_test_.Equal(t, "0x9A5FBec6367a882d6B5F8CE2F267924d75e2d718", result.From.String())
 }
