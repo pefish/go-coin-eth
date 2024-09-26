@@ -219,10 +219,16 @@ type FindLogsResult struct {
 }
 
 // 通过 scan api 查询 logs。最多只会返回开始的 1000 个结果，部分结果可能会被抛弃，所以要缩小范围查询
-// topics 是 and 的关系
+//
 // 结果是按时间升序排列的
+//
+// topics []string 是 and 的关系
+//
 // page 从 1 开始的
+//
 // pageSize 最大为 1000
+//
+// fromBlock toBlock 是左闭右开
 func (e *EtherscanApiClient) FindLogs(
 	contractAddress string,
 	fromBlock uint64,
@@ -235,7 +241,7 @@ func (e *EtherscanApiClient) FindLogs(
 		"module":    "logs",
 		"action":    "getLogs",
 		"fromBlock": fromBlock,
-		"toBlock":   toBlock,
+		"toBlock":   toBlock - 1,
 		"apikey":    e.apiKey,
 		"page":      page,
 		"offset":    pageSize,
