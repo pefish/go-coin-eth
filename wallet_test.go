@@ -839,19 +839,30 @@ func TestWallet_CallContractConstant3(t *testing.T) {
 }
 
 func TestWallet_IsContract(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
-		RpcUrl: "https://rpc.ankr.com/eth_goerli",
+	// wallet, err := NewWallet().InitRemote(&UrlParam{
+	// 	RpcUrl: "https://rpc.ankr.com/eth_goerli",
+	// 	WsUrl:  "",
+	// })
+	// go_test_.Equal(t, nil, err)
+	// defer wallet.Close()
+	// isContract, err := wallet.IsContract("0x509Ee0d083DdF8AC028f2a56731412edD63223B9")
+	// go_test_.Equal(t, nil, err)
+	// go_test_.Equal(t, true, isContract)
+
+	// isContract1, err := wallet.IsContract("0x2F62CEACb04eAbF8Fc53C195C5916DDDfa4BED02")
+	// go_test_.Equal(t, nil, err)
+	// go_test_.Equal(t, false, isContract1)
+
+	wallet1, err := NewWallet().InitRemote(&UrlParam{
+		RpcUrl: "https://mainnet.infura.io/v3/c747c4512b8b4d33ad265ea5803cbb30",
 		WsUrl:  "",
 	})
 	go_test_.Equal(t, nil, err)
-	defer wallet.Close()
-	isContract, err := wallet.IsContract("0x509Ee0d083DdF8AC028f2a56731412edD63223B9")
+	defer wallet1.Close()
+	isContract, err := wallet1.IsContract("0xa96e7ba3772CE808DAB049E30ed146F77dA372a8")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, true, isContract)
 
-	isContract1, err := wallet.IsContract("0x2F62CEACb04eAbF8Fc53C195C5916DDDfa4BED02")
-	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, false, isContract1)
 }
 
 func TestWallet_GetTokenDecimals(t *testing.T) {

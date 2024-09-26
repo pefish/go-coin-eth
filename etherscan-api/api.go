@@ -236,10 +236,12 @@ func (e *EtherscanApiClient) FindLogs(
 		"action":    "getLogs",
 		"fromBlock": fromBlock,
 		"toBlock":   toBlock,
-		"address":   contractAddress,
 		"apikey":    e.apiKey,
 		"page":      page,
 		"offset":    pageSize,
+	}
+	if contractAddress != "" {
+		params["address"] = contractAddress
 	}
 	for i, str := range topics {
 		params[fmt.Sprintf("topic%d", i)] = str
