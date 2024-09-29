@@ -765,10 +765,74 @@ func (w *Wallet) BuildCallMethodTx(
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
-		contractAddressObj,
+		&contractAddressObj,
 		value,
 		gasLimit,
 		input,
+		realOpts.GasFeeCap,
+		realOpts.GasTipCap,
+		realOpts.GasAccelerate,
+	)
+}
+
+type BuildDeployContractTxOpts struct {
+	Nonce         uint64
+	GasFeeCap     *big.Int // MaxFeePerGas
+	GasLimit      uint64
+	GasTipCap     *big.Int // MaxTipPerGas
+	GasAccelerate float64
+}
+
+func (w *Wallet) BuildDeployContractTx(
+	privateKey,
+	abiStr,
+	binHexStr string,
+	opts *BuildDeployContractTxOpts,
+	params []interface{},
+) (btr_ *BuildTxResult, err_ error) {
+	var realOpts BuildDeployContractTxOpts
+	if opts != nil {
+		realOpts = *opts
+	}
+
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	privateKey = strings.TrimPrefix(privateKey, "0x")
+	privateKeyBuf, err := hex.DecodeString(privateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	var gasLimit uint64 = realOpts.GasLimit
+	var nonce uint64 = realOpts.Nonce
+
+	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	publicKeyECDSA := privateKeyECDSA.PublicKey
+	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
+	if nonce == 0 {
+		nonce, err = w.NextNonce(fromAddress.String())
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
+		}
+	}
+
+	input, err := parsedAbi.Pack("", params...)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	return w.buildTx(
+		privateKeyECDSA,
+		nonce,
+		nil,
+		big.NewInt(0),
+		gasLimit,
+		append(common.FromHex(binHexStr), input...),
 		realOpts.GasFeeCap,
 		realOpts.GasTipCap,
 		realOpts.GasAccelerate,
@@ -828,7 +892,7 @@ func (w *Wallet) NextNonce(address string) (nonce_ uint64, err_ error) {
 func (w *Wallet) buildTx(
 	privateKeyECDSA *ecdsa.PrivateKey,
 	nonce uint64,
-	toAddressObj common.Address,
+	toAddressObj *common.Address,
 	value *big.Int,
 	gasLimit uint64,
 	data []byte,
@@ -849,7 +913,7 @@ func (w *Wallet) buildTx(
 	}
 	rawTx = types.NewTx(&types.DynamicFeeTx{
 		Nonce:     nonce,
-		To:        &toAddressObj,
+		To:        toAddressObj,
 		Value:     value,
 		Gas:       gasLimit,
 		GasFeeCap: gasFeeCap, // baseFee（是由网络决定的） + 小费（小费越高确认越快）
@@ -984,7 +1048,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
-		contractAddressObj,
+		&contractAddressObj,
 		value,
 		gasLimit,
 		payloadBuf,
@@ -1058,7 +1122,7 @@ func (w *Wallet) BuildTransferTx(
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
-		toAddressObj,
+		&toAddressObj,
 		value,
 		gasLimit,
 		realOpts.Payload,
