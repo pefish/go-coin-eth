@@ -806,7 +806,6 @@ func (w *Wallet) BuildDeployContractTx(
 		return nil, errors.Wrap(err, "")
 	}
 
-	var gasLimit uint64 = realOpts.GasLimit
 	var nonce uint64 = realOpts.Nonce
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
@@ -826,13 +825,31 @@ func (w *Wallet) BuildDeployContractTx(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
+	data := append(common.FromHex(binHexStr), input...)
+
+	value := big.NewInt(0)
+	var gasLimit uint64 = realOpts.GasLimit
+	if gasLimit == 0 {
+		msg := ethereum.CallMsg{
+			From:  fromAddress,
+			To:    nil,
+			Value: value,
+			Data:  data,
+		}
+		tempGasLimit, err := w.EstimateGas(msg)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to estimate gas.")
+		}
+		gasLimit = uint64(float64(tempGasLimit) * 1.2)
+	}
+
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
 		nil,
-		big.NewInt(0),
+		value,
 		gasLimit,
-		append(common.FromHex(binHexStr), input...),
+		data,
 		realOpts.GasFeeCap,
 		realOpts.GasTipCap,
 		realOpts.GasAccelerate,
@@ -900,6 +917,10 @@ func (w *Wallet) buildTx(
 	gasTipCap *big.Int, // MaxTipPerGas
 	gasAccelerate float64,
 ) (btr_ *BuildTxResult, err_ error) {
+	if gasLimit == 0 {
+		return nil, errors.Errorf("GasLimit <%d> is illegal.", gasLimit)
+	}
+
 	var rawTx *types.Transaction
 	if gasFeeCap == nil {
 		gasPrice, err := w.SuggestGasPrice(gasAccelerate)
