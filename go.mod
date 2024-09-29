@@ -3,7 +3,7 @@ module github.com/pefish/go-coin-eth
 go 1.22.0
 
 require (
-	github.com/ethereum/go-ethereum v1.14.9
+	github.com/ethereum/go-ethereum v1.14.10
 	github.com/pefish/go-decimal v0.4.3
 	github.com/pefish/go-http v0.8.4
 	github.com/pefish/go-random v0.2.8
@@ -17,7 +17,7 @@ require (
 	github.com/bits-and-blooms/bitset v1.14.3 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.4 // indirect
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.1.0 // indirect
-	github.com/consensys/bavard v0.1.17 // indirect
+	github.com/consensys/bavard v0.1.18 // indirect
 	github.com/consensys/gnark-crypto v0.14.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/crate-crypto/go-ipa v0.0.0-20240724233137-53bbb0ceb27a // indirect
@@ -56,6 +56,6 @@ require (
 require (
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcutil v1.1.6
-	github.com/pefish/go-format v0.4.1
+	github.com/pefish/go-format v0.4.2
 	github.com/pefish/go-interface v0.1.2
 )
