@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -250,6 +252,19 @@ retry:
 			}
 		}
 	}
+}
+
+func (w *Wallet) PredictContractAddress(
+	address string,
+	nonce uint64,
+) string {
+	hash := sha3.NewLegacyKeccak256()
+	b, _ := rlp.EncodeToBytes([]interface{}{
+		common.HexToAddress(address),
+		nonce,
+	})
+	hash.Write(b)
+	return "0x" + hex.EncodeToString(hash.Sum(nil)[12:])
 }
 
 func (w *Wallet) WatchLogsByLoop(
