@@ -948,11 +948,11 @@ func TestWallet_PredictContractAddress(t *testing.T) {
 		"0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981",
 		0,
 	)
-	go_test_.Equal(t, "0x3731aa0f49a1866df10f2639563f729d29d24e34", address)
+	go_test_.Equal(t, "0x3731Aa0F49A1866dF10f2639563f729D29D24e34", address)
 
 	address = wallet.PredictContractAddress(
 		"0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981",
 		1,
 	)
-	go_test_.Equal(t, "0x8ca430c20be7452bde527afdd5d83b0fbc0aef30", address)
+	go_test_.Equal(t, "0x8CA430C20be7452BDE527aFDd5d83b0FBC0AEF30", address)
 }

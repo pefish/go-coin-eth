@@ -264,7 +264,8 @@ func (w *Wallet) PredictContractAddress(
 		nonce,
 	})
 	hash.Write(b)
-	return "0x" + hex.EncodeToString(hash.Sum(nil)[12:])
+
+	return common.HexToAddress("0x" + hex.EncodeToString(hash.Sum(nil)[12:])).String()
 }
 
 func (w *Wallet) WatchLogsByLoop(
