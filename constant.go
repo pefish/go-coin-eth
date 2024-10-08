@@ -22,6 +22,9 @@ var (
 	MaxUint256, _ = new(big.Int).SetString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
 
 	TypeUint256, _    = abi.NewType("uint256", "", nil)
+	TypeInt256, _     = abi.NewType("int256", "", nil)
+	TypeUint160, _    = abi.NewType("uint160", "", nil)
+	TypeUint128, _    = abi.NewType("uint128", "", nil)
 	TypeUint32, _     = abi.NewType("uint32", "", nil)
 	TypeUint16, _     = abi.NewType("uint16", "", nil)
 	TypeInt24, _      = abi.NewType("int24", "", nil)
