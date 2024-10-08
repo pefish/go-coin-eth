@@ -23,6 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	chain "github.com/pefish/go-coin-eth/util"
 	go_decimal "github.com/pefish/go-decimal"
+	go_format "github.com/pefish/go-format"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_random "github.com/pefish/go-random"
 	"github.com/pkg/errors"
@@ -486,6 +487,30 @@ func (w *Wallet) FilterLogs(
 	return results, nil
 }
 
+func (w *Wallet) UnpackParamsToStrs(
+	types_ []abi.Type,
+	paramsStr string,
+) ([]string, error) {
+	params, err := w.UnpackParams(types_, paramsStr)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]string, 0)
+	for _, param := range params {
+		switch p := param.(type) {
+		case common.Address:
+			results = append(results, p.String())
+		case []byte:
+			results = append(results, hex.EncodeToString(p))
+		case *big.Int:
+			results = append(results, p.String())
+		default:
+			results = append(results, go_format.ToString(param))
+		}
+	}
+	return results, nil
+}
+
 // payload 除了 methodId 就是 params
 func (w *Wallet) UnpackParams(
 	types_ []abi.Type,
@@ -511,6 +536,36 @@ func (w *Wallet) UnpackParams(
 		return nil, errors.Wrap(err, "")
 	}
 	return datas, nil
+}
+
+func (w *Wallet) PackParamsFromStrs(
+	types []abi.Type,
+	strs []string,
+) (hexStr_ string, err_ error) {
+	args := make([]interface{}, 0)
+	for i, str := range strs {
+		switch types[i].String() {
+		case "string":
+			args = append(args, str)
+		case "bool":
+			args = append(args, go_format.MustToBool(str))
+		case "bytes":
+			str = strings.TrimPrefix(str, "0x")
+			b, err := hex.DecodeString(str)
+			if err != nil {
+				return "", err
+			}
+			args = append(args, b)
+		case "address":
+			args = append(args, common.HexToAddress(str))
+		default:
+			if !strings.Contains(types[i].String(), "int") {
+				return "", errors.Errorf("Type <%s> not be supported", types[i].String())
+			}
+			args = append(args, go_decimal.Decimal.MustStart(str).MustEndForBigInt())
+		}
+	}
+	return w.PackParams(types, args)
 }
 
 // 不带 0x 前缀

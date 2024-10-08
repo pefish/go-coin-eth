@@ -433,31 +433,48 @@ func TestWallet_UnpackParams(t *testing.T) {
 	datas, err := wallet1.UnpackParams([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "1", datas[0].(*big.Int).String())
+	strs, err := wallet1.UnpackParamsToStrs([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, "1", strs[0])
 
 	datas, err = wallet1.UnpackParams([]abi.Type{TypeAddress}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", datas[0].(common.Address).String())
+	strs, err = wallet1.UnpackParamsToStrs([]abi.Type{TypeAddress}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", strs[0])
 
 	datas, err = wallet1.UnpackParams(
 		[]abi.Type{TypeUint256, TypeUint256}, "0x00000000000000000000000000000000000000000000004e47868d5c301000000000000000000000000000000000000000000000000000000048df335bd24400")
 	go_test_.Equal(t, nil, err)
-	fmt.Println(datas)
-	//go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", a.String())
+	go_test_.Equal(t, "1444000000000000000000", datas[0].(*big.Int).String())
+	go_test_.Equal(t, "20511610000000000", datas[1].(*big.Int).String())
+	strs, err = wallet1.UnpackParamsToStrs(
+		[]abi.Type{TypeUint256, TypeUint256}, "0x00000000000000000000000000000000000000000000004e47868d5c301000000000000000000000000000000000000000000000000000000048df335bd24400")
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, "1444000000000000000000", strs[0])
+	go_test_.Equal(t, "20511610000000000", strs[1])
 }
 
 func TestWallet_PackParams(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
-		RpcUrl: "https://heconode.ifoobar.com",
-		WsUrl:  "",
-	})
-	go_test_.Equal(t, nil, err)
-	defer wallet1.Close()
+	wallet1 := NewWallet()
 	result, err := wallet1.PackParams(
 		[]abi.Type{
 			TypeUint256,
 		},
 		[]interface{}{
 			new(big.Int).SetUint64(1),
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, "0000000000000000000000000000000000000000000000000000000000000001", result)
+
+	result, err = wallet1.PackParamsFromStrs(
+		[]abi.Type{
+			TypeUint256,
+		},
+		[]string{
+			"1",
 		},
 	)
 	go_test_.Equal(t, nil, err)
@@ -473,6 +490,19 @@ func TestWallet_PackParams(t *testing.T) {
 		[]interface{}{
 			common.HexToAddress("0x7373c42502874C88954bDd6D50b53061F018422e"),
 			data,
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, "0000000000000000000000007373c42502874c88954bdd6d50b53061f018422e00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000004b872dd0e00000000000000000000000000000000000000000000000000000000", result1)
+
+	result1, err = wallet1.PackParamsFromStrs(
+		[]abi.Type{
+			TypeAddress,
+			TypeBytes,
+		},
+		[]string{
+			"0x7373c42502874C88954bDd6D50b53061F018422e",
+			"0xb872dd0e",
 		},
 	)
 	go_test_.Equal(t, nil, err)
