@@ -250,6 +250,9 @@ func (e *EtherscanApiClient) FindLogs(
 		params["address"] = contractAddress
 	}
 	for i, str := range topics {
+		if str == "" {
+			continue
+		}
 		params[fmt.Sprintf("topic%d", i)] = str
 		if i < len(topics)-1 {
 			oprStr := fmt.Sprintf("topic%d_%d_opr", i, i+1)
