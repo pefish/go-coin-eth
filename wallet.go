@@ -1427,9 +1427,6 @@ type DeriveFromPathResult struct {
 
 // 都不带 0x 前缀
 func (w *Wallet) DeriveFromPath(seed string, path string) (result_ *DeriveFromPathResult, err_ error) {
-	if len(strings.Split(path, "/")) != 6 || !strings.HasPrefix(path, `m/44'/60'/0'`) {
-		return nil, errors.Errorf("Path may be wrong, check it. path: %s", path)
-	}
 	// 字符串转换成字节数组
 	seedBuf, err := hex.DecodeString(seed)
 	if err != nil {

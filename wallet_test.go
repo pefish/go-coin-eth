@@ -704,12 +704,8 @@ func TestWallet_SendEth(t *testing.T) {
 	txHash, err := wallet1.SendEth(
 		"",
 		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
-		&BuildTransferTxOpts{
-			CallMethodOpts: CallMethodOpts{
-				Value:    go_decimal.Decimal.MustStart(0.00001).MustShiftedBy(18).MustEndForBigInt(),
-				GasLimit: 300000,
-			},
-		},
+		0.1,
+		nil,
 	)
 	go_test_.Equal(t, nil, err)
 
