@@ -1182,7 +1182,7 @@ func (w *Wallet) BuildTransferTx(
 		value = realOpts.Value
 	}
 	if gasLimit == 0 {
-		gasLimit = 30000
+		gasLimit = 21000
 	}
 
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
@@ -1420,9 +1420,9 @@ func (w *Wallet) ApproveWait(
 }
 
 type DeriveFromPathResult struct {
-	Address    string
-	PublicKey  string
-	PrivateKey string
+	Address    string `json:"address"`
+	PublicKey  string `json:"public_key"`
+	PrivateKey string `json:"private_key"`
 }
 
 // 都不带 0x 前缀
