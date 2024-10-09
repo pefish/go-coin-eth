@@ -404,6 +404,7 @@ func (w *Wallet) FindLogs(
 	return nil
 }
 
+// MaxTipPerGas: 小费价格的最大值，因为矿工会直接取最高值，所以这个值其实就是小费（etherscan 上显示的 Max Priority）
 // a1 = 基础价格（是动态的由网络决定的，etherscan 上显示的 Base）+ MaxTipPerGas
 // 最终采用的 price = min(a1, MaxFeePerGas)
 type CallMethodOpts struct {
@@ -413,7 +414,6 @@ type CallMethodOpts struct {
 	MaxFeePerGas   *big.Int // 这里指定采用价格的最高值（etherscan 上显示的 Max）
 	GasLimit       uint64
 	IsPredictError bool
-	MaxTipPerGas   *big.Int // 这里指定小费价格的最大值，因为矿工会直接取最高值，所以这个值其实就是小费（etherscan 上显示的 Max Priority）
 	GasAccelerate  float64
 }
 
@@ -843,16 +843,14 @@ func (w *Wallet) BuildCallMethodTx(
 		gasLimit,
 		input,
 		realOpts.MaxFeePerGas,
-		realOpts.MaxTipPerGas,
 		realOpts.GasAccelerate,
 	)
 }
 
 type BuildDeployContractTxOpts struct {
 	Nonce         uint64
-	GasFeeCap     *big.Int // MaxFeePerGas
+	MaxFeePerGas  *big.Int
 	GasLimit      uint64
-	GasTipCap     *big.Int // MaxTipPerGas
 	GasAccelerate float64
 }
 
@@ -923,8 +921,7 @@ func (w *Wallet) BuildDeployContractTx(
 		value,
 		gasLimit,
 		data,
-		realOpts.GasFeeCap,
-		realOpts.GasTipCap,
+		realOpts.MaxFeePerGas,
 		realOpts.GasAccelerate,
 	)
 }
@@ -987,7 +984,6 @@ func (w *Wallet) buildTx(
 	gasLimit uint64,
 	data []byte,
 	maxFeePerGas *big.Int,
-	maxTipPerGas *big.Int,
 	gasAccelerate float64,
 ) (btr_ *BuildTxResult, err_ error) {
 	if gasLimit == 0 {
@@ -996,18 +992,26 @@ func (w *Wallet) buildTx(
 
 	var rawTx *types.Transaction
 
+	maxTipPerGas := big.NewInt(0)
 	if maxFeePerGas == nil {
-		baseGasPrice, err := w.SuggestGasPrice(gasAccelerate) // 取到的是 base price
+		maxFeePerGas = big.NewInt(0)
+
+		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+		baseGasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
 		maxFeePerGas.Mul(baseGasPrice, big.NewInt(2))
-	}
-	if maxTipPerGas == nil {
-		maxTipPerGas = new(big.Int).Div(maxFeePerGas, big.NewInt(10))
+
+		if gasAccelerate != 0 {
+			gasAccelerate = 1.1
+		}
+		a := go_decimal.Decimal.MustStart(gasAccelerate).MustSub(1).Abs().MustEndForBigInt()
+		maxTipPerGas = new(big.Int).Mul(baseGasPrice, a)
+	} else {
+		maxTipPerGas = new(big.Int).Div(maxFeePerGas, big.NewInt(20))
 	}
 
-	w.logger.ErrorF("maxFeePerGas: %s, maxTipPerGas: %s, value: %s", maxFeePerGas.String(), maxTipPerGas.String(), value.String())
 	rawTx = types.NewTx(&types.DynamicFeeTx{
 		Nonce:     nonce,
 		To:        toAddressObj,
@@ -1150,7 +1154,6 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		gasLimit,
 		payloadBuf,
 		realOpts.MaxFeePerGas,
-		realOpts.MaxTipPerGas,
 		realOpts.GasAccelerate,
 	)
 }
@@ -1224,7 +1227,6 @@ func (w *Wallet) BuildTransferTx(
 		gasLimit,
 		realOpts.Payload,
 		realOpts.MaxFeePerGas,
-		realOpts.MaxTipPerGas,
 		realOpts.GasAccelerate,
 	)
 }
@@ -1547,8 +1549,7 @@ func (w *Wallet) SignHashForMsg(data string) (hexStr_ string, err_ error) {
 
 type SendEthOpts struct {
 	Nonce         uint64
-	GasFeeCap     *big.Int // MaxFeePerGas
-	GasTipCap     *big.Int // MaxTipPerGas
+	MaxFeePerGas  *big.Int
 	GasAccelerate float64
 }
 
@@ -1564,8 +1565,7 @@ func (w *Wallet) SendEth(
 	if opts != nil {
 		callMethodOpts.Nonce = opts.Nonce
 		callMethodOpts.GasAccelerate = opts.GasAccelerate
-		callMethodOpts.MaxFeePerGas = opts.GasFeeCap
-		callMethodOpts.MaxTipPerGas = opts.GasTipCap
+		callMethodOpts.MaxFeePerGas = opts.MaxFeePerGas
 	}
 	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
 		CallMethodOpts: callMethodOpts,

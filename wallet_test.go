@@ -419,7 +419,6 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 		&BuildTransferTxOpts{
 			CallMethodOpts: CallMethodOpts{
 				Value:        new(big.Int).SetUint64(1000000000000000),
-				MaxTipPerGas: new(big.Int).SetUint64(10000000000),
 				MaxFeePerGas: new(big.Int).SetUint64(100000000000),
 			},
 		},
