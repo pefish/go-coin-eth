@@ -1543,8 +1543,35 @@ func (w *Wallet) SignHashForMsg(data string) (hexStr_ string, err_ error) {
 	return hex.EncodeToString(crypto.Keccak256([]byte(msg))), nil
 }
 
-func (w *Wallet) SendEth(priv string, address string, opts *BuildTransferTxOpts) (hash_ string, err_ error) {
-	tx, err := w.BuildTransferTx(priv, address, opts)
+type SendEthOpts struct {
+	Nonce         uint64
+	GasPrice      *big.Int // for legacy tx
+	GasFeeCap     *big.Int // MaxFeePerGas
+	GasLimit      uint64
+	GasTipCap     *big.Int // MaxTipPerGas
+	GasAccelerate float64
+}
+
+func (w *Wallet) SendEth(
+	priv string,
+	address string,
+	amount float64,
+	opts *SendEthOpts,
+) (hash_ string, err_ error) {
+	callMethodOpts := CallMethodOpts{
+		Value: go_decimal.Decimal.MustStart(amount).MustShiftedBy(18).MustEndForBigInt(),
+	}
+	if opts != nil {
+		callMethodOpts.Nonce = opts.Nonce
+		callMethodOpts.GasAccelerate = opts.GasAccelerate
+		callMethodOpts.GasFeeCap = opts.GasFeeCap
+		callMethodOpts.GasLimit = opts.GasLimit
+		callMethodOpts.GasPrice = opts.GasPrice
+		callMethodOpts.GasTipCap = opts.GasTipCap
+	}
+	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
+		CallMethodOpts: callMethodOpts,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -1559,9 +1586,10 @@ func (w *Wallet) SendEthWait(
 	ctx context.Context,
 	priv string,
 	address string,
-	opts *BuildTransferTxOpts,
+	amount float64,
+	opts *SendEthOpts,
 ) (txReceipt_ *types.Receipt, err_ error) {
-	hash, err := w.SendEth(priv, address, opts)
+	hash, err := w.SendEth(priv, address, amount, opts)
 	if err != nil {
 		return nil, err
 	}
