@@ -37,7 +37,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 		abiStr,
 		"transfer",
 		&CallMethodOpts{
-			GasFeeCap: new(big.Int).SetUint64(1000000000),
+			MaxFeePerGas: new(big.Int).SetUint64(1000000000),
 		},
 		[]interface{}{
 			common.HexToAddress("0x2117210296c2993Cfb4c6790FEa1bEB3ECe8Ac06"),
@@ -418,9 +418,9 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 		"0x476fBB25d56B5dD4f1df03165498C403C4713069",
 		&BuildTransferTxOpts{
 			CallMethodOpts: CallMethodOpts{
-				Value:     new(big.Int).SetUint64(1000000000000000),
-				GasTipCap: new(big.Int).SetUint64(10000000000),
-				GasFeeCap: new(big.Int).SetUint64(100000000000),
+				Value:        new(big.Int).SetUint64(1000000000000000),
+				MaxTipPerGas: new(big.Int).SetUint64(10000000000),
+				MaxFeePerGas: new(big.Int).SetUint64(100000000000),
 			},
 		},
 	)
@@ -591,9 +591,9 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000", paramsStr)
 	tx, err := wallet1.BuildCallMethodTxWithPayload("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", contractAddress, "0x0b4c7e4d"+paramsStr, &CallMethodOpts{
-		GasFeeCap: new(big.Int).SetUint64(1000000000),
-		Nonce:     1,
-		GasLimit:  5000000,
+		MaxFeePerGas: new(big.Int).SetUint64(1000000000),
+		Nonce:        1,
+		GasLimit:     5000000,
 	})
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0xf8a901843b9aca00834c4b4094d384946c4054d53635cb9462eed7d106101ad44980b8440b4c7e4d0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a76400001ba0ddf312004ff8bc93f407e89ba550f22f9bf7c0f87d234e9c60ddd0cbfeee82eaa06a43ceffb68dc057a681ed92d406d87e4ac13eaaadb354e2f4161f91e0d1c5f5", tx.TxHex)
@@ -981,4 +981,21 @@ func TestWallet_PredictContractAddress(t *testing.T) {
 		1,
 	)
 	go_test_.Equal(t, "0x8CA430C20be7452BDE527aFDd5d83b0FBC0AEF30", address)
+}
+
+func TestWallet_SendAllEth(t *testing.T) {
+	wallet, err := NewWallet().InitRemote(
+		&UrlParam{
+			RpcUrl: "https://sepolia.base.org",
+		},
+	)
+	go_test_.Equal(t, nil, err)
+
+	_, err = wallet.SendAllEth(
+		"",
+		"0xD55B17ba6D269F94d75FfB3651d05529BEFD290A",
+		0.0000000001,
+	)
+	go_test_.Equal(t, nil, err)
+
 }

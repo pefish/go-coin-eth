@@ -404,14 +404,16 @@ func (w *Wallet) FindLogs(
 	return nil
 }
 
+// a1 = 基础价格（是动态的由网络决定的，etherscan 上显示的 Base）+ MaxTipPerGas
+// 最终采用的 price = min(a1, MaxFeePerGas)
 type CallMethodOpts struct {
 	Nonce          uint64
 	Value          *big.Int
-	GasPrice       *big.Int // for legacy tx
-	GasFeeCap      *big.Int // MaxFeePerGas
+	GasPrice       *big.Int // only for legacy tx
+	MaxFeePerGas   *big.Int // 这里指定采用价格的最高值（etherscan 上显示的 Max）
 	GasLimit       uint64
 	IsPredictError bool
-	GasTipCap      *big.Int // MaxTipPerGas
+	MaxTipPerGas   *big.Int // 这里指定小费价格的最大值，因为矿工会直接取最高值，所以这个值其实就是小费（etherscan 上显示的 Max Priority）
 	GasAccelerate  float64
 }
 
@@ -840,8 +842,8 @@ func (w *Wallet) BuildCallMethodTx(
 		value,
 		gasLimit,
 		input,
-		realOpts.GasFeeCap,
-		realOpts.GasTipCap,
+		realOpts.MaxFeePerGas,
+		realOpts.MaxTipPerGas,
 		realOpts.GasAccelerate,
 	)
 }
@@ -984,8 +986,8 @@ func (w *Wallet) buildTx(
 	value *big.Int,
 	gasLimit uint64,
 	data []byte,
-	gasFeeCap *big.Int, // MaxFeePerGas
-	gasTipCap *big.Int, // MaxTipPerGas
+	maxFeePerGas *big.Int,
+	maxTipPerGas *big.Int,
 	gasAccelerate float64,
 ) (btr_ *BuildTxResult, err_ error) {
 	if gasLimit == 0 {
@@ -993,23 +995,26 @@ func (w *Wallet) buildTx(
 	}
 
 	var rawTx *types.Transaction
-	if gasFeeCap == nil {
-		gasPrice, err := w.SuggestGasPrice(gasAccelerate)
+
+	if maxFeePerGas == nil {
+		baseGasPrice, err := w.SuggestGasPrice(gasAccelerate) // 取到的是 base price
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
-		gasFeeCap = gasPrice
+		maxFeePerGas.Mul(baseGasPrice, big.NewInt(2))
 	}
-	if gasTipCap == nil {
-		gasTipCap = gasFeeCap
+	if maxTipPerGas == nil {
+		maxTipPerGas = new(big.Int).Div(maxFeePerGas, big.NewInt(10))
 	}
+
+	w.logger.ErrorF("maxFeePerGas: %s, maxTipPerGas: %s, value: %s", maxFeePerGas.String(), maxTipPerGas.String(), value.String())
 	rawTx = types.NewTx(&types.DynamicFeeTx{
 		Nonce:     nonce,
 		To:        toAddressObj,
 		Value:     value,
 		Gas:       gasLimit,
-		GasFeeCap: gasFeeCap, // baseFee（是由网络决定的） + 小费（小费越高确认越快）
-		GasTipCap: gasTipCap, // 限制最高能给多少小费
+		GasFeeCap: maxFeePerGas,
+		GasTipCap: maxTipPerGas,
 		Data:      data,
 	})
 	signedTx, err := types.SignTx(rawTx, types.LatestSignerForChainID(w.chainId), privateKeyECDSA)
@@ -1144,8 +1149,8 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		value,
 		gasLimit,
 		payloadBuf,
-		realOpts.GasFeeCap,
-		realOpts.GasTipCap,
+		realOpts.MaxFeePerGas,
+		realOpts.MaxTipPerGas,
 		realOpts.GasAccelerate,
 	)
 }
@@ -1218,8 +1223,8 @@ func (w *Wallet) BuildTransferTx(
 		value,
 		gasLimit,
 		realOpts.Payload,
-		realOpts.GasFeeCap,
-		realOpts.GasTipCap,
+		realOpts.MaxFeePerGas,
+		realOpts.MaxTipPerGas,
 		realOpts.GasAccelerate,
 	)
 }
@@ -1542,9 +1547,7 @@ func (w *Wallet) SignHashForMsg(data string) (hexStr_ string, err_ error) {
 
 type SendEthOpts struct {
 	Nonce         uint64
-	GasPrice      *big.Int // for legacy tx
 	GasFeeCap     *big.Int // MaxFeePerGas
-	GasLimit      uint64
 	GasTipCap     *big.Int // MaxTipPerGas
 	GasAccelerate float64
 }
@@ -1561,13 +1564,97 @@ func (w *Wallet) SendEth(
 	if opts != nil {
 		callMethodOpts.Nonce = opts.Nonce
 		callMethodOpts.GasAccelerate = opts.GasAccelerate
-		callMethodOpts.GasFeeCap = opts.GasFeeCap
-		callMethodOpts.GasLimit = opts.GasLimit
-		callMethodOpts.GasPrice = opts.GasPrice
-		callMethodOpts.GasTipCap = opts.GasTipCap
+		callMethodOpts.MaxFeePerGas = opts.GasFeeCap
+		callMethodOpts.MaxTipPerGas = opts.GasTipCap
 	}
 	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
 		CallMethodOpts: callMethodOpts,
+	})
+	if err != nil {
+		return "", err
+	}
+	txHash, err := w.SendRawTransaction(tx.TxHex)
+	if err != nil {
+		return "", err
+	}
+	return txHash, nil
+}
+
+// 一些二层网络，比如 Base，需要额外消耗一些 gas，所以需要 remainAmount 参数
+func (w *Wallet) SendAllEthByLegacy(
+	priv string,
+	address string,
+	remainAmount float64,
+) (hash_ string, err_ error) {
+	fromAddress, err := w.PrivateKeyToAddress(priv)
+	if err != nil {
+		return "", err
+	}
+
+	ethBal, err := w.Balance(fromAddress)
+	if err != nil {
+		return "", err
+	}
+
+	gasPrice, err := w.SuggestGasPrice(1.1)
+	if err != nil {
+		return "", err
+	}
+	gasLimit := 21000
+
+	fee := new(big.Int).Mul(gasPrice, big.NewInt(int64(gasLimit)))
+	value := new(big.Int).Sub(ethBal, fee)
+	value.Sub(value, go_decimal.Decimal.MustStart(remainAmount).MustShiftedBy(18).MustEndForBigInt())
+
+	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
+		CallMethodOpts: CallMethodOpts{
+			GasPrice: gasPrice,
+			GasLimit: uint64(gasLimit),
+			Value:    value,
+		},
+		IsLegacy: true,
+	})
+	if err != nil {
+		return "", err
+	}
+	txHash, err := w.SendRawTransaction(tx.TxHex)
+	if err != nil {
+		return "", err
+	}
+	return txHash, nil
+}
+
+func (w *Wallet) SendAllEth(
+	priv string,
+	address string,
+	remainAmount float64,
+) (hash_ string, err_ error) {
+	fromAddress, err := w.PrivateKeyToAddress(priv)
+	if err != nil {
+		return "", err
+	}
+
+	ethBal, err := w.Balance(fromAddress)
+	if err != nil {
+		return "", err
+	}
+
+	maxFeePerGas, err := w.SuggestGasPrice(1.1)
+	if err != nil {
+		return "", err
+	}
+	gasLimit := 21000
+
+	fee := new(big.Int).Mul(maxFeePerGas, big.NewInt(int64(gasLimit)))
+	value := new(big.Int).Sub(ethBal, fee)
+	value.Sub(value, go_decimal.Decimal.MustStart(remainAmount).MustShiftedBy(18).MustEndForBigInt())
+
+	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
+		CallMethodOpts: CallMethodOpts{
+			MaxFeePerGas: maxFeePerGas,
+			GasLimit:     uint64(gasLimit),
+			Value:        value,
+		},
 	})
 	if err != nil {
 		return "", err
