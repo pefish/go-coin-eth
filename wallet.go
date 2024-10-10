@@ -992,8 +992,9 @@ func (w *Wallet) buildTx(
 
 	var rawTx *types.Transaction
 
-	maxTipPerGas := big.NewInt(0)
+	maxTipPerGas := new(big.Int)
 	if maxFeePerGas == nil {
+		// 使用 maxTipPerGas 限制
 		maxFeePerGas = big.NewInt(0)
 
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
@@ -1001,15 +1002,19 @@ func (w *Wallet) buildTx(
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
+		// 直接设置为两倍，十倍都可以，因为是使用 maxTipPerGas 限制
 		maxFeePerGas.Mul(baseGasPrice, big.NewInt(2))
 
-		if gasAccelerate != 0 {
-			gasAccelerate = 1.1
+		if gasAccelerate == 0 {
+			gasAccelerate = 1
 		}
-		a := go_decimal.Decimal.MustStart(gasAccelerate).MustSub(1).Abs().MustEndForBigInt()
-		maxTipPerGas = new(big.Int).Mul(baseGasPrice, a)
+		if gasAccelerate < 1 {
+			return nil, errors.Errorf("GasAccelerate must larger than 1.")
+		}
+		maxTipPerGas = new(big.Int).Mul(baseGasPrice, go_decimal.Decimal.MustStart(gasAccelerate).MustSub(1).MustEndForBigInt())
 	} else {
-		maxTipPerGas = new(big.Int).Div(maxFeePerGas, big.NewInt(20))
+		// 使用 maxFeePerGas 限制
+		maxTipPerGas = maxFeePerGas
 	}
 
 	rawTx = types.NewTx(&types.DynamicFeeTx{
