@@ -40,11 +40,11 @@ type Wallet struct {
 	logger          i_logger.ILogger
 }
 
-func NewWallet() *Wallet {
+func NewWallet(logger i_logger.ILogger) *Wallet {
 	timeout := 60 * time.Second
 	return &Wallet{
 		timeout: timeout,
-		logger:  &i_logger.DefaultLogger,
+		logger:  logger,
 	}
 }
 
@@ -100,11 +100,6 @@ func (w *Wallet) Close() {
 		w.WsClient.Close()
 	}
 
-}
-
-func (w *Wallet) SetLogger(logger i_logger.ILogger) (wallet_ *Wallet) {
-	w.logger = logger
-	return w
 }
 
 func (w *Wallet) CallContractConstant(
