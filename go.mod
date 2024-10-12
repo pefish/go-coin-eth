@@ -6,7 +6,7 @@ require (
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/pefish/go-decimal v0.4.3
 	github.com/pefish/go-http v0.8.4
-	github.com/pefish/go-random v0.2.8
+	github.com/pefish/go-random v0.2.9
 	github.com/pefish/go-test v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/tyler-smith/go-bip39 v1.1.0
@@ -55,7 +55,7 @@ require (
 require (
 	github.com/btcsuite/btcd v0.24.2
 	github.com/btcsuite/btcd/btcutil v1.1.6
-	github.com/pefish/go-format v0.4.4
+	github.com/pefish/go-format v0.4.6
 	github.com/pefish/go-interface v0.1.2
 	golang.org/x/crypto v0.28.0
 )

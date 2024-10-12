@@ -1006,7 +1006,7 @@ func (w *Wallet) buildTx(
 		maxFeePerGas.Mul(baseGasPrice, big.NewInt(2))
 
 		if gasAccelerate == 0 {
-			gasAccelerate = 1
+			gasAccelerate = 1.02
 		}
 		if gasAccelerate < 1 {
 			return nil, errors.Errorf("GasAccelerate must larger than 1.")
