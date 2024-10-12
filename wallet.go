@@ -1011,7 +1011,8 @@ func (w *Wallet) buildTx(
 		if gasAccelerate < 1 {
 			return nil, errors.Errorf("GasAccelerate must larger than 1.")
 		}
-		maxTipPerGas = new(big.Int).Mul(baseGasPrice, go_decimal.Decimal.MustStart(gasAccelerate).MustSub(1).MustEndForBigInt())
+		diff := go_decimal.Decimal.MustStart(gasAccelerate).MustSub(1).EndForString()
+		maxTipPerGas = go_decimal.Decimal.MustStart(baseGasPrice).MustMulti(diff).RoundDown(0).MustEndForBigInt()
 	} else {
 		// 使用 maxFeePerGas 限制
 		maxTipPerGas = maxFeePerGas

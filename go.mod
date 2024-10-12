@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/pefish/go-decimal v0.4.3
+	github.com/pefish/go-decimal v0.4.4
 	github.com/pefish/go-http v0.8.4
 	github.com/pefish/go-random v0.2.9
 	github.com/pefish/go-test v0.0.4
