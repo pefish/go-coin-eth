@@ -1354,6 +1354,15 @@ func (w *Wallet) Balance(address string) (bal_ *big.Int, err_ error) {
 	return result, nil
 }
 
+func (w *Wallet) BalanceNoDecimals(address string) (string, error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	result, err := w.RemoteRpcClient.BalanceAt(ctx, common.HexToAddress(address), nil)
+	if err != nil {
+		return "", errors.Wrap(err, "")
+	}
+	return go_decimal.Decimal.MustStart(result).MustUnShiftedBy(18).EndForString(), nil
+}
+
 func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) (amount_ *big.Int, err_ error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(
