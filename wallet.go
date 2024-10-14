@@ -300,7 +300,7 @@ func (w *Wallet) WatchLogsByLoop(
 					for _, log := range logs {
 						err := logComming(contract, log)
 						if err != nil {
-							return err
+							return errors.Wrap(err, "")
 						}
 					}
 					return nil
@@ -426,7 +426,7 @@ func (w *Wallet) UnpackLog(
 ) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "")
 	}
 	boundContract := bind.NewBoundContract(
 		common.HexToAddress(""),
@@ -437,7 +437,7 @@ func (w *Wallet) UnpackLog(
 	)
 	err = boundContract.UnpackLog(out, event, *log)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "")
 	}
 
 	return nil
@@ -472,10 +472,10 @@ func (w *Wallet) FilterLogs(
 ) ([]*types.Log, error) {
 	results := make([]*types.Log, 0)
 	for _, log := range logs {
-		if log.Address.Cmp(common.HexToAddress(logAddress)) != 0 {
+		if logAddress != "" && log.Address.Cmp(common.HexToAddress(logAddress)) != 0 {
 			continue
 		}
-		if log.Topics[0].Cmp(common.HexToHash(topic0Hex)) != 0 {
+		if topic0Hex != "" && log.Topics[0].Cmp(common.HexToHash(topic0Hex)) != 0 {
 			continue
 		}
 		results = append(results, log)
