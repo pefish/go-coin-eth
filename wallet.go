@@ -1010,8 +1010,8 @@ func (w *Wallet) buildTx(
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
-		// 直接设置为两倍，十倍都可以，因为是使用 maxTipPerGas 限制
-		maxFeePerGas.Mul(baseGasPrice, big.NewInt(2))
+		// 直接设置为 1.2 倍，十倍都可以（但要求余额足够），因为是使用 maxTipPerGas 限制
+		maxFeePerGas = go_decimal.Decimal.MustStart(baseGasPrice).MustMulti(1.2).RoundDown(0).MustEndForBigInt()
 
 		if gasAccelerate == 0 {
 			gasAccelerate = 1.02
