@@ -418,6 +418,19 @@ type BuildTxResult struct {
 }
 
 // 通过字段名识别的，而不是 json tag
+//
+// out 参数必须将 event 中的每个参数都声明，event 中如果没有参数名，则使用 Arg<index> 代替
+//
+// 比如 event PairCreated(address indexed token0, address indexed token1, address pair, uint);
+//
+// out 应该是
+//
+//	var pairCreatedEvent struct {
+//		Token0 common.Address
+//		Token1 common.Address
+//		Pair   common.Address
+//		Arg3   *big.Int
+//	}
 func (w *Wallet) UnpackLog(
 	out interface{},
 	abiStr string,

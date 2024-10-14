@@ -946,12 +946,15 @@ func TestWallet_UnpackLog(t *testing.T) {
 	tr, err := wallet.TransactionReceiptByHash("0x866b3a1b7790b08e0642214399d030c1d30ab5c8b60f9dfdcabda75bab177112")
 	go_test_.Equal(t, nil, err)
 	var a struct {
-		From  common.Address `json:"from"`
-		Value *big.Int       `json:"value"`
-		To    common.Address `json:"to"`
+		From  common.Address
+		Value *big.Int
+		To    common.Address
 	}
 	err = wallet.UnpackLog(&a, Erc20AbiStr, "Transfer", tr.Logs[1])
 	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, "0x09945b92893c2a00F8CCf96001D836f0499589E1", a.From.String())
+	go_test_.Equal(t, "2021765178544007531148598", a.Value.String())
+	go_test_.Equal(t, "0x1c5DDaEdbcc64f807c557275E5d6b8b57fF1A82b", a.To.String())
 
 	fmt.Println(a)
 }
