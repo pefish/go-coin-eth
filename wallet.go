@@ -971,6 +971,19 @@ func (w *Wallet) NextNonce(address string) (nonce_ uint64, err_ error) {
 	return nonce, nil
 }
 
+func (w *Wallet) DecodeTxHex(txHex string) (*types.Transaction, error) {
+	raw, err := hexutil.Decode(txHex)
+	if err != nil {
+		return nil, err
+	}
+	tx := new(types.Transaction)
+	err = tx.UnmarshalBinary(raw)
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
 func (w *Wallet) buildTx(
 	privateKeyECDSA *ecdsa.PrivateKey,
 	nonce uint64,
@@ -1461,6 +1474,9 @@ func (w *Wallet) DeriveFromPath(seed string, path string) (result_ *DeriveFromPa
 	}
 	// 派生账号
 	account, err := wallet.Derive(hdPath, true)
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
 	// 获取私钥 hex 字符串
 	privateKeyStr, err := wallet.PrivateKeyHex(account)
 	if err != nil {

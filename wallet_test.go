@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	go_decimal "github.com/pefish/go-decimal"
+	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
 )
 
@@ -25,7 +26,7 @@ func init() {
 }
 
 func TestContract_BuildCallMethodTx(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://rpc.ankr.com/eth_goerli",
 		WsUrl:  "",
 	})
@@ -50,7 +51,7 @@ func TestContract_BuildCallMethodTx(t *testing.T) {
 }
 
 func TestWallet_WatchLogs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "wss://mainnet.infura.io/ws/v3/7594e560416349f79c8ef6ff286d83fc",
 	})
@@ -75,7 +76,7 @@ exit:
 }
 
 func TestWallet_FindLogs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -104,7 +105,7 @@ func TestWallet_FindLogs(t *testing.T) {
 }
 
 //func TestWallet_FindLogs1(t *testing.T) {
-//	wallet, err := NewWallet().InitRemote(&UrlParam{
+//	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 //		RpcUrl: "https://data-seed-prebsc-2-s1.binance.org:8545/",
 //		WsUrl:  "",
 //	})
@@ -133,7 +134,7 @@ func TestWallet_FindLogs(t *testing.T) {
 //}
 
 func TestWallet_SendRawTransaction(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -145,7 +146,7 @@ func TestWallet_SendRawTransaction(t *testing.T) {
 }
 
 func TestWallet_WatchPendingTxByWs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -163,7 +164,7 @@ func TestWallet_WatchPendingTxByWs(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -187,7 +188,7 @@ func TestWallet_CallContractConstant(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant1(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://data-seed-prebsc-1-s1.binance.org:8545/",
 		WsUrl:  "",
 	})
@@ -314,7 +315,7 @@ func TestWallet_CallContractConstant1(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant2(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://http-mainnet.hecochain.com",
 		WsUrl:  "",
 	})
@@ -348,7 +349,7 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 }
 
 func TestWallet_DecodePayload(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -383,7 +384,7 @@ func TestWallet_DecodePayload(t *testing.T) {
 }
 
 func TestWallet_TxsInPool(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -394,20 +395,20 @@ func TestWallet_TxsInPool(t *testing.T) {
 }
 
 func TestWallet_SuggestGasPrice(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
-		RpcUrl: "https://heconode.ifoobar.com",
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
+		RpcUrl: "https://sepolia.base.org",
 		WsUrl:  "",
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
 	gasPrice, err := wallet1.SuggestGasPrice(0)
-	//fmt.Println(gasPrice.String())
+	fmt.Println(gasPrice.String())
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, true, len(gasPrice.String()) > 3)
 }
 
 func TestWallet_BuildTransferTx(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://rinkeby.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -427,7 +428,7 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 }
 
 func TestWallet_UnpackParams(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
 	datas, err := wallet1.UnpackParams([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
 	go_test_.Equal(t, nil, err)
@@ -456,7 +457,7 @@ func TestWallet_UnpackParams(t *testing.T) {
 }
 
 func TestWallet_PackParams(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	result, err := wallet1.PackParams(
 		[]abi.Type{
 			TypeUint256,
@@ -509,7 +510,7 @@ func TestWallet_PackParams(t *testing.T) {
 }
 
 func TestWallet_TokenBalance(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -523,7 +524,7 @@ func TestWallet_TokenBalance(t *testing.T) {
 }
 
 func TestWallet_TransactionByHash(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://heconode.ifoobar.com",
 		WsUrl:  "",
 	})
@@ -537,7 +538,7 @@ func TestWallet_TransactionByHash(t *testing.T) {
 }
 
 func TestWallet_DeriveFromPath(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
 
 	result, err := wallet1.DeriveFromPath("308c18194c8345cb16b7a265439bc09c69e3166404951717fe50abe28bc9d19985cc1c06084290c2eba446d2626a1bf3bfb12ede5974653f756f26752475e8d8", "m/0/0/1")
@@ -547,7 +548,7 @@ func TestWallet_DeriveFromPath(t *testing.T) {
 }
 
 func TestWallet_EncodePayload(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
 	abiStr := `[{"inputs":[{"internalType":"address","name":"_factory","type":"address"},{"internalType":"address","name":"_WETH","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"WETH","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"amountADesired","type":"uint256"},{"internalType":"uint256","name":"amountBDesired","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidity","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amountTokenDesired","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"addLiquidityETH","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"},{"internalType":"uint256","name":"liquidity","type":"uint256"}],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"factory","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"uint256","name":"reserveIn","type":"uint256"},{"internalType":"uint256","name":"reserveOut","type":"uint256"}],"name":"getAmountIn","outputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"reserveIn","type":"uint256"},{"internalType":"uint256","name":"reserveOut","type":"uint256"}],"name":"getAmountOut","outputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsIn","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"}],"name":"getAmountsOut","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"reserveA","type":"uint256"},{"internalType":"uint256","name":"reserveB","type":"uint256"}],"name":"quote","outputs":[{"internalType":"uint256","name":"amountB","type":"uint256"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"removeLiquidity","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"removeLiquidityETH","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"removeLiquidityETHSupportingFeeOnTransferTokens","outputs":[{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bool","name":"approveMax","type":"bool"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"removeLiquidityETHWithPermit","outputs":[{"internalType":"uint256","name":"amountToken","type":"uint256"},{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountTokenMin","type":"uint256"},{"internalType":"uint256","name":"amountETHMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bool","name":"approveMax","type":"bool"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"removeLiquidityETHWithPermitSupportingFeeOnTransferTokens","outputs":[{"internalType":"uint256","name":"amountETH","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"tokenA","type":"address"},{"internalType":"address","name":"tokenB","type":"address"},{"internalType":"uint256","name":"liquidity","type":"uint256"},{"internalType":"uint256","name":"amountAMin","type":"uint256"},{"internalType":"uint256","name":"amountBMin","type":"uint256"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bool","name":"approveMax","type":"bool"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"removeLiquidityWithPermit","outputs":[{"internalType":"uint256","name":"amountA","type":"uint256"},{"internalType":"uint256","name":"amountB","type":"uint256"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapETHForExactTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactETHForTokensSupportingFeeOnTransferTokens","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForETHSupportingFeeOnTransferTokens","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapExactTokensForTokensSupportingFeeOnTransferTokens","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"uint256","name":"amountInMax","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapTokensForExactETH","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"},{"internalType":"uint256","name":"amountInMax","type":"uint256"},{"internalType":"address[]","name":"path","type":"address[]"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"deadline","type":"uint256"}],"name":"swapTokensForExactTokens","outputs":[{"internalType":"uint256[]","name":"amounts","type":"uint256[]"}],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]`
 
@@ -575,8 +576,11 @@ func stringToBigInt(a string) *big.Int {
 }
 
 func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
-	wallet1 := NewWallet()
-	defer wallet1.Close()
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
+		RpcUrl: "https://sepolia.base.org",
+		WsUrl:  "",
+	})
+	go_test_.Equal(t, nil, err)
 	paramsStr, err := wallet1.PackParams(
 		[]abi.Type{
 			TypeAddress,
@@ -589,17 +593,28 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	)
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000", paramsStr)
-	tx, err := wallet1.BuildCallMethodTxWithPayload("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", contractAddress, "0x0b4c7e4d"+paramsStr, &CallMethodOpts{
-		MaxFeePerGas: new(big.Int).SetUint64(1000000000),
-		Nonce:        1,
-		GasLimit:     5000000,
-	})
+	btr, err := wallet1.BuildCallMethodTxWithPayload(
+		"4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f",
+		"0x68422825055059bc548C213a50545614f655604e",
+		"0x0b4c7e4d"+paramsStr,
+		&CallMethodOpts{
+			MaxFeePerGas: new(big.Int).SetUint64(1000000000),
+			Nonce:        1,
+			GasLimit:     5000000,
+		},
+	)
 	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, "0xf8a901843b9aca00834c4b4094d384946c4054d53635cb9462eed7d106101ad44980b8440b4c7e4d0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a76400001ba0ddf312004ff8bc93f407e89ba550f22f9bf7c0f87d234e9c60ddd0cbfeee82eaa06a43ceffb68dc057a681ed92d406d87e4ac13eaaadb354e2f4161f91e0d1c5f5", tx.TxHex)
+	go_test_.Equal(t, "0x02f8b383014a3401843b9aca00843b9aca00834c4b409468422825055059bc548c213a50545614f655604e80b8440b4c7e4d0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000c080a06b1f46073b56d747c245d27aa5cf765262e50caaa6ac68dd7d49c106d3bfa39da07135d180b765aa1e239c676bdbeeea422e88d1adb0094963ebdebd31de164042", btr.TxHex)
+
+	tx, err := wallet1.DecodeTxHex(btr.TxHex)
+	go_test_.Equal(t, nil, err)
+
+	go_test_.Equal(t, btr.SignedTx.Hash().String(), tx.Hash().String())
+
 }
 
 func TestWallet_RandomMnemonic(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
 	result, err := wallet1.RandomMnemonic()
 	go_test_.Equal(t, nil, err)
@@ -607,14 +622,14 @@ func TestWallet_RandomMnemonic(t *testing.T) {
 }
 
 func TestWallet_SeedHexByMnemonic(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
 	result := wallet1.SeedHexByMnemonic("go_test_", "go_test_")
 	go_test_.Equal(t, "da2a48a1b9fbade07552281143814b3cd7ba4b53a7de5241439417b9bb540e229c45a30b0ce32174aaccc80072df7cbdff24f0c0ae327cd5170d1f276b890173", result)
 }
 
 func TestWallet_MaxUint256(t *testing.T) {
-	wallet1 := NewWallet()
+	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
 	result, err := wallet1.PackParams(
 		[]abi.Type{
@@ -629,13 +644,13 @@ func TestWallet_MaxUint256(t *testing.T) {
 }
 
 func TestRecoverSignerAddress(t *testing.T) {
-	address, err := NewWallet().RecoverSignerAddressFromMsgHash("43aa0dee053b766817331315ab5440b144451f86d58f2d3b938e3de4dbca7ed8", "c2f57c5b9c187b089c492ba216cbb28e1d3d59aa8b62178b58d5442cbfc45cf40769070dfee43a8dd3f721d9a7a514f27fff3e0efbe6d7a41a6b27b8093f4dce1b")
+	address, err := NewWallet(&i_logger.DefaultLogger).RecoverSignerAddressFromMsgHash("43aa0dee053b766817331315ab5440b144451f86d58f2d3b938e3de4dbca7ed8", "c2f57c5b9c187b089c492ba216cbb28e1d3d59aa8b62178b58d5442cbfc45cf40769070dfee43a8dd3f721d9a7a514f27fff3e0efbe6d7a41a6b27b8093f4dce1b")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0xf93B52193658335DBfe7b9138a0Da4CCEb6aF466", address.String())
 }
 
 func TestWallet_CallContractConstantWithPayload(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/7594e560416349f79c8ef6ff286d83fc",
 		WsUrl:  "",
 	})
@@ -669,32 +684,32 @@ func TestWallet_CallContractConstantWithPayload(t *testing.T) {
 }
 
 func TestWallet_SignMsg(t *testing.T) {
-	result, err := NewWallet().SignMsg("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", "hello")
+	result, err := NewWallet(&i_logger.DefaultLogger).SignMsg("4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f", "hello")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "f315c40961c73b55f1e4cf4f2665c5cf70fda8f8f3a545e0788fe1f66e21f6d13d49ff33d300b9c5f9f943f095b5fc2838dbbb4d5820bc696fd974d284aa19751c", result)
 }
 
 func TestWallet_RecoverSignerAddress(t *testing.T) {
-	address, err := NewWallet().RecoverSignerAddress("hello", "f315c40961c73b55f1e4cf4f2665c5cf70fda8f8f3a545e0788fe1f66e21f6d13d49ff33d300b9c5f9f943f095b5fc2838dbbb4d5820bc696fd974d284aa19751c")
+	address, err := NewWallet(&i_logger.DefaultLogger).RecoverSignerAddress("hello", "f315c40961c73b55f1e4cf4f2665c5cf70fda8f8f3a545e0788fe1f66e21f6d13d49ff33d300b9c5f9f943f095b5fc2838dbbb4d5820bc696fd974d284aa19751c")
 	go_test_.Equal(t, nil, err)
 
 	go_test_.Equal(t, "0xC3BF2dF684d91248b01278499184cC30C5bE45C3", address.String())
 }
 
 func TestWallet_SignHashForMsg(t *testing.T) {
-	result, err := NewWallet().SignHashForMsg("hello")
+	result, err := NewWallet(&i_logger.DefaultLogger).SignHashForMsg("hello")
 	go_test_.Equal(t, nil, err)
 
 	go_test_.Equal(t, "50b2c43fd39106bafbba0da34fc430e1f91e3c96ea2acee2bc34119f92b37750", result)
 }
 
 func TestWallet_MethodIdFromMethodStr(t *testing.T) {
-	result := NewWallet().MethodIdFromMethodStr("cashChequeBeneficiary(address,uint256,bytes)")
+	result := NewWallet(&i_logger.DefaultLogger).MethodIdFromMethodStr("cashChequeBeneficiary(address,uint256,bytes)")
 	go_test_.Equal(t, "0d5f2659", result)
 }
 
 func TestWallet_SendEth(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -703,7 +718,7 @@ func TestWallet_SendEth(t *testing.T) {
 	txHash, err := wallet1.SendEth(
 		"",
 		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
-		0.1,
+		"0.1",
 		nil,
 	)
 	go_test_.Equal(t, nil, err)
@@ -712,7 +727,7 @@ func TestWallet_SendEth(t *testing.T) {
 }
 
 func TestWallet_SendToken(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -727,7 +742,7 @@ func TestWallet_SendToken(t *testing.T) {
 }
 
 func TestWallet_ApproveAmount(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -743,7 +758,7 @@ func TestWallet_ApproveAmount(t *testing.T) {
 }
 
 func TestWallet_Approve(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -765,7 +780,7 @@ func TestWallet_Approve(t *testing.T) {
 }
 
 func TestWallet_CallContractConstant3(t *testing.T) {
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://arb1.arbitrum.io/rpc",
 		WsUrl:  "",
 	})
@@ -864,7 +879,7 @@ func TestWallet_CallContractConstant3(t *testing.T) {
 }
 
 func TestWallet_IsContract(t *testing.T) {
-	// wallet, err := NewWallet().InitRemote(&UrlParam{
+	// wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 	// 	RpcUrl: "https://rpc.ankr.com/eth_goerli",
 	// 	WsUrl:  "",
 	// })
@@ -878,7 +893,7 @@ func TestWallet_IsContract(t *testing.T) {
 	// go_test_.Equal(t, nil, err)
 	// go_test_.Equal(t, false, isContract1)
 
-	wallet1, err := NewWallet().InitRemote(&UrlParam{
+	wallet1, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.infura.io/v3/c747c4512b8b4d33ad265ea5803cbb30",
 		WsUrl:  "",
 	})
@@ -891,7 +906,7 @@ func TestWallet_IsContract(t *testing.T) {
 }
 
 func TestWallet_GetTokenDecimals(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://rpc.ankr.com/eth_goerli",
 		WsUrl:  "",
 	})
@@ -903,7 +918,7 @@ func TestWallet_GetTokenDecimals(t *testing.T) {
 }
 
 func TestWallet_ToTopicHash(t *testing.T) {
-	wallet := NewWallet()
+	wallet := NewWallet(&i_logger.DefaultLogger)
 	hash, err := wallet.ToTopicHash(
 		"OrderExecuted",
 	)
@@ -912,7 +927,7 @@ func TestWallet_ToTopicHash(t *testing.T) {
 }
 
 func TestWallet_ToTopicHashes(t *testing.T) {
-	wallet := NewWallet()
+	wallet := NewWallet(&i_logger.DefaultLogger)
 	hashes, err := wallet.ToTopicHashes(
 		"OrderExecuted",
 		common.HexToAddress("0xc8ee91a54287db53897056e12d9819156d3822fb"),
@@ -923,7 +938,7 @@ func TestWallet_ToTopicHashes(t *testing.T) {
 }
 
 func TestWallet_UnpackLog(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.base.org",
 		WsUrl:  "",
 	})
@@ -943,7 +958,7 @@ func TestWallet_UnpackLog(t *testing.T) {
 
 // Filters logs correctly when both topic0 and logAddress match
 func TestWallet_FilterLogs(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(&UrlParam{
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
 		RpcUrl: "https://mainnet.base.org",
 		WsUrl:  "",
 	})
@@ -968,7 +983,7 @@ func TestWallet_FilterLogs(t *testing.T) {
 }
 
 func TestWallet_PredictContractAddress(t *testing.T) {
-	wallet := NewWallet()
+	wallet := NewWallet(&i_logger.DefaultLogger)
 	address := wallet.PredictContractAddress(
 		"0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981",
 		0,
@@ -983,7 +998,7 @@ func TestWallet_PredictContractAddress(t *testing.T) {
 }
 
 func TestWallet_SendAllEth(t *testing.T) {
-	wallet, err := NewWallet().InitRemote(
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(
 		&UrlParam{
 			RpcUrl: "https://sepolia.base.org",
 		},
@@ -993,7 +1008,7 @@ func TestWallet_SendAllEth(t *testing.T) {
 	_, err = wallet.SendAllEth(
 		"",
 		"0xD55B17ba6D269F94d75FfB3651d05529BEFD290A",
-		0.0000000001,
+		"0.000001",
 	)
 	go_test_.Equal(t, nil, err)
 
