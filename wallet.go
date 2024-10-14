@@ -826,7 +826,7 @@ func (w *Wallet) BuildCallMethodTx(
 			return nil, errors.Wrap(err, "Failed to estimate gas.")
 		}
 		if gasLimit == 0 {
-			gasLimit = uint64(float64(tempGasLimit) * 1.3)
+			gasLimit = tempGasLimit
 		}
 	}
 
@@ -1003,7 +1003,7 @@ func (w *Wallet) buildTx(
 	maxTipPerGas := new(big.Int)
 	if maxFeePerGas == nil {
 		// 使用 maxTipPerGas 限制
-		maxFeePerGas = big.NewInt(0)
+		maxFeePerGas = new(big.Int)
 
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		baseGasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
@@ -1156,7 +1156,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 			return nil, errors.Wrap(err, "Failed to estimate gas.")
 		}
 		if gasLimit == 0 {
-			gasLimit = uint64(float64(tempGasLimit) * 1.3)
+			gasLimit = tempGasLimit
 		}
 	}
 
