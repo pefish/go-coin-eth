@@ -925,7 +925,7 @@ func (w *Wallet) EstimateCall(
 	fromAddress string,
 	contractAddress string,
 	abiStr string,
-	value float64,
+	value string,
 	methodName string,
 	params []interface{},
 ) error {
@@ -1566,7 +1566,7 @@ type SendEthOpts struct {
 func (w *Wallet) SendEth(
 	priv string,
 	address string,
-	amount float64,
+	amount string,
 	opts *SendEthOpts,
 ) (hash_ string, err_ error) {
 	callMethodOpts := CallMethodOpts{
@@ -1594,7 +1594,7 @@ func (w *Wallet) SendEth(
 func (w *Wallet) SendAllEthByLegacy(
 	priv string,
 	address string,
-	remainAmount float64,
+	remainAmount string,
 ) (hash_ string, err_ error) {
 	fromAddress, err := w.PrivateKeyToAddress(priv)
 	if err != nil {
@@ -1637,7 +1637,7 @@ func (w *Wallet) SendAllEthByLegacy(
 func (w *Wallet) SendAllEth(
 	priv string,
 	address string,
-	remainAmount float64,
+	remainAmount string,
 ) (hash_ string, err_ error) {
 	fromAddress, err := w.PrivateKeyToAddress(priv)
 	if err != nil {
@@ -1680,7 +1680,7 @@ func (w *Wallet) SendEthWait(
 	ctx context.Context,
 	priv string,
 	address string,
-	amount float64,
+	amount string,
 	opts *SendEthOpts,
 ) (txReceipt_ *types.Receipt, err_ error) {
 	hash, err := w.SendEth(priv, address, amount, opts)
