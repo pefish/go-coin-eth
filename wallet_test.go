@@ -912,7 +912,7 @@ func TestWallet_GetTokenDecimals(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet.Close()
-	decimals, err := wallet.GetTokenDecimals("0x1319D23c2F7034F52Eb07399702B040bA278Ca49")
+	decimals, err := wallet.TokenDecimals("0x1319D23c2F7034F52Eb07399702B040bA278Ca49")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, true, decimals == 18)
 }

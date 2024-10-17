@@ -1821,7 +1821,7 @@ func (w *Wallet) SendTokenWait(
 	return txr, nil
 }
 
-func (w *Wallet) GetTokenDecimals(tokenAddress string) (decimals_ uint64, err_ error) {
+func (w *Wallet) TokenDecimals(tokenAddress string) (decimals_ uint64, err_ error) {
 	var result uint8
 	err := w.CallContractConstant(
 		&result,
