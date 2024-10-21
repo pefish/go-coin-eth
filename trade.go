@@ -44,6 +44,9 @@ func (w *Wallet) BuyByExactETH(
 	tokenAddress string,
 	opts *BuyByExactETHOpts,
 ) (*BuyByExactETHResult, error) {
+
+	var result BuyByExactETHResult
+
 	var realOpts BuyByExactETHOpts
 	if opts != nil {
 		realOpts = *opts
@@ -101,9 +104,10 @@ func (w *Wallet) BuyByExactETH(
 	if err != nil {
 		return nil, err
 	}
+	result.TxId = btr.SignedTx.Hash().String()
 	tr, err := w.SendRawTransactionWait(context.Background(), btr.TxHex)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 	tokenAmountWithDecimals, err := w.receivedTokenAmountInLogs(
 		tr.Logs,
@@ -111,13 +115,11 @@ func (w *Wallet) BuyByExactETH(
 		selfAddress,
 	)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
-	return &BuyByExactETHResult{
-		TokenAmount: go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).EndForString(),
-		TxId:        tr.TxHash.String(),
-	}, nil
+	result.TokenAmount = go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).EndForString()
+	return &result, nil
 }
 
 type SellByExactTokenResult struct {
@@ -137,6 +139,8 @@ func (w *Wallet) SellByExactToken(
 	tokenAddress string,
 	opts *SellByExactTokenOpts,
 ) (*SellByExactTokenResult, error) {
+	var result SellByExactTokenResult
+
 	var realOpts SellByExactTokenOpts
 	if opts != nil {
 		realOpts = *opts
@@ -213,20 +217,19 @@ func (w *Wallet) SellByExactToken(
 	if err != nil {
 		return nil, err
 	}
+	result.TxId = btr.SignedTx.Hash().String()
 	tr, err := w.SendRawTransactionWait(context.Background(), btr.TxHex)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	ethAmountWithDecimals, err := w.receivedETHAmountInLogs(tr.Logs, opts.WETHAddress)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
-	return &SellByExactTokenResult{
-		ETHAmount: go_decimal.Decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString(),
-		TxId:      tr.TxHash.String(),
-	}, nil
+	result.ETHAmount = go_decimal.Decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString()
+	return &result, nil
 }
 
 func (w *Wallet) receivedTokenAmountInLogs(
