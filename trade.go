@@ -157,7 +157,7 @@ func (w *Wallet) SellByExactToken(
 		}
 		realOpts.TokenDecimals = decimals_
 	}
-	tokenAmountWithDecimals := go_decimal.Decimal.MustStart(tokenAmount).MustUnShiftedBy(realOpts.TokenDecimals).MustEndForBigInt()
+	tokenAmountWithDecimals := go_decimal.Decimal.MustStart(tokenAmount).MustShiftedBy(realOpts.TokenDecimals).MustEndForBigInt()
 
 	tokenBalanceWithDecimals, err := w.TokenBalance(tokenAddress, selfAddress)
 	if err != nil {
