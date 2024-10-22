@@ -38,6 +38,7 @@ type BuyByExactETHOpts struct {
 }
 
 func (w *Wallet) BuyByExactETH(
+	ctx context.Context,
 	priv string,
 	ethAmount string,
 	routerAddress string,
@@ -105,10 +106,12 @@ func (w *Wallet) BuyByExactETH(
 		return nil, err
 	}
 	result.TxId = btr.SignedTx.Hash().String()
-	tr, err := w.SendRawTransactionWait(context.Background(), btr.TxHex)
+	w.logger.InfoF("购买 txid <%s> 等待确认", result.TxId)
+	tr, err := w.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
 		return &result, err
 	}
+	w.logger.InfoF("<%s> 已确认", result.TxId)
 	tokenAmountWithDecimals, err := w.receivedTokenAmountInLogs(
 		tr.Logs,
 		tokenAddress,
@@ -133,6 +136,7 @@ type SellByExactTokenOpts struct {
 }
 
 func (w *Wallet) SellByExactToken(
+	ctx context.Context,
 	priv string,
 	tokenAmount string,
 	routerAddress string,
@@ -186,7 +190,7 @@ func (w *Wallet) SellByExactToken(
 
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
 		_, err := w.ApproveWait(
-			context.Background(),
+			ctx,
 			priv,
 			tokenAddress,
 			routerAddress,
@@ -218,10 +222,12 @@ func (w *Wallet) SellByExactToken(
 		return nil, err
 	}
 	result.TxId = btr.SignedTx.Hash().String()
-	tr, err := w.SendRawTransactionWait(context.Background(), btr.TxHex)
+	w.logger.InfoF("出售 txid <%s> 等待确认", result.TxId)
+	tr, err := w.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
 		return &result, err
 	}
+	w.logger.InfoF("<%s> 已确认", result.TxId)
 
 	ethAmountWithDecimals, err := w.receivedETHAmountInLogs(tr.Logs, opts.WETHAddress)
 	if err != nil {
