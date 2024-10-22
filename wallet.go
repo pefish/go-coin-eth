@@ -1849,6 +1849,46 @@ func (w *Wallet) TokenDecimals(tokenAddress string) (decimals_ uint64, err_ erro
 	return uint64(result), nil
 }
 
+func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ string, err_ error) {
+	result := new(big.Int)
+	err := w.CallContractConstant(
+		&result,
+		contractAddress,
+		`[{
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }]`,
+		"balanceOf",
+		nil,
+		[]interface{}{
+			common.HexToAddress(address),
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	decimals, err := w.TokenDecimals(contractAddress)
+	if err != nil {
+		return "", err
+	}
+	return go_decimal.Decimal.MustStart(result).MustUnShiftedBy(decimals).EndForString(), nil
+}
+
 func (w *Wallet) TokenBalance(contractAddress, address string) (bal_ *big.Int, err_ error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(

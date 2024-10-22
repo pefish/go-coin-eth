@@ -184,8 +184,8 @@ github.com/pefish/go-decimal v0.4.4 h1:0Djm8SIOsnUuFWNLscZ59BI8scHZO9weK/00xlen2
 github.com/pefish/go-decimal v0.4.4/go.mod h1:N2GOyFVgnyljOBbAXxY6AW2YrxtRpdqtzIZ+dc+3Ez0=
 github.com/pefish/go-desensitize v0.0.7 h1:7YZMo6nWvb8soIB0HIG5qc0Zy1t9RBjZ6E7XcbzosBE=
 github.com/pefish/go-desensitize v0.0.7/go.mod h1:uXY6qOL5bhJVNZALEUaWiIZ1uGe6d7u0pKsKBdBHHEg=
-github.com/pefish/go-format v0.4.6 h1:n41ppXKciDLbX7q+kqhUhjXDCtoMbsE6IGjYJQbCBwg=
-github.com/pefish/go-format v0.4.6/go.mod h1:0xlhm0yXcX0Md1t4ztEN4aDYVE8rqbXXxBuoAHYX1Kc=
+github.com/pefish/go-format v0.5.1 h1:KL2Wy4A0av4YwBC/pMNuRE+1k2Gu5ILLeX5tt2p9PGU=
+github.com/pefish/go-format v0.5.1/go.mod h1:0xlhm0yXcX0Md1t4ztEN4aDYVE8rqbXXxBuoAHYX1Kc=
 github.com/pefish/go-http v0.8.4 h1:m9S+vzLjWeZ68w79Eom2HAkvp3gAhAo5lhrRUd5mk2s=
 github.com/pefish/go-http v0.8.4/go.mod h1:Rf+tZpHKKrM51npJNUCzBtd7ACjdwEzdsQ9sqPuGP3k=
 github.com/pefish/go-interface v0.1.2 h1:CmBUP7e/mwFrqy2UiTb2637HzP4T1QlZPimgOOsWCQw=
