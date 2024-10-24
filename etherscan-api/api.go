@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	go_coin_eth "github.com/pefish/go-coin-eth"
 	go_format "github.com/pefish/go-format"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -296,4 +298,69 @@ func (e *EtherscanApiClient) FindLogs(
 		return nil, errors.Wrap(err, "")
 	}
 	return result.Result, nil
+}
+
+type VerifySourceCodeParams struct {
+	Code string
+	Args struct {
+		Types []abi.Type
+		Strs  []string
+	}
+	ContractAddress   string
+	ContractName      string
+	CompilerVersion   string
+	IsUseOptimization bool
+	Runs              uint64
+}
+
+func (e *EtherscanApiClient) VerifySourceCode(params *VerifySourceCodeParams) (guid_ string, err_ error) {
+	paramsMap := make(map[string]interface{}, 0)
+
+	paramsMap["module"] = "contract"
+	paramsMap["action"] = "verifysourcecode"
+	paramsMap["apikey"] = e.apiKey
+
+	paramsMap["codeformat"] = "solidity-single-file"
+	paramsMap["sourceCode"] = params.Code
+	if len(params.Args.Types) > 0 {
+		r, err := go_coin_eth.NewWallet(e.logger).PackParamsFromStrs(params.Args.Types, params.Args.Strs)
+		if err != nil {
+			return "", err
+		}
+		paramsMap["constructorArguements"] = r
+	}
+
+	paramsMap["contractaddress"] = params.ContractAddress
+	paramsMap["contractname"] = params.ContractName
+	paramsMap["compilerversion"] = params.CompilerVersion
+	if params.IsUseOptimization {
+		paramsMap["optimizationUsed"] = 1
+	} else {
+		paramsMap["optimizationUsed"] = 0
+	}
+	paramsMap["runs"] = params.Runs
+
+	var httpResult struct {
+		Status  string `json:"status"`
+		Message string `json:"message"`
+		Result  string `json:"result"`
+	}
+	_, _, err := go_http.NewHttpRequester(
+		go_http.WithTimeout(e.timeout),
+		go_http.WithLogger(e.logger),
+	).PostForStruct(
+		&go_http.RequestParams{
+			Url:    e.url,
+			Params: paramsMap,
+		},
+		&httpResult,
+	)
+	if err != nil {
+		return "", err
+	}
+	if httpResult.Status != "1" {
+		return "", errors.New(go_format.ToString(httpResult.Result))
+	}
+
+	return httpResult.Result, nil
 }
