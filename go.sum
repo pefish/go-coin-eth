@@ -188,6 +188,10 @@ github.com/pefish/go-format v0.5.1 h1:KL2Wy4A0av4YwBC/pMNuRE+1k2Gu5ILLeX5tt2p9PG
 github.com/pefish/go-format v0.5.1/go.mod h1:0xlhm0yXcX0Md1t4ztEN4aDYVE8rqbXXxBuoAHYX1Kc=
 github.com/pefish/go-http v0.8.4 h1:m9S+vzLjWeZ68w79Eom2HAkvp3gAhAo5lhrRUd5mk2s=
 github.com/pefish/go-http v0.8.4/go.mod h1:Rf+tZpHKKrM51npJNUCzBtd7ACjdwEzdsQ9sqPuGP3k=
+github.com/pefish/go-http v0.8.5 h1:/rpu3R+ooqjEz7Ab3R2W3c/NskCjOxdR5NknvSTLQDs=
+github.com/pefish/go-http v0.8.5/go.mod h1:dEm7IRr1vvVYsS3fL8T8xzEA0CU+csiujuzYe++pFCk=
+github.com/pefish/go-http v0.8.6 h1:ImsGLYYlDTwhecClTYMkwwR8IVIjoAC11IXbcyxv+vc=
+github.com/pefish/go-http v0.8.6/go.mod h1:dEm7IRr1vvVYsS3fL8T8xzEA0CU+csiujuzYe++pFCk=
 github.com/pefish/go-interface v0.1.2 h1:CmBUP7e/mwFrqy2UiTb2637HzP4T1QlZPimgOOsWCQw=
 github.com/pefish/go-interface v0.1.2/go.mod h1:usSGQkQvVOKPGeDEEYpA7EnqCT/kADcLQxmfdRfMQXE=
 github.com/pefish/go-random v0.2.9 h1:49BxBlcphho1+tC6qgASUkdiujo9/qSjNUVb0Df8Utc=

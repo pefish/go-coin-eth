@@ -81,10 +81,6 @@ type ListTokenTxResult struct {
 func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListTokenTxResult, error) {
 	paramsMap := go_format.StructToMap(params)
 
-	paramsMap["module"] = "account"
-	paramsMap["action"] = "tokentx"
-	paramsMap["apikey"] = e.apiKey
-
 	var httpResult struct {
 		Status  string      `json:"status"`
 		Message string      `json:"message"`
@@ -95,7 +91,12 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
-			Url:    e.url,
+			Url: e.url,
+			Queries: map[string]string{
+				"module": "account",
+				"action": "tokentx",
+				"apikey": e.apiKey,
+			},
 			Params: paramsMap,
 		},
 		&httpResult,
@@ -138,9 +139,6 @@ type GetSourceCodeResult struct {
 func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult, error) {
 	paramsMap := make(map[string]interface{}, 0)
 
-	paramsMap["module"] = "contract"
-	paramsMap["action"] = "getsourcecode"
-	paramsMap["apikey"] = e.apiKey
 	paramsMap["address"] = address
 
 	var httpResult struct {
@@ -153,7 +151,12 @@ func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
-			Url:    e.url,
+			Url: e.url,
+			Queries: map[string]string{
+				"module": "contract",
+				"action": "getsourcecode",
+				"apikey": e.apiKey,
+			},
 			Params: paramsMap,
 		},
 		&httpResult,
@@ -177,9 +180,6 @@ type GetCreatorAndTxIdResult struct {
 func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCreatorAndTxIdResult, error) {
 	paramsMap := make(map[string]interface{}, 0)
 
-	paramsMap["module"] = "contract"
-	paramsMap["action"] = "getcontractcreation"
-	paramsMap["apikey"] = e.apiKey
 	paramsMap["contractaddresses"] = contractAddress
 
 	var httpResult struct {
@@ -192,7 +192,12 @@ func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCrea
 		go_http.WithLogger(e.logger),
 	).GetForStruct(
 		&go_http.RequestParams{
-			Url:    e.url,
+			Url: e.url,
+			Queries: map[string]string{
+				"module": "contract",
+				"action": "getcontractcreation",
+				"apikey": e.apiKey,
+			},
 			Params: paramsMap,
 		},
 		&httpResult,
@@ -240,11 +245,8 @@ func (e *EtherscanApiClient) FindLogs(
 	pageSize int,
 ) (results_ []FindLogsResult, err_ error) {
 	params := map[string]interface{}{
-		"module":    "logs",
-		"action":    "getLogs",
 		"fromBlock": fromBlock,
 		"toBlock":   toBlock - 1,
-		"apikey":    e.apiKey,
 		"page":      page,
 		"offset":    pageSize,
 	}
@@ -270,7 +272,12 @@ func (e *EtherscanApiClient) FindLogs(
 		go_http.WithLogger(e.logger),
 		go_http.WithTimeout(e.timeout),
 	).GetForStruct(&go_http.RequestParams{
-		Url:    e.url,
+		Url: e.url,
+		Queries: map[string]string{
+			"module": "logs",
+			"action": "getLogs",
+			"apikey": e.apiKey,
+		},
 		Params: params,
 	}, &tempResult)
 	if err != nil {
@@ -316,10 +323,6 @@ type VerifySourceCodeParams struct {
 func (e *EtherscanApiClient) VerifySourceCode(params *VerifySourceCodeParams) (guid_ string, err_ error) {
 	paramsMap := make(map[string]interface{}, 0)
 
-	paramsMap["module"] = "contract"
-	paramsMap["action"] = "verifysourcecode"
-	paramsMap["apikey"] = e.apiKey
-
 	paramsMap["codeformat"] = "solidity-single-file"
 	paramsMap["sourceCode"] = params.Code
 	if len(params.Args.Types) > 0 {
@@ -350,7 +353,12 @@ func (e *EtherscanApiClient) VerifySourceCode(params *VerifySourceCodeParams) (g
 		go_http.WithLogger(e.logger),
 	).PostForStruct(
 		&go_http.RequestParams{
-			Url:    e.url,
+			Url: e.url,
+			Queries: map[string]string{
+				"module": "contract",
+				"action": "verifysourcecode",
+				"apikey": e.apiKey,
+			},
 			Params: paramsMap,
 		},
 		&httpResult,
