@@ -351,7 +351,7 @@ func (e *EtherscanApiClient) VerifySourceCode(params *VerifySourceCodeParams) (g
 	_, _, err := go_http.NewHttpRequester(
 		go_http.WithTimeout(e.timeout),
 		go_http.WithLogger(e.logger),
-	).PostForStruct(
+	).PostFormDataForStruct(
 		&go_http.RequestParams{
 			Url: e.url,
 			Queries: map[string]string{
