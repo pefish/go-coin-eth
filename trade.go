@@ -314,7 +314,7 @@ func (w *Wallet) SellByExactToken(
 
 	result.ETHAmount = go_decimal.Decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString()
 	result.SellFee = go_decimal.Decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
-	result.Fee = go_decimal.Decimal.MustStart(result.SellFee).MustAddForString(result.SellFee)
+	result.Fee = go_decimal.Decimal.MustStart(result.ApproveFee).MustAddForString(result.SellFee)
 	return &result, nil
 }
 

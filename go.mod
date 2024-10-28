@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/ethereum/go-ethereum v1.14.11
-	github.com/pefish/go-decimal v0.4.4
+	github.com/pefish/go-decimal v0.4.5
 	github.com/pefish/go-http v0.8.6
 	github.com/pefish/go-random v0.2.9
 	github.com/pefish/go-test v0.0.4
@@ -25,7 +25,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.3 // indirect
-	github.com/ethereum/go-verkle v0.1.1-0.20240829091221-dffa7562dbe9 // indirect
+	github.com/ethereum/go-verkle v0.2.1 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
