@@ -248,7 +248,6 @@ func (w *Wallet) SellByExactToken(
 	}
 
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
-		w.logger.InfoF("Approve txid <%s> 等待确认", result.TxId)
 		tr, err := w.ApproveWait(
 			ctx,
 			priv,
@@ -261,7 +260,7 @@ func (w *Wallet) SellByExactToken(
 			return nil, err
 		}
 		result.ApproveFee = go_decimal.Decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
-		w.logger.InfoF("Approve 成功")
+		w.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
 	}
 
 	amountOutWithDecimals, err := w.GetAmountsOut(
