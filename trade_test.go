@@ -17,3 +17,21 @@ func TestWallet_WETHAddressFromRouter(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0x4200000000000000000000000000000000000006", wethAddress)
 }
+
+func TestWallet_GetAmountsOut(t *testing.T) {
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
+		RpcUrl: "https://eth-mainnet.g.alchemy.com/v2/",
+	})
+
+	go_test_.Equal(t, nil, err)
+	result, err := wallet.GetAmountsOut(
+		"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+		"100000000000000000",
+		[]string{
+			WETHAddress,
+			"0xD06e204b2DE9cBCC19E1Fa1F9523f2189aF38c55",
+		},
+	)
+	go_test_.Equal(t, nil, err)
+	go_test_.Equal(t, true, result != "")
+}

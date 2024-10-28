@@ -27,6 +27,35 @@ func (w *Wallet) WETHAddressFromRouter(routerAddress string) (string, error) {
 	return wethAddress.String(), nil
 }
 
+func (w *Wallet) GetAmountsOut(
+	routerAddress string,
+	amountInWithDecimals string,
+	path []string,
+) (amountOutWithDecimals_ string, err_ error) {
+	if len(path) > 2 {
+		return "", errors.New("Length of path must be 2.")
+	}
+	results := make([]*big.Int, 0)
+	err := w.CallContractConstant(
+		&results,
+		routerAddress,
+		RouterAbiStr,
+		"getAmountsOut",
+		nil,
+		[]interface{}{
+			go_decimal.Decimal.MustStart(amountInWithDecimals).MustEndForBigInt(),
+			[]common.Address{
+				common.HexToAddress(path[0]),
+				common.HexToAddress(path[1]),
+			},
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	return results[1].String(), nil
+}
+
 type BuyByExactETHResult struct {
 	TokenAmount string
 	TxId        string
@@ -35,6 +64,7 @@ type BuyByExactETHResult struct {
 type BuyByExactETHOpts struct {
 	TokenDecimals uint64
 	WETHAddress   string
+	Slippage      float64 // 滑点，默认 0.5%
 }
 
 func (w *Wallet) BuyByExactETH(
@@ -51,6 +81,10 @@ func (w *Wallet) BuyByExactETH(
 	var realOpts BuyByExactETHOpts
 	if opts != nil {
 		realOpts = *opts
+	}
+
+	if realOpts.Slippage == 0 {
+		realOpts.Slippage = 0.005
 	}
 
 	selfAddress, err := w.PrivateKeyToAddress(priv)
@@ -84,6 +118,21 @@ func (w *Wallet) BuyByExactETH(
 		realOpts.TokenDecimals = decimals_
 	}
 
+	amountOutWithDecimals, err := w.GetAmountsOut(
+		routerAddress,
+		ethAmountWithDecimals.String(),
+		[]string{opts.WETHAddress, tokenAddress},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	minTokenAmountWithDecimals := go_decimal.Decimal.
+		MustStart(amountOutWithDecimals).
+		MustMulti(1 - realOpts.Slippage).
+		RoundDown(0).
+		MustEndForBigInt()
+
 	btr, err := w.BuildCallMethodTx(
 		priv,
 		routerAddress,
@@ -93,7 +142,7 @@ func (w *Wallet) BuyByExactETH(
 			Value: ethAmountWithDecimals,
 		},
 		[]interface{}{
-			new(big.Int).SetInt64(0),
+			minTokenAmountWithDecimals,
 			[]common.Address{
 				common.HexToAddress(realOpts.WETHAddress),
 				common.HexToAddress(tokenAddress),
@@ -133,6 +182,7 @@ type SellByExactTokenResult struct {
 type SellByExactTokenOpts struct {
 	TokenDecimals uint64
 	WETHAddress   string
+	Slippage      float64 // 滑点，默认 0.5%
 }
 
 func (w *Wallet) SellByExactToken(
@@ -148,6 +198,10 @@ func (w *Wallet) SellByExactToken(
 	var realOpts SellByExactTokenOpts
 	if opts != nil {
 		realOpts = *opts
+	}
+
+	if realOpts.Slippage == 0 {
+		realOpts.Slippage = 0.005
 	}
 
 	selfAddress, err := w.PrivateKeyToAddress(priv)
@@ -189,6 +243,7 @@ func (w *Wallet) SellByExactToken(
 	}
 
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
+		w.logger.InfoF("Approve txid <%s> 等待确认", result.TxId)
 		_, err := w.ApproveWait(
 			ctx,
 			priv,
@@ -200,7 +255,24 @@ func (w *Wallet) SellByExactToken(
 		if err != nil {
 			return nil, err
 		}
+		w.logger.InfoF("Approve 成功")
 	}
+
+	amountOutWithDecimals, err := w.GetAmountsOut(
+		routerAddress,
+		tokenAmountWithDecimals.String(),
+		[]string{tokenAddress, opts.WETHAddress},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	minETHAmountWithDecimals := go_decimal.Decimal.
+		MustStart(amountOutWithDecimals).
+		MustMulti(1 - realOpts.Slippage).
+		RoundDown(0).
+		MustEndForBigInt()
+
 	btr, err := w.BuildCallMethodTx(
 		priv,
 		routerAddress,
@@ -209,7 +281,7 @@ func (w *Wallet) SellByExactToken(
 		nil,
 		[]interface{}{
 			tokenAmountWithDecimals,
-			new(big.Int).SetInt64(0),
+			minETHAmountWithDecimals,
 			[]common.Address{
 				common.HexToAddress(tokenAddress),
 				common.HexToAddress(opts.WETHAddress),
