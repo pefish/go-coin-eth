@@ -177,11 +177,12 @@ func (w *Wallet) BuyByExactETH(
 }
 
 type SellByExactTokenResult struct {
-	ETHAmount  string
-	ApproveFee string
-	SellFee    string
-	Fee        string
-	TxId       string
+	ETHAmount   string
+	ApproveFee  string
+	SellFee     string
+	Fee         string
+	TxId        string
+	ApproveTxId string
 }
 
 type SellByExactTokenOpts struct {
@@ -259,6 +260,7 @@ func (w *Wallet) SellByExactToken(
 		if err != nil {
 			return nil, err
 		}
+		result.ApproveTxId = tr.TxHash.String()
 		result.ApproveFee = go_decimal.Decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
 		w.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
 	}
@@ -269,7 +271,7 @@ func (w *Wallet) SellByExactToken(
 		[]string{tokenAddress, opts.WETHAddress},
 	)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 
 	minETHAmountWithDecimals := go_decimal.Decimal.
@@ -296,7 +298,7 @@ func (w *Wallet) SellByExactToken(
 		},
 	)
 	if err != nil {
-		return nil, err
+		return &result, err
 	}
 	result.TxId = btr.SignedTx.Hash().String()
 	w.logger.InfoF("出售 txid <%s> 等待确认", result.TxId)
