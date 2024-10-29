@@ -249,6 +249,7 @@ func (w *Wallet) SellByExactToken(
 		return nil, err
 	}
 
+	result.ApproveFee = "0"
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
 		tr, err := w.ApproveWait(
 			ctx,
