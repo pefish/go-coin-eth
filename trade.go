@@ -66,6 +66,7 @@ type BuyByExactETHOpts struct {
 	TokenDecimals uint64
 	WETHAddress   string
 	Slippage      float64 // 滑点，默认 0.5%
+	GasLimit      uint64
 }
 
 func (w *Wallet) BuyByExactETH(
@@ -86,6 +87,10 @@ func (w *Wallet) BuyByExactETH(
 
 	if realOpts.Slippage == 0 {
 		realOpts.Slippage = 0.005
+	}
+
+	if realOpts.GasLimit == 0 {
+		realOpts.GasLimit = 300000
 	}
 
 	selfAddress, err := w.PrivateKeyToAddress(priv)
@@ -141,7 +146,7 @@ func (w *Wallet) BuyByExactETH(
 		"swapExactETHForTokensSupportingFeeOnTransferTokens",
 		&CallMethodOpts{
 			Value:    ethAmountWithDecimals,
-			GasLimit: 300000,
+			GasLimit: realOpts.GasLimit,
 		},
 		[]interface{}{
 			minTokenAmountWithDecimals,
@@ -190,6 +195,7 @@ type SellByExactTokenOpts struct {
 	TokenDecimals uint64
 	WETHAddress   string
 	Slippage      float64 // 滑点，默认 0.5%
+	GasLimit      uint64
 }
 
 func (w *Wallet) SellByExactToken(
@@ -209,6 +215,10 @@ func (w *Wallet) SellByExactToken(
 
 	if realOpts.Slippage == 0 {
 		realOpts.Slippage = 0.005
+	}
+
+	if realOpts.GasLimit == 0 {
+		realOpts.GasLimit = 400000
 	}
 
 	selfAddress, err := w.PrivateKeyToAddress(priv)
@@ -288,7 +298,7 @@ func (w *Wallet) SellByExactToken(
 		RouterAbiStr,
 		"swapExactTokensForETHSupportingFeeOnTransferTokens",
 		&CallMethodOpts{
-			GasLimit: 300000,
+			GasLimit: realOpts.GasLimit,
 		},
 		[]interface{}{
 			tokenAmountWithDecimals,
