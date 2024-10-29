@@ -140,7 +140,8 @@ func (w *Wallet) BuyByExactETH(
 		RouterAbiStr,
 		"swapExactETHForTokensSupportingFeeOnTransferTokens",
 		&CallMethodOpts{
-			Value: ethAmountWithDecimals,
+			Value:    ethAmountWithDecimals,
+			GasLimit: 300000,
 		},
 		[]interface{}{
 			minTokenAmountWithDecimals,
@@ -285,7 +286,9 @@ func (w *Wallet) SellByExactToken(
 		routerAddress,
 		RouterAbiStr,
 		"swapExactTokensForETHSupportingFeeOnTransferTokens",
-		nil,
+		&CallMethodOpts{
+			GasLimit: 300000,
+		},
 		[]interface{}{
 			tokenAmountWithDecimals,
 			minETHAmountWithDecimals,
