@@ -722,6 +722,15 @@ func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err
 	return go_decimal.Decimal.MustStart(gasPrice).MustMulti(gasAccelerate).Round(0).MustEndForBigInt(), nil
 }
 
+func (w *Wallet) GasPriceNoDecimals() (gasPrice_ float64, err_ error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
+	if err != nil {
+		return 0, errors.Wrap(err, "Failed to suggest gas price.")
+	}
+	return go_decimal.Decimal.MustStart(gasPrice).MustUnShiftedBy(9).MustEndForFloat64(), nil
+}
+
 func (w *Wallet) LatestBlockNumber() (blockNumber_ *big.Int, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	number, err := w.RemoteRpcClient.BlockNumber(ctx)

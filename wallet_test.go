@@ -1016,3 +1016,14 @@ func TestWallet_SendAllEth(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 
 }
+
+func TestWallet_GasPriceNoDecimals(t *testing.T) {
+	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
+		RpcUrl: "https://mainnet.base.org",
+		WsUrl:  "",
+	})
+	go_test_.Equal(t, nil, err)
+	gasPrice, err := wallet.GasPriceNoDecimals()
+	go_test_.Equal(t, nil, err)
+	fmt.Println(gasPrice)
+}
