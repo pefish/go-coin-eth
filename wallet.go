@@ -792,7 +792,7 @@ func (w *Wallet) BuildCallMethodTx(
 	privateKey,
 	contractAddress,
 	abiStr,
-	methodName string,
+	methodName string, // 如果有同名重构函数，比如有 4 个重构函数 test()，则 abi 数组中第一个叫 test，第二个叫 test0，第三个叫 test1，第四个叫 test2
 	opts *CallMethodOpts,
 	params []interface{},
 ) (btr_ *BuildTxResult, err_ error) {
