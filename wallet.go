@@ -195,59 +195,68 @@ func (w *Wallet) CallContractConstantWithPayload(
 
 /*
 *
-是个同步方法
+是个异步方法
 
 只能获取以后的而且区块确认了的事件，即使 start 指定为过去的 block number，也不能获取到
 
 query 的第一个 []interface{} 是指第一个 index ，第二个是指第二个 index
 */
 func (w *Wallet) WatchLogsByWs(
-	resultChan chan map[string]interface{},
+	ctx context.Context,
 	contractAddress,
 	abiStr,
 	eventName string,
 	opts *bind.WatchOpts,
 	query ...[]interface{},
-) error {
+) (chan map[string]interface{}, error) {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
-		return errors.New("please set ws url")
+		return nil, errors.New("please set ws url")
 	}
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return errors.Wrap(err, "")
+		return nil, errors.Wrap(err, "")
 	}
 	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteWsClient, w.RemoteWsClient, w.RemoteWsClient)
-retry:
-	for {
-		chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
-		if err != nil {
-			w.logger.WarnF("connect failed, reconnect after 3s. err -> %#v", err)
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		w.logger.Info("connected. watching...")
+	resultChan := make(chan map[string]interface{})
+
+	go func() {
+	retry:
 		for {
-			select {
-			case log1 := <-chanLog:
-				map_ := make(map[string]interface{})
-				err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
-				if err != nil {
-					sub.Unsubscribe()
-					return errors.Wrap(err, "")
-				}
-				resultChan <- map_
-			case err := <-sub.Err():
-				w.logger.WarnF("connection closed. err -> %#v", err)
-				if err == nil { // 自己主动关闭的
-					return nil
-				}
-				sub.Unsubscribe()
+			chanLog, sub, err := contractInstance.WatchLogs(opts, eventName, query...)
+			if err != nil {
+				w.logger.WarnF("connect failed, reconnect after 3s. err -> %#v", err)
 				time.Sleep(3 * time.Second)
-				w.logger.Info("reconnect...")
-				continue retry
+				continue
+			}
+			w.logger.Info("connected. watching...")
+			for {
+				select {
+				case log1 := <-chanLog:
+					map_ := make(map[string]interface{})
+					err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
+					if err != nil {
+						w.logger.Error(err)
+						continue
+					}
+					resultChan <- map_
+				case err := <-sub.Err():
+					w.logger.WarnF("connection closed. err -> %#v", err)
+					if err == nil { // 自己主动关闭的
+						return
+					}
+					w.logger.Error(err)
+					sub.Unsubscribe()
+					time.Sleep(3 * time.Second)
+					w.logger.Info("reconnect...")
+					continue retry
+				case <-ctx.Done():
+					w.logger.Error(ctx.Err())
+					return
+				}
 			}
 		}
-	}
+	}()
+	return resultChan, nil
 }
 
 func (w *Wallet) PredictContractAddress(
