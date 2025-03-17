@@ -208,16 +208,26 @@ func (w *Wallet) WatchLogsByWs(
 	eventName string,
 	opts *bind.WatchOpts,
 	query ...[]interface{},
-) (chan map[string]interface{}, error) {
+) (
+	resultChan_ chan types.Log,
+	contractInstance_ *bind.BoundContract,
+	err_ error,
+) {
 	if w.RemoteWsClient == nil || w.WsClient == nil {
-		return nil, errors.New("please set ws url")
+		return nil, nil, errors.New("please set ws url")
 	}
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, nil, errors.Wrap(err, "")
 	}
-	contractInstance := bind.NewBoundContract(common.HexToAddress(contractAddress), parsedAbi, w.RemoteWsClient, w.RemoteWsClient, w.RemoteWsClient)
-	resultChan := make(chan map[string]interface{})
+	contractInstance := bind.NewBoundContract(
+		common.HexToAddress(contractAddress),
+		parsedAbi,
+		w.RemoteWsClient,
+		w.RemoteWsClient,
+		w.RemoteWsClient,
+	)
+	resultChan := make(chan types.Log)
 
 	go func() {
 	retry:
@@ -231,14 +241,8 @@ func (w *Wallet) WatchLogsByWs(
 			w.logger.Info("connected. watching...")
 			for {
 				select {
-				case log1 := <-chanLog:
-					map_ := make(map[string]interface{})
-					err := contractInstance.UnpackLogIntoMap(map_, eventName, log1)
-					if err != nil {
-						w.logger.Error(err)
-						continue
-					}
-					resultChan <- map_
+				case log := <-chanLog:
+					resultChan <- log
 				case err := <-sub.Err():
 					w.logger.WarnF("connection closed. err -> %#v", err)
 					if err == nil { // 自己主动关闭的
@@ -256,7 +260,7 @@ func (w *Wallet) WatchLogsByWs(
 			}
 		}
 	}()
-	return resultChan, nil
+	return resultChan, contractInstance, nil
 }
 
 func (w *Wallet) PredictContractAddress(
