@@ -735,6 +735,15 @@ func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err
 	return go_decimal.Decimal.MustStart(gasPrice).MustMulti(gasAccelerate).Round(0).MustEndForBigInt(), nil
 }
 
+func (w *Wallet) GasPrice() (gasPrice_ *big.Int, err_ error) {
+	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
+	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to suggest gas price.")
+	}
+	return gasPrice, nil
+}
+
 func (w *Wallet) GasPriceNoDecimals() (gasPrice_ float64, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 	gasPrice, err := w.RemoteRpcClient.SuggestGasPrice(ctx)
@@ -858,7 +867,7 @@ func (w *Wallet) BuildCallMethodTx(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to estimate gas.")
+			return nil, err
 		}
 		if gasLimit == 0 {
 			gasLimit = tempGasLimit
@@ -939,7 +948,7 @@ func (w *Wallet) BuildDeployContractTx(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to estimate gas.")
+			return nil, err
 		}
 		gasLimit = uint64(float64(tempGasLimit) * 1.2)
 	}
@@ -991,7 +1000,7 @@ func (w *Wallet) EstimateCall(
 	}
 	_, err = w.EstimateGas(msg)
 	if err != nil {
-		return errors.Wrap(err, "Failed to estimate gas.")
+		return err
 	}
 
 	return nil
@@ -1188,7 +1197,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 		}
 		tempGasLimit, err := w.EstimateGas(msg)
 		if err != nil {
-			return nil, errors.Wrap(err, "Failed to estimate gas.")
+			return nil, err
 		}
 		if gasLimit == 0 {
 			gasLimit = tempGasLimit

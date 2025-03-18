@@ -1023,7 +1023,7 @@ func TestWallet_SendAllEth(t *testing.T) {
 
 func TestWallet_GasPriceNoDecimals(t *testing.T) {
 	wallet, err := NewWallet(&i_logger.DefaultLogger).InitRemote(&UrlParam{
-		RpcUrl: "https://mainnet.base.org",
+		RpcUrl: "https://bsc-dataseed4.ninicoin.io/",
 		WsUrl:  "",
 	})
 	go_test_.Equal(t, nil, err)
