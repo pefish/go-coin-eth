@@ -263,7 +263,8 @@ func (w *Wallet) WatchLogsByWs(
 	return resultChan, contractInstance, nil
 }
 
-func (w *Wallet) PredictContractAddress(
+// 通过 CREATE 指令（普通合约部署）
+func (w *Wallet) PredictCreateContractAddress(
 	address string,
 	nonce uint64,
 ) string {
@@ -275,6 +276,49 @@ func (w *Wallet) PredictContractAddress(
 	hash.Write(b)
 
 	return common.HexToAddress("0x" + hex.EncodeToString(hash.Sum(nil)[12:])).String()
+}
+
+func keccak256(data []byte) []byte {
+	hasher := sha3.NewLegacyKeccak256()
+	hasher.Write(data)
+	return hasher.Sum(nil)
+}
+
+// 通过 CREATE2 指令（可预测合约地址）
+func (w *Wallet) PredictCreate2ContractAddress(
+	deployer string,
+	salt string, // 32 字节 salt
+	bytecode string,
+) (string, error) {
+	// 解析输入
+	deployerBytes, err := hex.DecodeString(deployer[2:]) // 去掉 "0x"
+	if err != nil {
+		return "", err
+	}
+	saltBytes, err := hex.DecodeString(salt[2:])
+	if err != nil {
+		return "", err
+	}
+	bytecodeBytes, err := hex.DecodeString(bytecode[2:])
+	if err != nil {
+		return "", err
+	}
+
+	// 计算合约字节码哈希
+	bytecodeHash := keccak256(bytecodeBytes)
+
+	// 构造 CREATE2 的输入数据: 0xff || deployer || salt || keccak256(bytecode)
+	prefix := []byte{0xff}
+	data := append(prefix, deployerBytes...)
+	data = append(data, saltBytes...)
+	data = append(data, bytecodeHash...)
+
+	// 计算合约地址
+	contractHash := keccak256(data)
+	contractAddress := contractHash[12:] // 取后 20 字节
+
+	// 转换为以太坊地址格式
+	return "0x" + hex.EncodeToString(contractAddress), nil
 }
 
 func (w *Wallet) WatchLogsByLoop(
@@ -1306,10 +1350,10 @@ func (w *Wallet) SendRawTransactionWait(ctx context.Context, txHex string) (txRe
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr == nil {
-		return nil, errors.New("Canceled wait.")
+		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
 	}
 	if txr.Status == 0 {
-		return txr, errors.Errorf("Tx failed.")
+		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
 	}
 	return txr, nil
 }
@@ -1485,10 +1529,10 @@ func (w *Wallet) ApproveWait(
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr == nil {
-		return nil, errors.New("Canceled wait.")
+		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
 	}
 	if txr.Status == 0 {
-		return txr, errors.Errorf("Tx failed.")
+		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
 	}
 	return txr, nil
 }
@@ -1749,10 +1793,10 @@ func (w *Wallet) SendEthWait(
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr == nil {
-		return nil, errors.New("Canceled wait.")
+		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
 	}
 	if txr.Status == 0 {
-		return txr, errors.Errorf("Tx failed.")
+		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
 	}
 	return txr, nil
 }
@@ -1794,10 +1838,10 @@ func (w *Wallet) SendAllTokenWait(
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr == nil {
-		return nil, nil, errors.New("Canceled wait.")
+		return nil, nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
 	}
 	if txr.Status == 0 {
-		return amountWithDecimals, txr, errors.Errorf("Tx failed.")
+		return amountWithDecimals, txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
 	}
 	return amountWithDecimals, txr, nil
 }
@@ -1844,10 +1888,10 @@ func (w *Wallet) SendTokenWait(
 	}
 	txr := w.WaitConfirm(ctx, hash, time.Second)
 	if txr == nil {
-		return nil, errors.New("Canceled wait.")
+		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
 	}
 	if txr.Status == 0 {
-		return txr, errors.Errorf("Tx failed.")
+		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
 	}
 	return txr, nil
 }
