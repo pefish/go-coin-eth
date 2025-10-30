@@ -337,7 +337,7 @@ func (w *Wallet) WatchLogsByLoop(
 		if err != nil {
 			return err
 		}
-		fromBlock = go_decimal.Decimal.MustStart(latestBlockNumber).MustSub(1000).MustEndForBigInt()
+		fromBlock = go_decimal.MustStart(latestBlockNumber).MustSub(1000).MustEndForBigInt()
 	}
 
 	timer := time.NewTimer(0)
@@ -353,7 +353,7 @@ func (w *Wallet) WatchLogsByLoop(
 			w.logger.DebugF("Find logs... fromBlock: %s, toBlock: %s", fromBlock, toBlock)
 			err = w.FindLogs(
 				func(contract *bind.BoundContract, logs []types.Log) error {
-					fromBlock = go_decimal.Decimal.MustStart(toBlock).MustAdd(1).MustEndForBigInt()
+					fromBlock = go_decimal.MustStart(toBlock).MustAdd(1).MustEndForBigInt()
 					for _, log := range logs {
 						err := logComming(contract, log)
 						if err != nil {
@@ -424,18 +424,18 @@ func (w *Wallet) FindLogs(
 	_fromBlock := fromBlock
 	_toBlock := fromBlock
 	for {
-		if go_decimal.Decimal.MustStart(_toBlock).MustEq(toBlock) {
+		if go_decimal.MustStart(_toBlock).MustEq(toBlock) {
 			break
 		}
 		_fromBlock = _toBlock
 		if maxRange == 0 {
 			_toBlock = toBlock
-		} else if go_decimal.Decimal.MustStart(toBlock).MustSub(_toBlock).MustGt(maxRange) {
-			_toBlock = go_decimal.Decimal.MustStart(_toBlock).MustAdd(maxRange).MustEndForBigInt()
+		} else if go_decimal.MustStart(toBlock).MustSub(_toBlock).MustGt(maxRange) {
+			_toBlock = go_decimal.MustStart(_toBlock).MustAdd(maxRange).MustEndForBigInt()
 		} else {
 			_toBlock = toBlock
 		}
-		w.logger.DebugF("_fromBlock: %s, _toBlock: %s, remain: %s", _fromBlock.String(), _toBlock.String(), go_decimal.Decimal.MustStart(toBlock).MustSubForString(_toBlock))
+		w.logger.DebugF("_fromBlock: %s, _toBlock: %s, remain: %s", _fromBlock.String(), _toBlock.String(), go_decimal.MustStart(toBlock).MustSubForString(_toBlock))
 		ctx, _ := context.WithTimeout(context.Background(), w.timeout)
 		logs, err := w.RemoteRpcClient.FilterLogs(ctx, ethereum.FilterQuery{
 			FromBlock: _fromBlock,
@@ -629,7 +629,7 @@ func (w *Wallet) PackParamsFromStrs(
 			if !strings.Contains(types[i].String(), "int") {
 				return "", errors.Errorf("Type <%s> not be supported", types[i].String())
 			}
-			args = append(args, go_decimal.Decimal.MustStart(str).MustEndForBigInt())
+			args = append(args, go_decimal.MustStart(str).MustEndForBigInt())
 		}
 	}
 	return w.PackParams(types, args)
@@ -776,7 +776,7 @@ func (w *Wallet) SuggestGasPrice(gasAccelerate float64) (gasPrice_ *big.Int, err
 	if gasAccelerate == 0 {
 		return gasPrice, nil
 	}
-	return go_decimal.Decimal.MustStart(gasPrice).MustMulti(gasAccelerate).Round(0).MustEndForBigInt(), nil
+	return go_decimal.MustStart(gasPrice).MustMulti(gasAccelerate).Round(0).MustEndForBigInt(), nil
 }
 
 func (w *Wallet) GasPrice() (gasPrice_ *big.Int, err_ error) {
@@ -794,7 +794,7 @@ func (w *Wallet) GasPriceNoDecimals() (gasPrice_ float64, err_ error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed to suggest gas price.")
 	}
-	return go_decimal.Decimal.MustStart(gasPrice).MustUnShiftedBy(9).MustEndForFloat64(), nil
+	return go_decimal.MustStart(gasPrice).MustUnShiftedBy(9).MustEndForFloat64(), nil
 }
 
 func (w *Wallet) LatestBlockNumber() (blockNumber_ *big.Int, err_ error) {
@@ -1039,7 +1039,7 @@ func (w *Wallet) EstimateCall(
 	msg := ethereum.CallMsg{
 		From:  common.HexToAddress(fromAddress),
 		To:    &contractAddressObj,
-		Value: go_decimal.Decimal.MustStart(value).MustShiftedBy(18).MustEndForBigInt(),
+		Value: go_decimal.MustStart(value).MustShiftedBy(18).MustEndForBigInt(),
 		Data:  input,
 	}
 	_, err = w.EstimateGas(msg)
@@ -1099,7 +1099,7 @@ func (w *Wallet) buildTx(
 			return nil, errors.Wrap(err, "Failed to suggest gas price.")
 		}
 		// 直接设置为 1.2 倍，十倍都可以（但要求余额足够），因为是使用 maxTipPerGas 限制
-		maxFeePerGas = go_decimal.Decimal.MustStart(baseGasPrice).MustMulti(1.2).RoundDown(0).MustEndForBigInt()
+		maxFeePerGas = go_decimal.MustStart(baseGasPrice).MustMulti(1.2).RoundDown(0).MustEndForBigInt()
 
 		if gasAccelerate == 0 {
 			gasAccelerate = 1.02
@@ -1107,8 +1107,8 @@ func (w *Wallet) buildTx(
 		if gasAccelerate < 1 {
 			return nil, errors.Errorf("GasAccelerate must larger than 1.")
 		}
-		diff := go_decimal.Decimal.MustStart(gasAccelerate).MustSub(1).EndForString()
-		maxTipPerGas = go_decimal.Decimal.MustStart(baseGasPrice).MustMulti(diff).RoundDown(0).MustEndForBigInt()
+		diff := go_decimal.MustStart(gasAccelerate).MustSub(1).EndForString()
+		maxTipPerGas = go_decimal.MustStart(baseGasPrice).MustMulti(diff).RoundDown(0).MustEndForBigInt()
 	} else {
 		// 使用 maxFeePerGas 限制
 		maxTipPerGas = maxFeePerGas
@@ -1461,7 +1461,7 @@ func (w *Wallet) BalanceNoDecimals(address string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "")
 	}
-	return go_decimal.Decimal.MustStart(result).MustUnShiftedBy(18).EndForString(), nil
+	return go_decimal.MustStart(result).MustUnShiftedBy(18).EndForString(), nil
 }
 
 func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) (amount_ *big.Int, err_ error) {
@@ -1674,7 +1674,7 @@ func (w *Wallet) SendEth(
 	opts *SendEthOpts,
 ) (hash_ string, err_ error) {
 	callMethodOpts := CallMethodOpts{
-		Value: go_decimal.Decimal.MustStart(amount).MustShiftedBy(18).MustEndForBigInt(),
+		Value: go_decimal.MustStart(amount).MustShiftedBy(18).MustEndForBigInt(),
 	}
 	if opts != nil {
 		callMethodOpts.Nonce = opts.Nonce
@@ -1718,7 +1718,7 @@ func (w *Wallet) SendAllEthByLegacy(
 
 	fee := new(big.Int).Mul(gasPrice, big.NewInt(int64(gasLimit)))
 	value := new(big.Int).Sub(ethBal, fee)
-	value.Sub(value, go_decimal.Decimal.MustStart(remainAmount).MustShiftedBy(18).MustEndForBigInt())
+	value.Sub(value, go_decimal.MustStart(remainAmount).MustShiftedBy(18).MustEndForBigInt())
 
 	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
 		CallMethodOpts: CallMethodOpts{
@@ -1761,7 +1761,7 @@ func (w *Wallet) SendAllEth(
 
 	fee := new(big.Int).Mul(maxFeePerGas, big.NewInt(int64(gasLimit)))
 	value := new(big.Int).Sub(ethBal, fee)
-	value.Sub(value, go_decimal.Decimal.MustStart(remainAmount).MustShiftedBy(18).MustEndForBigInt())
+	value.Sub(value, go_decimal.MustStart(remainAmount).MustShiftedBy(18).MustEndForBigInt())
 
 	tx, err := w.BuildTransferTx(priv, address, &BuildTransferTxOpts{
 		CallMethodOpts: CallMethodOpts{
@@ -1815,7 +1815,7 @@ func (w *Wallet) SendAllToken(
 	if err != nil {
 		return bal, "", err
 	}
-	if go_decimal.Decimal.MustStart(bal).MustEq(0) {
+	if go_decimal.MustStart(bal).MustEq(0) {
 		return bal, "", errors.Errorf("Balance not enough.")
 	}
 	hash, err := w.SendToken(priv, contractAddress, address, bal, opts)
@@ -1961,7 +1961,7 @@ func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ s
 	if err != nil {
 		return "", err
 	}
-	return go_decimal.Decimal.MustStart(result).MustUnShiftedBy(decimals).EndForString(), nil
+	return go_decimal.MustStart(result).MustUnShiftedBy(decimals).EndForString(), nil
 }
 
 func (w *Wallet) TokenBalance(contractAddress, address string) (bal_ *big.Int, err_ error) {

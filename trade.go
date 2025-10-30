@@ -43,7 +43,7 @@ func (w *Wallet) GetAmountsOut(
 		"getAmountsOut",
 		nil,
 		[]interface{}{
-			go_decimal.Decimal.MustStart(amountInWithDecimals).MustEndForBigInt(),
+			go_decimal.MustStart(amountInWithDecimals).MustEndForBigInt(),
 			[]common.Address{
 				common.HexToAddress(path[0]),
 				common.HexToAddress(path[1]),
@@ -97,7 +97,7 @@ func (w *Wallet) BuyByExactETH(
 	if err != nil {
 		return nil, err
 	}
-	ethAmountWithDecimals := go_decimal.Decimal.MustStart(ethAmount).MustShiftedBy(18).MustEndForBigInt()
+	ethAmountWithDecimals := go_decimal.MustStart(ethAmount).MustShiftedBy(18).MustEndForBigInt()
 
 	balanceWithDecimals, err := w.Balance(selfAddress)
 	if err != nil {
@@ -133,7 +133,7 @@ func (w *Wallet) BuyByExactETH(
 		return nil, err
 	}
 
-	minTokenAmountWithDecimals := go_decimal.Decimal.
+	minTokenAmountWithDecimals := go_decimal.
 		MustStart(amountOutWithDecimals).
 		MustMulti(1 - realOpts.Slippage).
 		RoundDown(0).
@@ -155,7 +155,7 @@ func (w *Wallet) BuyByExactETH(
 				common.HexToAddress(tokenAddress),
 			},
 			common.HexToAddress(selfAddress),
-			go_decimal.Decimal.MustStart(time.Now().Unix()).Round(0).MustAdd(200).MustEndForBigInt(),
+			go_decimal.MustStart(time.Now().Unix()).Round(0).MustAdd(200).MustEndForBigInt(),
 		},
 	)
 	if err != nil {
@@ -177,8 +177,8 @@ func (w *Wallet) BuyByExactETH(
 		return &result, err
 	}
 
-	result.TokenAmount = go_decimal.Decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).EndForString()
-	result.Fee = go_decimal.Decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
+	result.TokenAmount = go_decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).EndForString()
+	result.Fee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
 	return &result, nil
 }
 
@@ -232,7 +232,7 @@ func (w *Wallet) SellByExactToken(
 		}
 		realOpts.TokenDecimals = decimals_
 	}
-	tokenAmountWithDecimals := go_decimal.Decimal.MustStart(tokenAmount).MustShiftedBy(realOpts.TokenDecimals).MustEndForBigInt()
+	tokenAmountWithDecimals := go_decimal.MustStart(tokenAmount).MustShiftedBy(realOpts.TokenDecimals).MustEndForBigInt()
 
 	tokenBalanceWithDecimals, err := w.TokenBalance(tokenAddress, selfAddress)
 	if err != nil {
@@ -273,7 +273,7 @@ func (w *Wallet) SellByExactToken(
 			return nil, err
 		}
 		result.ApproveTxId = tr.TxHash.String()
-		result.ApproveFee = go_decimal.Decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
+		result.ApproveFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
 		w.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
 	}
 
@@ -286,7 +286,7 @@ func (w *Wallet) SellByExactToken(
 		return &result, err
 	}
 
-	minETHAmountWithDecimals := go_decimal.Decimal.
+	minETHAmountWithDecimals := go_decimal.
 		MustStart(amountOutWithDecimals).
 		MustMulti(1 - realOpts.Slippage).
 		RoundDown(0).
@@ -308,7 +308,7 @@ func (w *Wallet) SellByExactToken(
 				common.HexToAddress(opts.WETHAddress),
 			},
 			common.HexToAddress(selfAddress),
-			go_decimal.Decimal.MustStart(time.Now().Unix()).Round(0).MustAdd(200).MustEndForBigInt(),
+			go_decimal.MustStart(time.Now().Unix()).Round(0).MustAdd(200).MustEndForBigInt(),
 		},
 	)
 	if err != nil {
@@ -327,9 +327,9 @@ func (w *Wallet) SellByExactToken(
 		return &result, err
 	}
 
-	result.ETHAmount = go_decimal.Decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString()
-	result.SellFee = go_decimal.Decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
-	result.Fee = go_decimal.Decimal.MustStart(result.ApproveFee).MustAddForString(result.SellFee)
+	result.ETHAmount = go_decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString()
+	result.SellFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
+	result.Fee = go_decimal.MustStart(result.ApproveFee).MustAddForString(result.SellFee)
 	return &result, nil
 }
 

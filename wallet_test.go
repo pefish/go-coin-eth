@@ -69,7 +69,7 @@ func TestWallet_WatchLogs(t *testing.T) {
 	for {
 		select {
 		case log := <-resultChan:
-			result := make(map[string]interface{})
+			result := make(map[string]any)
 			err := contractInstance.UnpackLogIntoMap(result, "Transfer", log)
 			go_test_.Equal(t, nil, err)
 			go_test_.Equal(t, true, result["from"].(common.Address).String() != "")
@@ -737,7 +737,7 @@ func TestWallet_SendToken(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
-	txHash, err := wallet1.SendToken("", "0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.Decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(), &CallMethodOpts{
+	txHash, err := wallet1.SendToken("", "0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(), &CallMethodOpts{
 		GasLimit: 500000,
 	})
 	go_test_.Equal(t, nil, err)
@@ -873,7 +873,7 @@ func TestWallet_CallContractConstant3(t *testing.T) {
 			}{
 				common.HexToAddress("0x915EA4A94B61B138b568169122903Ed707A8E704"),
 				common.HexToAddress("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
-				go_decimal.Decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(),
+				go_decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(),
 				new(big.Int).SetUint64(3000),
 				new(big.Int).SetUint64(0),
 			},
