@@ -1,0 +1,54 @@
+package fourmeme_lib
+
+import (
+	"os"
+	"path"
+	"testing"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/joho/godotenv"
+	go_coin_eth "github.com/pefish/go-coin-eth"
+	go_decimal "github.com/pefish/go-decimal"
+	t_logger "github.com/pefish/go-interface/t-logger"
+	go_logger "github.com/pefish/go-logger"
+	go_test_ "github.com/pefish/go-test"
+)
+
+var wallet *go_coin_eth.Wallet
+
+func init() {
+	projectRoot, _ := go_test_.ProjectRoot()
+	envMap, err := godotenv.Read(path.Join(projectRoot, ".env"))
+	if err != nil {
+		panic(err)
+	}
+	for k, v := range envMap {
+		os.Setenv(k, v)
+	}
+
+	wallet_, err := go_coin_eth.NewWallet(go_logger.NewLogger(t_logger.Level_DEBUG)).InitRemote(&go_coin_eth.UrlParam{
+		RpcUrl: os.Getenv("NODE_HTTPS"),
+		WsUrl:  os.Getenv("NODE_WSS"),
+	})
+	if err != nil {
+		panic(err)
+	}
+	wallet = wallet_
+}
+
+func TestTokenInfo(t *testing.T) {
+	tokenInfo, err := TokenInfo(
+		wallet,
+		"0x444439030cbfdfb7e8db874734d56e612973e72b",
+	)
+	go_test_.Equal(t, nil, err)
+	spew.Dump(go_decimal.MustStart(tokenInfo.LastPrice).EndForString())
+}
+
+func TestTokenInfoByAPI(t *testing.T) {
+	tokenInfo, err := TokenInfoByAPI(
+		"0x444439030cbfdfb7e8db874734d56e612973e72b",
+	)
+	go_test_.Equal(t, nil, err)
+	spew.Dump(tokenInfo)
+}
