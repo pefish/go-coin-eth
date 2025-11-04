@@ -42,7 +42,7 @@ func (w *Wallet) GetAmountsOut(
 		RouterAbiStr,
 		"getAmountsOut",
 		nil,
-		[]interface{}{
+		[]any{
 			go_decimal.MustStart(amountInWithDecimals).MustEndForBigInt(),
 			[]common.Address{
 				common.HexToAddress(path[0]),
@@ -148,7 +148,7 @@ func (w *Wallet) BuyByExactETH(
 			Value:    ethAmountWithDecimals,
 			GasLimit: realOpts.GasLimit,
 		},
-		[]interface{}{
+		[]any{
 			minTokenAmountWithDecimals,
 			[]common.Address{
 				common.HexToAddress(realOpts.WETHAddress),
@@ -300,7 +300,7 @@ func (w *Wallet) SellByExactToken(
 		&CallMethodOpts{
 			GasLimit: realOpts.GasLimit,
 		},
-		[]interface{}{
+		[]any{
 			tokenAmountWithDecimals,
 			minETHAmountWithDecimals,
 			[]common.Address{

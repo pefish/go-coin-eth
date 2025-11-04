@@ -103,12 +103,12 @@ func (w *Wallet) Close() {
 }
 
 func (w *Wallet) CallContractConstant(
-	out interface{},
+	out any,
 	contractAddress,
 	abiStr,
 	methodName string,
 	opts *bind.CallOpts,
-	params []interface{},
+	params []any,
 ) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
@@ -127,7 +127,7 @@ func (w *Wallet) CallContractConstant(
 }
 
 func (w *Wallet) CallContractConstantWithPayload(
-	out interface{},
+	out any,
 	contractAddress,
 	payload string,
 	outputTypes abi.Arguments,
@@ -199,7 +199,7 @@ func (w *Wallet) CallContractConstantWithPayload(
 
 只能获取以后的而且区块确认了的事件，即使 start 指定为过去的 block number，也不能获取到
 
-query 的第一个 []interface{} 是指第一个 index ，第二个是指第二个 index
+query 的第一个 []any 是指第一个 index ，第二个是指第二个 index
 */
 func (w *Wallet) WatchLogsByWs(
 	ctx context.Context,
@@ -207,7 +207,7 @@ func (w *Wallet) WatchLogsByWs(
 	abiStr,
 	eventName string,
 	opts *bind.WatchOpts,
-	query ...[]interface{},
+	query ...[]any,
 ) (
 	resultChan_ chan types.Log,
 	contractInstance_ *bind.BoundContract,
@@ -238,7 +238,7 @@ func (w *Wallet) WatchLogsByWs(
 				time.Sleep(3 * time.Second)
 				continue
 			}
-			w.logger.Info("connected. watching...")
+			w.logger.InfoF("connected. watching <%s>...", eventName)
 			for {
 				select {
 				case log := <-chanLog:
@@ -269,7 +269,7 @@ func (w *Wallet) PredictCreateContractAddress(
 	nonce uint64,
 ) string {
 	hash := sha3.NewLegacyKeccak256()
-	b, _ := rlp.EncodeToBytes([]interface{}{
+	b, _ := rlp.EncodeToBytes([]any{
 		common.HexToAddress(address),
 		nonce,
 	})
@@ -329,7 +329,7 @@ func (w *Wallet) WatchLogsByLoop(
 	contractAddress,
 	abiStr,
 	eventName string,
-	query ...[]interface{},
+	query ...[]any,
 ) error {
 	fromBlock := startFromBlock
 	if startFromBlock == nil {
@@ -394,28 +394,34 @@ func (w *Wallet) FindLogs(
 	fromBlock,
 	toBlock *big.Int,
 	maxRange uint64,
-	query ...[]interface{},
+	query ...[]any,
 ) error {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
 
-	query = append([][]interface{}{{parsedAbi.Events[eventName].ID}}, query...)
+	query = append([][]any{{parsedAbi.Events[eventName].ID}}, query...)
 
 	topics, err := abi.MakeTopics(query...)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
 
-	latestBlockNumber, err := w.LatestBlockNumber()
-	if err != nil {
-		return errors.Wrap(err, "")
-	}
-	if fromBlock == nil {
+	if fromBlock == nil && toBlock != nil {
+		fromBlock = toBlock.Sub(toBlock, new(big.Int).SetUint64(maxRange))
+	} else if fromBlock == nil && toBlock == nil {
+		latestBlockNumber, err := w.LatestBlockNumber()
+		if err != nil {
+			return errors.Wrap(err, "")
+		}
 		fromBlock = latestBlockNumber.Sub(latestBlockNumber, new(big.Int).SetUint64(maxRange))
-	}
-	if toBlock == nil {
+		toBlock = latestBlockNumber
+	} else if fromBlock != nil && toBlock == nil {
+		latestBlockNumber, err := w.LatestBlockNumber()
+		if err != nil {
+			return errors.Wrap(err, "")
+		}
 		toBlock = latestBlockNumber
 	}
 
@@ -489,7 +495,7 @@ type BuildTxResult struct {
 //		Arg3   *big.Int
 //	}
 func (w *Wallet) UnpackLog(
-	out interface{},
+	out any,
 	abiStr string,
 	event string,
 	log *types.Log,
@@ -582,7 +588,7 @@ func (w *Wallet) UnpackParamsToStrs(
 func (w *Wallet) UnpackParams(
 	types_ []abi.Type,
 	paramsStr string,
-) ([]interface{}, error) {
+) ([]any, error) {
 	paramsStr = strings.TrimPrefix(paramsStr, "0x")
 
 	argTypes := make(abi.Arguments, 0)
@@ -609,7 +615,7 @@ func (w *Wallet) PackParamsFromStrs(
 	types []abi.Type,
 	strs []string,
 ) (hexStr_ string, err_ error) {
-	args := make([]interface{}, 0)
+	args := make([]any, 0)
 	for i, str := range strs {
 		switch types[i].String() {
 		case "string":
@@ -638,7 +644,7 @@ func (w *Wallet) PackParamsFromStrs(
 // 不带 0x 前缀
 func (w *Wallet) PackParams(
 	types []abi.Type,
-	args []interface{},
+	args []any,
 ) (hexStr_ string, err_ error) {
 	argTypes := make(abi.Arguments, 0)
 	for _, t := range types {
@@ -660,7 +666,7 @@ func (w *Wallet) PackParams(
 func (w *Wallet) EncodePayload(
 	abiStr string,
 	methodName string,
-	params []interface{},
+	params []any,
 ) (hexStr_ string, err_ error) {
 	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
@@ -674,9 +680,9 @@ func (w *Wallet) EncodePayload(
 }
 
 func (w *Wallet) ToTopicHash(
-	data interface{},
+	data any,
 ) (*common.Hash, error) {
-	hashes, err := abi.MakeTopics([]interface{}{data})
+	hashes, err := abi.MakeTopics([]any{data})
 	if err != nil {
 		return nil, err
 	}
@@ -684,7 +690,7 @@ func (w *Wallet) ToTopicHash(
 }
 
 func (w *Wallet) ToTopicHashes(
-	datas ...interface{},
+	datas ...any,
 ) ([]common.Hash, error) {
 	hashes, err := abi.MakeTopics(datas)
 	if err != nil {
@@ -695,7 +701,7 @@ func (w *Wallet) ToTopicHashes(
 
 func (w *Wallet) DecodePayload(
 	abiStr string,
-	out interface{},
+	out any,
 	payloadStr string,
 ) (methodInfo_ *abi.Method, err_ error) {
 	if len(payloadStr) < 8 {
@@ -847,7 +853,7 @@ func (w *Wallet) BuildCallMethodTx(
 	abiStr,
 	methodName string, // 如果有同名重构函数，比如有 4 个重构函数 test()，则 abi 数组中第一个叫 test，第二个叫 test0，第三个叫 test1，第四个叫 test2
 	opts *CallMethodOpts,
-	params []interface{},
+	params []any,
 ) (btr_ *BuildTxResult, err_ error) {
 	var realOpts CallMethodOpts
 	if opts != nil {
@@ -942,7 +948,7 @@ func (w *Wallet) BuildDeployContractTx(
 	abiStr,
 	binHexStr string,
 	opts *BuildDeployContractTxOpts,
-	params []interface{},
+	params []any,
 ) (btr_ *BuildTxResult, err_ error) {
 	var realOpts BuildDeployContractTxOpts
 	if opts != nil {
@@ -1015,7 +1021,7 @@ func (w *Wallet) EstimateCall(
 	abiStr string,
 	value string,
 	methodName string,
-	params []interface{},
+	params []any,
 ) error {
 
 	isContract, err := w.IsContract(contractAddress)
@@ -1472,7 +1478,7 @@ func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) 
 		Erc20AbiStr,
 		"allowance",
 		nil,
-		[]interface{}{
+		[]any{
 			common.HexToAddress(fromAddress),
 			common.HexToAddress(toAddress),
 		},
@@ -1500,7 +1506,7 @@ func (w *Wallet) Approve(
 		Erc20AbiStr,
 		"approve",
 		opts,
-		[]interface{}{
+		[]any{
 			common.HexToAddress(toAddress),
 			approveAmount,
 		},
@@ -1859,7 +1865,7 @@ func (w *Wallet) SendToken(
 		Erc20AbiStr,
 		"transfer",
 		opts,
-		[]interface{}{
+		[]any{
 			common.HexToAddress(address),
 			amount,
 		},
@@ -1950,7 +1956,7 @@ func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ s
   }]`,
 		"balanceOf",
 		nil,
-		[]interface{}{
+		[]any{
 			common.HexToAddress(address),
 		},
 	)
@@ -1990,7 +1996,7 @@ func (w *Wallet) TokenBalance(contractAddress, address string) (bal_ *big.Int, e
   }]`,
 		"balanceOf",
 		nil,
-		[]interface{}{
+		[]any{
 			common.HexToAddress(address),
 		},
 	)
