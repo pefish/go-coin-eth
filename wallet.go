@@ -371,7 +371,7 @@ func (w *Wallet) WatchLogsByLoop(
 				query...,
 			)
 			if err != nil {
-				return err
+				w.logger.Error(err)
 			}
 
 			timer.Reset(loopInterval)
