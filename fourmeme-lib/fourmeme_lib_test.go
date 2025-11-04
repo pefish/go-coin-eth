@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	go_decimal "github.com/pefish/go-decimal"
+	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
 	go_test_ "github.com/pefish/go-test"
@@ -47,6 +48,7 @@ func TestTokenInfo(t *testing.T) {
 
 func TestTokenInfoByAPI(t *testing.T) {
 	tokenInfo, err := TokenInfoByAPI(
+		&i_logger.DefaultLogger,
 		"0x444439030cbfdfb7e8db874734d56e612973e72b",
 	)
 	go_test_.Equal(t, nil, err)

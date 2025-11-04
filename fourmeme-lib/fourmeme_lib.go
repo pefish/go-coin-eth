@@ -10,6 +10,7 @@ import (
 	"github.com/pefish/go-coin-eth/fourmeme-lib/constant"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
+	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
 
@@ -230,13 +231,13 @@ type TokenInfoByAPIType struct {
 	LastId        int64  `json:"lastId"`
 }
 
-func TokenInfoByAPI(tokenAddress string) (*TokenInfoByAPIType, error) {
+func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress string) (*TokenInfoByAPIType, error) {
 	var callResult struct {
 		Code int                `json:"code"`
 		Msg  string             `json:"msg"`
 		Data TokenInfoByAPIType `json:"data"`
 	}
-	_, _, err := go_http.NewHttpRequester(go_http.WithTimeout(10*time.Second)).GetForStruct(
+	_, _, err := go_http.NewHttpRequester(go_http.WithLogger(logger), go_http.WithTimeout(10*time.Second)).GetForStruct(
 		&go_http.RequestParams{
 			Url: "https://four.meme/meme-api/v1/private/token/get/v2",
 			Queries: map[string]string{
