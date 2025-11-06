@@ -2045,3 +2045,7 @@ func (w *Wallet) RandomMnemonic() (mnemonic_ string, err_ error) {
 	}
 	return mnemonic, nil
 }
+
+func (w *Wallet) IsAddress(str string) bool {
+	return common.IsHexAddress(str)
+}

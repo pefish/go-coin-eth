@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -1042,4 +1043,10 @@ func TestWallet_GasPriceNoDecimals(t *testing.T) {
 	gasPrice, err := wallet.GasPriceNoDecimals()
 	go_test_.Equal(t, nil, err)
 	fmt.Println(gasPrice)
+}
+
+func TestWallet_IsAddress(t *testing.T) {
+	wallet := NewWallet(&i_logger.DefaultLogger)
+	r := wallet.IsAddress("73652725672567")
+	spew.Dump(r)
 }
