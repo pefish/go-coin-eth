@@ -1,6 +1,7 @@
 package uniswap_v3_trade
 
 // v3 中，pool 由 token1、token2、fee 三个参数唯一确定
+// 同样适用于 pancake V3
 
 import (
 	"context"

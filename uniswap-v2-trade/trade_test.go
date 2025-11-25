@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	go_coin_eth "github.com/pefish/go-coin-eth"
+	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	go_test_ "github.com/pefish/go-test"
 )
@@ -27,12 +28,12 @@ func TestWallet_GetAmountsOut(t *testing.T) {
 	trader := New(&i_logger.DefaultLogger, wallet)
 	result, err := trader.GetAmountsOut(
 		"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-		"100000000000000000",
+		go_decimal.MustStart("100000000000000000").MustEndForBigInt(),
 		[]string{
 			go_coin_eth.WETHAddress,
 			"0xD06e204b2DE9cBCC19E1Fa1F9523f2189aF38c55",
 		},
 	)
 	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, true, result != "")
+	go_test_.Equal(t, true, result != nil)
 }
