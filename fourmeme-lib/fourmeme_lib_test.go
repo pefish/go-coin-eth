@@ -53,3 +53,12 @@ func TestTokenInfoByAPI(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	spew.Dump(tokenInfo)
 }
+
+func TestGetReserveInfo(t *testing.T) {
+	reserveInfo, err := GetReserveInfo(
+		wallet,
+		"0x44440f83419de123d7d411187adb9962db017d03",
+	)
+	go_test_.Equal(t, nil, err)
+	spew.Dump(reserveInfo)
+}

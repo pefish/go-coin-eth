@@ -273,3 +273,40 @@ func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress string) (*TokenInfoByA
 	}
 	return &callResult.Data, nil
 }
+
+type ReserveInfoType struct {
+	ReserveBNBWithDecimals   string
+	ReserveTokenWithDecimals string
+	Price                    string
+}
+
+func GetReserveInfo(
+	wallet *go_coin_eth.Wallet,
+	tokenAddress string,
+) (*ReserveInfoType, error) {
+	tokenInfo, err := TokenInfo(wallet, tokenAddress)
+	if err != nil {
+		return nil, err
+	}
+	if tokenInfo.LiquidityAdded {
+		reserveBNBWithDecimals, err := wallet.TokenBalance(constant.WBNBAddress, tokenInfo.PairAddress.String())
+		if err != nil {
+			return nil, err
+		}
+		reserveTokenWithDecimals, err := wallet.TokenBalance(tokenAddress, tokenInfo.PairAddress.String())
+		if err != nil {
+			return nil, err
+		}
+		return &ReserveInfoType{
+			ReserveBNBWithDecimals:   reserveBNBWithDecimals.String(),
+			ReserveTokenWithDecimals: reserveTokenWithDecimals.String(),
+			Price:                    go_decimal.MustStart(reserveBNBWithDecimals).MustDivForString(reserveTokenWithDecimals),
+		}, nil
+	}
+
+	return &ReserveInfoType{
+		ReserveBNBWithDecimals:   tokenInfo.Funds.String(),
+		ReserveTokenWithDecimals: tokenInfo.Offers.String(),
+		Price:                    go_decimal.MustStart(tokenInfo.LastPrice).MustUnShiftedBy(18).EndForString(),
+	}, nil
+}

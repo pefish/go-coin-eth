@@ -1970,11 +1970,11 @@ func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ s
 	return go_decimal.MustStart(result).MustUnShiftedBy(decimals).EndForString(), nil
 }
 
-func (w *Wallet) TokenBalance(contractAddress, address string) (bal_ *big.Int, err_ error) {
+func (w *Wallet) TokenBalance(tokenAddress, address string) (bal_ *big.Int, err_ error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(
 		&result,
-		contractAddress,
+		tokenAddress,
 		`[{
     "inputs": [
       {
