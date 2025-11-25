@@ -8,7 +8,6 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
@@ -40,10 +39,10 @@ func init() {
 func TestTokenInfo(t *testing.T) {
 	tokenInfo, err := TokenInfo(
 		wallet,
-		"0x444439030cbfdfb7e8db874734d56e612973e72b",
+		"0x44440f83419de123d7d411187adb9962db017d03",
 	)
 	go_test_.Equal(t, nil, err)
-	spew.Dump(go_decimal.MustStart(tokenInfo.LastPrice).EndForString())
+	spew.Dump(tokenInfo)
 }
 
 func TestTokenInfoByAPI(t *testing.T) {

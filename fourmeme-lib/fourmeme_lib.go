@@ -155,6 +155,7 @@ type TokenInfoType struct {
 	Funds          *big.Int       `json:"funds"`
 	MaxFunds       *big.Int       `json:"maxFunds"`
 	LiquidityAdded bool           `json:"liquidityAdded"`
+	PairAddress    common.Address `json:"pairAddress"` // 上岸后 pancake 中的 pair address
 }
 
 func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType, error) {
@@ -171,6 +172,24 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType,
 	)
 	if err != nil {
 		return nil, err
+	}
+	if callResult.LiquidityAdded {
+		var pairAddress common.Address
+		err = wallet.CallContractConstant(
+			&pairAddress,
+			constant.PancakeFactoryAddress,
+			constant.PancakeFactoryABI,
+			"getPair",
+			nil,
+			[]any{
+				common.HexToAddress(tokenAddress),
+				common.HexToAddress(constant.WBNBAddress),
+			},
+		)
+		if err != nil {
+			return nil, err
+		}
+		callResult.PairAddress = pairAddress
 	}
 	return &callResult, nil
 }
