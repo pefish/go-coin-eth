@@ -1,4 +1,6 @@
-package go_coin_eth
+package uniswap_v2_trade
+
+// 同样适用于 pancake V2
 
 import (
 	"context"
@@ -7,16 +9,34 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	go_coin_eth "github.com/pefish/go-coin-eth"
+	constants "github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
 	go_decimal "github.com/pefish/go-decimal"
+	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
 
-func (w *Wallet) WETHAddressFromRouter(routerAddress string) (string, error) {
+type Trader struct {
+	wallet *go_coin_eth.Wallet
+	logger i_logger.ILogger
+}
+
+func New(
+	logger i_logger.ILogger,
+	wallet *go_coin_eth.Wallet,
+) *Trader {
+	return &Trader{
+		wallet: wallet,
+		logger: logger,
+	}
+}
+
+func (t *Trader) WETHAddressFromRouter(routerAddress string) (string, error) {
 	var wethAddress common.Address
-	err := w.CallContractConstant(
+	err := t.wallet.CallContractConstant(
 		&wethAddress,
 		routerAddress,
-		RouterAbiStr,
+		constants.RouterAbiStr,
 		"WETH",
 		nil,
 		nil,
@@ -27,7 +47,7 @@ func (w *Wallet) WETHAddressFromRouter(routerAddress string) (string, error) {
 	return wethAddress.String(), nil
 }
 
-func (w *Wallet) GetAmountsOut(
+func (t *Trader) GetAmountsOut(
 	routerAddress string,
 	amountInWithDecimals string,
 	path []string,
@@ -36,10 +56,10 @@ func (w *Wallet) GetAmountsOut(
 		return "", errors.New("Length of path must be 2.")
 	}
 	results := make([]*big.Int, 0)
-	err := w.CallContractConstant(
+	err := t.wallet.CallContractConstant(
 		&results,
 		routerAddress,
-		RouterAbiStr,
+		constants.RouterAbiStr,
 		"getAmountsOut",
 		nil,
 		[]any{
@@ -67,9 +87,10 @@ type BuyByExactETHOpts struct {
 	WETHAddress   string
 	Slippage      float64 // 滑点，默认 0.5%
 	GasLimit      uint64
+	MaxFeePerGas  *big.Int
 }
 
-func (w *Wallet) BuyByExactETH(
+func (t *Trader) BuyByExactETH(
 	ctx context.Context,
 	priv string,
 	ethAmount string,
@@ -93,13 +114,13 @@ func (w *Wallet) BuyByExactETH(
 		realOpts.GasLimit = 300000
 	}
 
-	selfAddress, err := w.PrivateKeyToAddress(priv)
+	selfAddress, err := t.wallet.PrivateKeyToAddress(priv)
 	if err != nil {
 		return nil, err
 	}
 	ethAmountWithDecimals := go_decimal.MustStart(ethAmount).MustShiftedBy(18).MustEndForBigInt()
 
-	balanceWithDecimals, err := w.Balance(selfAddress)
+	balanceWithDecimals, err := t.wallet.Balance(selfAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +130,7 @@ func (w *Wallet) BuyByExactETH(
 	}
 
 	if realOpts.WETHAddress == "" {
-		wethAddress_, err := w.WETHAddressFromRouter(routerAddress)
+		wethAddress_, err := t.WETHAddressFromRouter(routerAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -117,17 +138,17 @@ func (w *Wallet) BuyByExactETH(
 	}
 
 	if realOpts.TokenDecimals == 0 {
-		decimals_, err := w.TokenDecimals(tokenAddress)
+		decimals_, err := t.wallet.TokenDecimals(tokenAddress)
 		if err != nil {
 			return nil, err
 		}
 		realOpts.TokenDecimals = decimals_
 	}
 
-	amountOutWithDecimals, err := w.GetAmountsOut(
+	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
 		ethAmountWithDecimals.String(),
-		[]string{opts.WETHAddress, tokenAddress},
+		[]string{realOpts.WETHAddress, tokenAddress},
 	)
 	if err != nil {
 		return nil, err
@@ -139,14 +160,15 @@ func (w *Wallet) BuyByExactETH(
 		RoundDown(0).
 		MustEndForBigInt()
 
-	btr, err := w.BuildCallMethodTx(
+	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
 		routerAddress,
-		RouterAbiStr,
+		constants.RouterAbiStr,
 		"swapExactETHForTokensSupportingFeeOnTransferTokens",
-		&CallMethodOpts{
-			Value:    ethAmountWithDecimals,
-			GasLimit: realOpts.GasLimit,
+		&go_coin_eth.CallMethodOpts{
+			Value:        ethAmountWithDecimals,
+			GasLimit:     realOpts.GasLimit,
+			MaxFeePerGas: realOpts.MaxFeePerGas,
 		},
 		[]any{
 			minTokenAmountWithDecimals,
@@ -162,13 +184,13 @@ func (w *Wallet) BuyByExactETH(
 		return nil, err
 	}
 	result.TxId = btr.SignedTx.Hash().String()
-	w.logger.InfoF("购买 txid <%s> 等待确认", result.TxId)
-	tr, err := w.SendRawTransactionWait(ctx, btr.TxHex)
+	t.logger.InfoF("购买 txid <%s> 等待确认", result.TxId)
+	tr, err := t.wallet.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
 		return &result, err
 	}
-	w.logger.InfoF("<%s> 已确认", result.TxId)
-	tokenAmountWithDecimals, err := w.receivedTokenAmountInLogs(
+	t.logger.InfoF("<%s> 已确认", result.TxId)
+	tokenAmountWithDecimals, err := t.receivedTokenAmountInLogs(
 		tr.Logs,
 		tokenAddress,
 		selfAddress,
@@ -196,9 +218,10 @@ type SellByExactTokenOpts struct {
 	WETHAddress   string
 	Slippage      float64 // 滑点，默认 0.5%
 	GasLimit      uint64
+	MaxFeePerGas  *big.Int
 }
 
-func (w *Wallet) SellByExactToken(
+func (t *Trader) SellByExactToken(
 	ctx context.Context,
 	priv string,
 	tokenAmount string,
@@ -221,12 +244,12 @@ func (w *Wallet) SellByExactToken(
 		realOpts.GasLimit = 400000
 	}
 
-	selfAddress, err := w.PrivateKeyToAddress(priv)
+	selfAddress, err := t.wallet.PrivateKeyToAddress(priv)
 	if err != nil {
 		return nil, err
 	}
 	if realOpts.TokenDecimals == 0 {
-		decimals_, err := w.TokenDecimals(tokenAddress)
+		decimals_, err := t.wallet.TokenDecimals(tokenAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -234,7 +257,7 @@ func (w *Wallet) SellByExactToken(
 	}
 	tokenAmountWithDecimals := go_decimal.MustStart(tokenAmount).MustShiftedBy(realOpts.TokenDecimals).MustEndForBigInt()
 
-	tokenBalanceWithDecimals, err := w.TokenBalance(tokenAddress, selfAddress)
+	tokenBalanceWithDecimals, err := t.wallet.TokenBalance(tokenAddress, selfAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -243,14 +266,14 @@ func (w *Wallet) SellByExactToken(
 	}
 
 	if realOpts.WETHAddress == "" {
-		wethAddress_, err := w.WETHAddressFromRouter(routerAddress)
+		wethAddress_, err := t.WETHAddressFromRouter(routerAddress)
 		if err != nil {
 			return nil, err
 		}
 		realOpts.WETHAddress = wethAddress_
 	}
 
-	approvedAmountWithDecimals, err := w.ApprovedAmount(
+	approvedAmountWithDecimals, err := t.wallet.ApprovedAmount(
 		tokenAddress,
 		selfAddress,
 		routerAddress,
@@ -261,26 +284,28 @@ func (w *Wallet) SellByExactToken(
 
 	result.ApproveFee = "0"
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
-		tr, err := w.ApproveWait(
+		tr, err := t.wallet.ApproveWait(
 			ctx,
 			priv,
 			tokenAddress,
 			routerAddress,
-			MaxUint256,
-			nil,
+			go_coin_eth.MaxUint256,
+			&go_coin_eth.CallMethodOpts{
+				MaxFeePerGas: realOpts.MaxFeePerGas,
+			},
 		)
 		if err != nil {
 			return nil, err
 		}
 		result.ApproveTxId = tr.TxHash.String()
 		result.ApproveFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
-		w.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
+		t.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
 	}
 
-	amountOutWithDecimals, err := w.GetAmountsOut(
+	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
 		tokenAmountWithDecimals.String(),
-		[]string{tokenAddress, opts.WETHAddress},
+		[]string{tokenAddress, realOpts.WETHAddress},
 	)
 	if err != nil {
 		return &result, err
@@ -292,20 +317,21 @@ func (w *Wallet) SellByExactToken(
 		RoundDown(0).
 		MustEndForBigInt()
 
-	btr, err := w.BuildCallMethodTx(
+	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
 		routerAddress,
-		RouterAbiStr,
+		constants.RouterAbiStr,
 		"swapExactTokensForETHSupportingFeeOnTransferTokens",
-		&CallMethodOpts{
-			GasLimit: realOpts.GasLimit,
+		&go_coin_eth.CallMethodOpts{
+			GasLimit:     realOpts.GasLimit,
+			MaxFeePerGas: realOpts.MaxFeePerGas,
 		},
 		[]any{
 			tokenAmountWithDecimals,
 			minETHAmountWithDecimals,
 			[]common.Address{
 				common.HexToAddress(tokenAddress),
-				common.HexToAddress(opts.WETHAddress),
+				common.HexToAddress(realOpts.WETHAddress),
 			},
 			common.HexToAddress(selfAddress),
 			go_decimal.MustStart(time.Now().Unix()).Round(0).MustAdd(200).MustEndForBigInt(),
@@ -315,14 +341,14 @@ func (w *Wallet) SellByExactToken(
 		return &result, err
 	}
 	result.TxId = btr.SignedTx.Hash().String()
-	w.logger.InfoF("出售 txid <%s> 等待确认", result.TxId)
-	tr, err := w.SendRawTransactionWait(ctx, btr.TxHex)
+	t.logger.InfoF("出售 txid <%s> 等待确认", result.TxId)
+	tr, err := t.wallet.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
 		return &result, err
 	}
-	w.logger.InfoF("<%s> 已确认", result.TxId)
+	t.logger.InfoF("<%s> 已确认", result.TxId)
 
-	ethAmountWithDecimals, err := w.receivedETHAmountInLogs(tr.Logs, opts.WETHAddress)
+	ethAmountWithDecimals, err := t.receivedETHAmountInLogs(tr.Logs, realOpts.WETHAddress)
 	if err != nil {
 		return &result, err
 	}
@@ -333,14 +359,14 @@ func (w *Wallet) SellByExactToken(
 	return &result, nil
 }
 
-func (w *Wallet) receivedTokenAmountInLogs(
+func (t *Trader) receivedTokenAmountInLogs(
 	logs []*types.Log,
 	tokenAddress string,
 	myAddress string,
 ) (*big.Int, error) {
 	result := big.NewInt(0)
 
-	transferLogs, err := w.FilterLogs(
+	transferLogs, err := t.wallet.FilterLogs(
 		"0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
 		tokenAddress,
 		logs,
@@ -354,9 +380,9 @@ func (w *Wallet) receivedTokenAmountInLogs(
 			Value *big.Int
 			To    common.Address
 		}
-		err := w.UnpackLog(
+		err := t.wallet.UnpackLog(
 			&transferEvent,
-			Erc20AbiStr,
+			go_coin_eth.Erc20AbiStr,
 			"Transfer",
 			log,
 		)
@@ -372,11 +398,11 @@ func (w *Wallet) receivedTokenAmountInLogs(
 	return result, nil
 }
 
-func (w *Wallet) receivedETHAmountInLogs(
+func (t *Trader) receivedETHAmountInLogs(
 	logs []*types.Log,
 	wethAddress string,
 ) (*big.Int, error) {
-	withdrawalLogs, err := w.FilterLogs(
+	withdrawalLogs, err := t.wallet.FilterLogs(
 		"0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
 		wethAddress,
 		logs,
@@ -388,7 +414,7 @@ func (w *Wallet) receivedETHAmountInLogs(
 		Src common.Address
 		Wad *big.Int
 	}
-	err = w.UnpackLog(&withdrawalEvent, WETHAbiStr, "Withdrawal", withdrawalLogs[len(withdrawalLogs)-1])
+	err = t.wallet.UnpackLog(&withdrawalEvent, go_coin_eth.WETHAbiStr, "Withdrawal", withdrawalLogs[len(withdrawalLogs)-1])
 	if err != nil {
 		return nil, err
 	}
