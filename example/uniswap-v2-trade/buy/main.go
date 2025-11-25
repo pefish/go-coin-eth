@@ -27,7 +27,7 @@ func main() {
 }
 
 const tokenAddress = "0x44440f83419de123d7d411187adb9962db017d03"
-const bnbAmount = 0.001
+const bnbAmount = "0.001"
 
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(

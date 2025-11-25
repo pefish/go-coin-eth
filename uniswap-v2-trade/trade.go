@@ -77,8 +77,8 @@ func (t *Trader) GetAmountsOut(
 }
 
 type BuyByExactETHResult struct {
-	TokenAmount float64
-	Fee         float64
+	TokenAmount string
+	Fee         string
 	TxId        string
 }
 
@@ -93,7 +93,7 @@ type BuyByExactETHOpts struct {
 func (t *Trader) BuyByExactETH(
 	ctx context.Context,
 	priv string,
-	ethAmount float64,
+	ethAmount string,
 	routerAddress string,
 	tokenAddress string,
 	opts *BuyByExactETHOpts,
@@ -199,16 +199,16 @@ func (t *Trader) BuyByExactETH(
 		return &result, err
 	}
 
-	result.TokenAmount = go_decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).MustEndForFloat64()
-	result.Fee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).MustEndForFloat64()
+	result.TokenAmount = go_decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).EndForString()
+	result.Fee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
 	return &result, nil
 }
 
 type SellByExactTokenResult struct {
-	ETHAmount   float64
-	ApproveFee  float64
-	SellFee     float64
-	Fee         float64
+	ETHAmount   string
+	ApproveFee  string
+	SellFee     string
+	Fee         string
 	TxId        string
 	ApproveTxId string
 }
@@ -224,7 +224,7 @@ type SellByExactTokenOpts struct {
 func (t *Trader) SellByExactToken(
 	ctx context.Context,
 	priv string,
-	tokenAmount float64,
+	tokenAmount string,
 	routerAddress string,
 	tokenAddress string,
 	opts *SellByExactTokenOpts,
@@ -282,7 +282,7 @@ func (t *Trader) SellByExactToken(
 		return nil, err
 	}
 
-	result.ApproveFee = 0.0
+	result.ApproveFee = "0"
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
 		tr, err := t.wallet.ApproveWait(
 			ctx,
@@ -298,7 +298,7 @@ func (t *Trader) SellByExactToken(
 			return nil, err
 		}
 		result.ApproveTxId = tr.TxHash.String()
-		result.ApproveFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).MustEndForFloat64()
+		result.ApproveFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
 		t.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
 	}
 
@@ -353,9 +353,9 @@ func (t *Trader) SellByExactToken(
 		return &result, err
 	}
 
-	result.ETHAmount = go_decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).MustEndForFloat64()
-	result.SellFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).MustEndForFloat64()
-	result.Fee = go_decimal.MustStart(result.ApproveFee).MustAdd(result.SellFee).MustEndForFloat64()
+	result.ETHAmount = go_decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString()
+	result.SellFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
+	result.Fee = go_decimal.MustStart(result.ApproveFee).MustAdd(result.SellFee).EndForString()
 	return &result, nil
 }
 
