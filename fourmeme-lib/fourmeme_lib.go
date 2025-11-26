@@ -158,6 +158,7 @@ type TokenInfoType struct {
 	PairAddress    common.Address `json:"pairAddress"` // 上岸后 pancake 中的 pair address
 }
 
+// tokenInfo 返回 nil 表示 token 不是 fourmeme token
 func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType, error) {
 	var callResult TokenInfoType
 	err := wallet.CallContractConstant(
@@ -172,6 +173,9 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType,
 	)
 	if err != nil {
 		return nil, err
+	}
+	if callResult.LaunchTime.Int64() == 0 {
+		return nil, nil
 	}
 	if callResult.LiquidityAdded {
 		var pairAddress common.Address
