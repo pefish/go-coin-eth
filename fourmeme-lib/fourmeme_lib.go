@@ -292,6 +292,9 @@ func GetReserveInfo(
 	if err != nil {
 		return nil, err
 	}
+	if tokenInfo.Quote.String() != "0x0000000000000000000000000000000000000000" {
+		return nil, errors.New("quote not WBNB")
+	}
 	if tokenInfo.LiquidityAdded {
 		reserveBNBWithDecimals, err := wallet.TokenBalance(constant.WBNBAddress, tokenInfo.PairAddress.String())
 		if err != nil {
