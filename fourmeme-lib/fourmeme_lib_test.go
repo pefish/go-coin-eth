@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -39,7 +40,7 @@ func init() {
 func TestTokenInfo(t *testing.T) {
 	tokenInfo, err := TokenInfo(
 		wallet,
-		"0x44440f83419de123d7d411187adb9962db017d03",
+		common.HexToAddress("0x44440f83419de123d7d411187adb9962db017d03"),
 	)
 	go_test_.Equal(t, nil, err)
 	spew.Dump(tokenInfo)
@@ -48,7 +49,7 @@ func TestTokenInfo(t *testing.T) {
 func TestTokenInfoByAPI(t *testing.T) {
 	tokenInfo, err := TokenInfoByAPI(
 		&i_logger.DefaultLogger,
-		"0x444439030cbfdfb7e8db874734d56e612973e72b",
+		common.HexToAddress("0x444439030cbfdfb7e8db874734d56e612973e72b"),
 	)
 	go_test_.Equal(t, nil, err)
 	spew.Dump(tokenInfo)
@@ -57,7 +58,7 @@ func TestTokenInfoByAPI(t *testing.T) {
 func TestGetReserveInfo(t *testing.T) {
 	reserveInfo, err := GetReserveInfo(
 		wallet,
-		"0x44440f83419de123d7d411187adb9962db017d03",
+		common.HexToAddress("0x44440f83419de123d7d411187adb9962db017d03"),
 	)
 	go_test_.Equal(t, nil, err)
 	spew.Dump(reserveInfo)

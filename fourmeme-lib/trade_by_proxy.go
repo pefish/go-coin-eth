@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	"github.com/pefish/go-coin-eth/fourmeme-lib/constant"
+	type_ "github.com/pefish/go-coin-eth/type"
 )
 
 type TradeEventType struct {
@@ -24,11 +25,11 @@ func BuyByProxy(
 	ctx context.Context,
 	wallet *go_coin_eth.Wallet,
 	priv string,
-	tokenAddress string,
+	tokenAddress common.Address,
 	tokenAmountWithDecimals *big.Int,
 	maxCostBNBAmount *big.Int,
 	maxFeePerGas *big.Int, // 1 大概 0.1 刀
-) (*SwapInfoType, error) {
+) (*type_.SwapResultType, *TradeEventType, error) {
 	btr, err := wallet.BuildCallMethodTx(
 		priv,
 		constant.FourmemeToolAddress,
@@ -40,36 +41,36 @@ func BuyByProxy(
 			IsPredictError: false,
 		},
 		[]any{
-			common.HexToAddress(tokenAddress),
+			tokenAddress,
 			tokenAmountWithDecimals,
 			maxCostBNBAmount,
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	tr, err := wallet.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	swapInfos, err := ParseSwapInfos(wallet, tr)
+	swapInfos, tradeEvents, err := ParseSwapInfos(wallet, tr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return swapInfos[0], nil
+	return swapInfos[0], tradeEvents[0], nil
 }
 
 func SellByProxy(
 	ctx context.Context,
 	wallet *go_coin_eth.Wallet,
 	priv string,
-	tokenAddress string,
+	tokenAddress common.Address,
 	tokenAmountWithDecimals *big.Int,
 	minReceiveBnbAmount *big.Int,
 	maxFeePerGas *big.Int,
-) (*SwapInfoType, error) {
+) (*type_.SwapResultType, *TradeEventType, error) {
 	btr, err := wallet.BuildCallMethodTx(
 		priv,
 		constant.FourmemeToolAddress,
@@ -81,22 +82,22 @@ func SellByProxy(
 			IsPredictError: false,
 		},
 		[]any{
-			common.HexToAddress(tokenAddress),
+			tokenAddress,
 			tokenAmountWithDecimals,
 			minReceiveBnbAmount,
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	tr, err := wallet.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	swapInfos, err := ParseSwapInfos(wallet, tr)
+	swapInfos, tradeEvents, err := ParseSwapInfos(wallet, tr)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return swapInfos[0], nil
+	return swapInfos[0], tradeEvents[0], nil
 }

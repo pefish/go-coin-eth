@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	"github.com/pefish/go-coin-eth/fourmeme-lib/constant"
+	type_ "github.com/pefish/go-coin-eth/type"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -34,7 +35,7 @@ type TokenInfoType struct {
 }
 
 // tokenInfo 返回 nil 表示 token 不是 fourmeme token
-func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType, error) {
+func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress common.Address) (*TokenInfoType, error) {
 	var callResult TokenInfoType
 	err := wallet.CallContractConstant(
 		&callResult,
@@ -43,7 +44,7 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType,
 		"getTokenInfo",
 		nil,
 		[]any{
-			common.HexToAddress(tokenAddress),
+			tokenAddress,
 		},
 	)
 	if err != nil {
@@ -61,8 +62,8 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress string) (*TokenInfoType,
 			"getPair",
 			nil,
 			[]any{
-				common.HexToAddress(tokenAddress),
-				common.HexToAddress(constant.WBNBAddress),
+				tokenAddress,
+				constant.WBNBAddress,
 			},
 		)
 		if err != nil {
@@ -129,7 +130,7 @@ type TokenInfoByAPIType struct {
 	LastId        int64  `json:"lastId"`
 }
 
-func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress string) (*TokenInfoByAPIType, error) {
+func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress common.Address) (*TokenInfoByAPIType, error) {
 	var callResult struct {
 		Code int                `json:"code"`
 		Msg  string             `json:"msg"`
@@ -139,7 +140,7 @@ func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress string) (*TokenInfoByA
 		&go_http.RequestParams{
 			Url: "https://four.meme/meme-api/v1/private/token/get/v2",
 			Queries: map[string]string{
-				"address": tokenAddress,
+				"address": tokenAddress.String(),
 			},
 		},
 		&callResult,
@@ -161,7 +162,7 @@ type ReserveInfoType struct {
 
 func GetReserveInfo(
 	wallet *go_coin_eth.Wallet,
-	tokenAddress string,
+	tokenAddress common.Address,
 ) (*ReserveInfoType, error) {
 	tokenInfo, err := TokenInfo(wallet, tokenAddress)
 	if err != nil {
@@ -171,11 +172,11 @@ func GetReserveInfo(
 		return nil, errors.New("quote not WBNB")
 	}
 	if tokenInfo.LiquidityAdded {
-		reserveBNBWithDecimals, err := wallet.TokenBalance(constant.WBNBAddress, tokenInfo.PairAddress.String())
+		reserveBNBWithDecimals, err := wallet.TokenBalance(constant.WBNBAddress, tokenInfo.PairAddress)
 		if err != nil {
 			return nil, err
 		}
-		reserveTokenWithDecimals, err := wallet.TokenBalance(tokenAddress, tokenInfo.PairAddress.String())
+		reserveTokenWithDecimals, err := wallet.TokenBalance(tokenAddress, tokenInfo.PairAddress)
 		if err != nil {
 			return nil, err
 		}
@@ -193,23 +194,16 @@ func GetReserveInfo(
 	}, nil
 }
 
-type SwapInfoType struct {
-	TradeEventType
-
-	Type_       string   `json:"type"` // buy/sell
-	NetworkFee  *big.Int `json:"network_fee"`
-	TxId        string   `json:"tx_id"`
-	BlockNumber uint64   `json:"block_number"`
-}
-
 func ParseSwapInfos(
 	wallet *go_coin_eth.Wallet,
 	txReceipt *types.Receipt,
-) ([]*SwapInfoType, error) {
-	results := make([]*SwapInfoType, 0)
+) ([]*type_.SwapResultType, []*TradeEventType, error) {
+	swapResults := make([]*type_.SwapResultType, 0)
+	tradeEvents := make([]*TradeEventType, 0)
+
 	parsedAbi, err := abi.JSON(strings.NewReader(constant.TokenManagerABI))
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, nil, errors.Wrap(err, "")
 	}
 	boundContract := bind.NewBoundContract(
 		common.HexToAddress(""),
@@ -220,35 +214,44 @@ func ParseSwapInfos(
 	)
 	for _, log := range txReceipt.Logs {
 		var r TradeEventType
-		if log.Topics[0] == parsedAbi.Events["TokenPurchase"].ID {
+		switch log.Topics[0] {
+		case parsedAbi.Events["TokenPurchase"].ID:
 			err = boundContract.UnpackLog(&r, "TokenPurchase", *log)
 			if err != nil {
-				return nil, errors.Wrap(err, "")
+				return nil, nil, errors.Wrap(err, "")
 			}
-			results = append(results, &SwapInfoType{
-				TradeEventType: r,
-				Type_:          "buy",
-				NetworkFee:     go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
-				TxId:           txReceipt.TxHash.String(),
-				BlockNumber:    txReceipt.BlockNumber.Uint64(),
+			swapResults = append(swapResults, &type_.SwapResultType{
+				Type_:                   "buy",
+				UserAddress:             r.Account,
+				ETHAmountWithDecimals:   r.Cost,
+				TokenAmountWithDecimals: r.Amount,
+				TokenAddress:            r.Token,
+				NetworkFee:              go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
+				TxId:                    txReceipt.TxHash.String(),
+				BlockNumber:             txReceipt.BlockNumber.Uint64(),
 			})
-		} else if log.Topics[0] == parsedAbi.Events["TokenSale"].ID {
+			tradeEvents = append(tradeEvents, &r)
+		case parsedAbi.Events["TokenSale"].ID:
 			err = boundContract.UnpackLog(&r, "TokenSale", *log)
 			if err != nil {
-				return nil, errors.Wrap(err, "")
+				return nil, nil, errors.Wrap(err, "")
 			}
-			results = append(results, &SwapInfoType{
-				TradeEventType: r,
-				Type_:          "sell",
-				NetworkFee:     go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
-				TxId:           txReceipt.TxHash.String(),
-				BlockNumber:    txReceipt.BlockNumber.Uint64(),
+			swapResults = append(swapResults, &type_.SwapResultType{
+				Type_:                   "sell",
+				UserAddress:             r.Account,
+				ETHAmountWithDecimals:   r.Cost,
+				TokenAmountWithDecimals: r.Amount,
+				TokenAddress:            r.Token,
+				NetworkFee:              go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
+				TxId:                    txReceipt.TxHash.String(),
+				BlockNumber:             txReceipt.BlockNumber.Uint64(),
 			})
-		} else {
+			tradeEvents = append(tradeEvents, &r)
+		default:
 			continue
 		}
 
 	}
 
-	return results, nil
+	return swapResults, tradeEvents, nil
 }

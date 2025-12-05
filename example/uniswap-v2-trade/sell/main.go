@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_v2_trade "github.com/pefish/go-coin-eth/uniswap-v2-trade"
@@ -31,8 +32,11 @@ func main() {
 	}
 }
 
-const tokenAddress = "0x44440f83419de123d7d411187adb9962db017d03"
+var tokenAddress = common.HexToAddress("0x44440f83419de123d7d411187adb9962db017d03")
+
 const tokenAmount = "0"
+
+var maxFeePerGas = big.NewInt(100000000) // bsc 最少要给 5000_0000
 
 var logger i_logger.ILogger = &i_logger.DefaultLogger
 
@@ -55,12 +59,36 @@ func do() error {
 
 	trader := uniswap_v2_trade.New(&i_logger.DefaultLogger, wallet)
 
+	approvedAmount, err := wallet.ApprovedAmount(tokenAddress, userAddress, constant.Pancake_BSCRouter)
+	if err != nil {
+		return err
+	}
+	logger.InfoF("approvedAmount: %s", approvedAmount.String())
 	tokenAmountWithDecimals := go_decimal.MustStart(tokenAmount).MustShiftedBy(18).MustEndForBigInt()
 	if tokenAmount == "0" {
 		tokenAmountWithDecimals, err = wallet.TokenBalance(tokenAddress, userAddress)
 		if err != nil {
 			return err
 		}
+	}
+	if approvedAmount.Cmp(tokenAmountWithDecimals) < 0 {
+		logger.InfoF("need approve first")
+		tr, err := wallet.ApproveWait(
+			context.Background(),
+			priv,
+			tokenAddress,
+			constant.Pancake_BSCRouter,
+			nil,
+			&go_coin_eth.CallMethodOpts{
+				MaxFeePerGas:   maxFeePerGas,
+				GasLimit:       250000,
+				IsPredictError: false,
+			},
+		)
+		if err != nil {
+			return err
+		}
+		logger.InfoF("approve done. txId: %s", tr.TxHash.String())
 	}
 
 	r, err := trader.SellByExactToken(

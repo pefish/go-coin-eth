@@ -18,7 +18,7 @@ import (
 	go_test_ "github.com/pefish/go-test"
 )
 
-var contractAddress = "0x509Ee0d083DdF8AC028f2a56731412edD63223B9"
+var contractAddress = common.HexToAddress("0x509Ee0d083DdF8AC028f2a56731412edD63223B9")
 var abiStr = `[{"inputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"uint8","name":"decimals","type":"uint8"},{"internalType":"uint256","name":"totalSupply","type":"uint256"},{"internalType":"address","name":"receiveAccount","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"guy","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}]`
 
 func init() {
@@ -178,7 +178,7 @@ func TestWallet_CallContractConstant(t *testing.T) {
 	result := new(big.Int)
 	err = wallet1.CallContractConstant(
 		&result,
-		"0xdac17f958d2ee523a2206206994597c13d831ec7",
+		common.HexToAddress("0xdac17f958d2ee523a2206206994597c13d831ec7"),
 		`[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_upgradedAddress","type":"address"}],"name":"deprecate","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"deprecated","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_evilUser","type":"address"}],"name":"addBlackList","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"upgradedAddress","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"maximumFee","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"_totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"unpause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_maker","type":"address"}],"name":"getBlackListStatus","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowed","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"who","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"pause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getOwner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"newBasisPoints","type":"uint256"},{"name":"newMaxFee","type":"uint256"}],"name":"setParams","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"issue","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"redeem","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"basisPointsRate","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"isBlackListed","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_clearedUser","type":"address"}],"name":"removeBlackList","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"MAX_UINT","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_blackListedUser","type":"address"}],"name":"destroyBlackFunds","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_initialSupply","type":"uint256"},{"name":"_name","type":"string"},{"name":"_symbol","type":"string"},{"name":"_decimals","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"amount","type":"uint256"}],"name":"Issue","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"amount","type":"uint256"}],"name":"Redeem","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newAddress","type":"address"}],"name":"Deprecate","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"feeBasisPoints","type":"uint256"},{"indexed":false,"name":"maxFee","type":"uint256"}],"name":"Params","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_blackListedUser","type":"address"},{"indexed":false,"name":"_balance","type":"uint256"}],"name":"DestroyedBlackFunds","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_user","type":"address"}],"name":"AddedBlackList","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"_user","type":"address"}],"name":"RemovedBlackList","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[],"name":"Pause","type":"event"},{"anonymous":false,"inputs":[],"name":"Unpause","type":"event"}]`,
 		"balanceOf",
 		&bind.CallOpts{
@@ -216,7 +216,7 @@ func TestWallet_CallContractConstant1(t *testing.T) {
 	var result [32]byte
 	err = wallet1.CallContractConstant(
 		&result,
-		"0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512",
+		common.HexToAddress("0x6454930EF2Bd86Ef40EC5fBBcb8a61F9B0F94512"),
 		`[
     {
       "inputs": [
@@ -341,7 +341,7 @@ func TestWallet_CallContractConstant2(t *testing.T) {
 	var tokenBank TokenBank
 	err = wallet1.CallContractConstant(
 		&tokenBank,
-		"0xD42Ef222d33E3cB771DdA783f48885e15c9D5CeD",
+		common.HexToAddress("0xD42Ef222d33E3cB771DdA783f48885e15c9D5CeD"),
 		`[{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":true,"internalType":"address","name":"killer","type":"address"},{"indexed":false,"internalType":"uint256","name":"prize","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"left","type":"uint256"}],"name":"Liquidate","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"debt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"back","type":"uint256"}],"name":"OpPosition","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"constant":false,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"string","name":"_symbol","type":"string"}],"name":"addToken","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"banks","outputs":[{"internalType":"address","name":"tokenAddr","type":"address"},{"internalType":"address","name":"pTokenAddr","type":"address"},{"internalType":"bool","name":"isOpen","type":"bool"},{"internalType":"bool","name":"canDeposit","type":"bool"},{"internalType":"bool","name":"canWithdraw","type":"bool"},{"internalType":"uint256","name":"totalVal","type":"uint256"},{"internalType":"uint256","name":"totalDebt","type":"uint256"},{"internalType":"uint256","name":"totalDebtShare","type":"uint256"},{"internalType":"uint256","name":"totalReserve","type":"uint256"},{"internalType":"uint256","name":"lastInterestTime","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"calInterest","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"currentPid","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"currentPos","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"debtShare","type":"uint256"}],"name":"debtShareToVal","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"debtVal","type":"uint256"}],"name":"debtValToShare","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"deposit","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"string","name":"_symbol","type":"string"}],"name":"genPToken","outputs":[{"internalType":"address","name":"","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"isOwner","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"posId","type":"uint256"}],"name":"liquidate","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"posId","type":"uint256"},{"internalType":"uint256","name":"pid","type":"uint256"},{"internalType":"uint256","name":"borrow","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"opPosition","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":false,"inputs":[{"internalType":"uint256","name":"pid","type":"uint256"},{"internalType":"bool","name":"isOpen","type":"bool"},{"internalType":"bool","name":"canBorrow","type":"bool"},{"internalType":"address","name":"coinToken","type":"address"},{"internalType":"address","name":"currencyToken","type":"address"},{"internalType":"address","name":"borrowToken","type":"address"},{"internalType":"address","name":"goblin","type":"address"},{"internalType":"uint256","name":"minDebt","type":"uint256"},{"internalType":"uint256","name":"openFactor","type":"uint256"},{"internalType":"uint256","name":"liquidateFactor","type":"uint256"}],"name":"opProduction","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"uint256","name":"posId","type":"uint256"}],"name":"positionInfo","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"address","name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"positions","outputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"productionId","type":"uint256"},{"internalType":"uint256","name":"debtShare","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"productions","outputs":[{"internalType":"address","name":"coinToken","type":"address"},{"internalType":"address","name":"currencyToken","type":"address"},{"internalType":"address","name":"borrowToken","type":"address"},{"internalType":"bool","name":"isOpen","type":"bool"},{"internalType":"bool","name":"canBorrow","type":"bool"},{"internalType":"address","name":"goblin","type":"address"},{"internalType":"uint256","name":"minDebt","type":"uint256"},{"internalType":"uint256","name":"openFactor","type":"uint256"},{"internalType":"uint256","name":"liquidateFactor","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"totalToken","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"contract IBankConfig","name":"_config","type":"address"}],"name":"updateConfig","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"bool","name":"canDeposit","type":"bool"},{"internalType":"bool","name":"canWithdraw","type":"bool"}],"name":"updateToken","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"pAmount","type":"uint256"}],"name":"withdraw","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"withdrawReserve","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"}]`,
 		"banks",
 		nil,
@@ -522,7 +522,10 @@ func TestWallet_TokenBalance(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
 
-	result, err := wallet1.TokenBalance("0xa71edc38d189767582c38a3145b5873052c3e47a", "0xe5fe1f8496095ab18f7e88eb13ed69f30a62d7a0")
+	result, err := wallet1.TokenBalance(
+		common.HexToAddress("0xa71edc38d189767582c38a3145b5873052c3e47a"),
+		common.HexToAddress("0xe5fe1f8496095ab18f7e88eb13ed69f30a62d7a0"),
+	)
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, true, len(result.String()) > 0)
 	fmt.Println(result.String())
@@ -600,7 +603,7 @@ func TestWallet_BuildCallMethodTxWithPayload(t *testing.T) {
 	go_test_.Equal(t, "0000000000000000000000002117210296c2993cfb4c6790fea1beb3ece8ac060000000000000000000000000000000000000000000000000de0b6b3a7640000", paramsStr)
 	btr, err := wallet1.BuildCallMethodTxWithPayload(
 		"4afc37894e7e4771eba8cb885b654eead3b78651d4db1e6af006d9e11f700f1f",
-		"0x68422825055059bc548C213a50545614f655604e",
+		common.HexToAddress("0x68422825055059bc548C213a50545614f655604e"),
 		"0x0b4c7e4d"+paramsStr,
 		&CallMethodOpts{
 			MaxFeePerGas: new(big.Int).SetUint64(1000000000),
@@ -672,7 +675,7 @@ func TestWallet_CallContractConstantWithPayload(t *testing.T) {
 	out := new(big.Int)
 	err = wallet1.CallContractConstantWithPayload(
 		&out,
-		"0xdac17f958d2ee523a2206206994597c13d831ec7",
+		common.HexToAddress("0xdac17f958d2ee523a2206206994597c13d831ec7"),
 		payload,
 		abi.Arguments{
 			abi.Argument{
@@ -738,9 +741,15 @@ func TestWallet_SendToken(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
-	txHash, err := wallet1.SendToken("", "0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F", "0xEA85c80805f36A65D96F6D360D02dFB3eBe18280", go_decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(), &CallMethodOpts{
-		GasLimit: 500000,
-	})
+	txHash, err := wallet1.SendToken(
+		"",
+		common.HexToAddress("0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F"),
+		common.HexToAddress("0xEA85c80805f36A65D96F6D360D02dFB3eBe18280"),
+		go_decimal.MustStart(1).MustShiftedBy(18).MustEndForBigInt(),
+		&CallMethodOpts{
+			GasLimit: 500000,
+		},
+	)
 	go_test_.Equal(t, nil, err)
 
 	fmt.Println(txHash)
@@ -754,9 +763,9 @@ func TestWallet_ApproveAmount(t *testing.T) {
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
 	amount, err := wallet1.ApprovedAmount(
-		"0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F",
-		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
-		"0x16e71b13fe6079b4312063f7e81f76d165ad32ad",
+		common.HexToAddress("0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F"),
+		common.HexToAddress("0xEA85c80805f36A65D96F6D360D02dFB3eBe18280"),
+		common.HexToAddress("0x16e71b13fe6079b4312063f7e81f76d165ad32ad"),
 	)
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0", amount.String())
@@ -772,8 +781,8 @@ func TestWallet_Approve(t *testing.T) {
 	defer wallet1.Close()
 	txHash, err := wallet1.Approve(
 		"",
-		"0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F",
-		"0x000000Eb4761239232363e02025194102b7Ef30a",
+		common.HexToAddress("0x4C4A57dD7D4c21fc37882567Af756cbF4B332d7F"),
+		common.HexToAddress("0x000000Eb4761239232363e02025194102b7Ef30a"),
 		nil,
 		&CallMethodOpts{
 			GasLimit: 400000,
@@ -800,7 +809,7 @@ func TestWallet_CallContractConstant3(t *testing.T) {
 	}
 	err = wallet1.CallContractConstant(
 		&quotaResult,
-		"0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+		common.HexToAddress("0x61fFE014bA17989E743c5F6cB21bF9697530B21e"),
 		`[{
         "inputs":[
             {
@@ -904,7 +913,7 @@ func TestWallet_IsContract(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet1.Close()
-	isContract, err := wallet1.IsContract("0xa96e7ba3772CE808DAB049E30ed146F77dA372a8")
+	isContract, err := wallet1.IsContract(common.HexToAddress("0xa96e7ba3772CE808DAB049E30ed146F77dA372a8"))
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, true, isContract)
 
@@ -917,7 +926,7 @@ func TestWallet_GetTokenDecimals(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	defer wallet.Close()
-	decimals, err := wallet.TokenDecimals("0x1319D23c2F7034F52Eb07399702B040bA278Ca49")
+	decimals, err := wallet.TokenDecimals(common.HexToAddress("0x1319D23c2F7034F52Eb07399702B040bA278Ca49"))
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, true, decimals == 18)
 }
@@ -972,7 +981,7 @@ func TestWallet_FilterLogs(t *testing.T) {
 	})
 	go_test_.Equal(t, nil, err)
 	topic0 := "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
-	logAddress := "0x4200000000000000000000000000000000000006"
+	logAddress := common.HexToAddress("0x4200000000000000000000000000000000000006")
 	tr, err := wallet.TransactionReceiptByHash("0x866b3a1b7790b08e0642214399d030c1d30ab5c8b60f9dfdcabda75bab177112")
 	go_test_.Equal(t, nil, err)
 	filteredLogs, err := wallet.FilterLogs(topic0, logAddress, tr.Logs)

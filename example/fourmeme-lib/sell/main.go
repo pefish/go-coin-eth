@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	fourmeme_lib "github.com/pefish/go-coin-eth/fourmeme-lib"
@@ -17,7 +18,7 @@ import (
 	go_logger "github.com/pefish/go-logger"
 )
 
-const tokenAddress = "0x33ba5243ac3ed4c3d1ee630515fff745423b4444"
+var tokenAddress = common.HexToAddress("0x33ba5243ac3ed4c3d1ee630515fff745423b4444")
 
 // const tokenAmount = "1000"
 const tokenAmount = "0"
@@ -89,7 +90,7 @@ func do() error {
 		logger.InfoF("approve done. txId: %s", tr.TxHash.String())
 	}
 
-	r, err := fourmeme_lib.Sell(
+	r, tradeEvent, err := fourmeme_lib.Sell(
 		context.Background(),
 		wallet,
 		os.Getenv("PRIV"),
@@ -101,6 +102,7 @@ func do() error {
 		return err
 	}
 	spew.Dump(r)
+	spew.Dump(tradeEvent)
 
 	return nil
 }

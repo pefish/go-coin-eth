@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_v3_trade "github.com/pefish/go-coin-eth/uniswap-v3-trade"
@@ -27,7 +28,8 @@ func main() {
 	}
 }
 
-const tokenAddress = "0x276b792D11B9e3712FE6A78A460a0DEb416baB0A"
+var tokenAddress = common.HexToAddress("0x276b792D11B9e3712FE6A78A460a0DEb416baB0A")
+
 const fee = 100
 const tokenAmount = "0.027450978022840288"
 

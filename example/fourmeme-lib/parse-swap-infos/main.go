@@ -49,7 +49,7 @@ func do() error {
 		return err
 	}
 
-	r, err := fourmeme_lib.ParseSwapInfos(
+	r, tradeEvent, err := fourmeme_lib.ParseSwapInfos(
 		wallet,
 		tr,
 	)
@@ -57,6 +57,7 @@ func do() error {
 		return err
 	}
 	spew.Dump(r)
+	spew.Dump(tradeEvent)
 
 	return nil
 }

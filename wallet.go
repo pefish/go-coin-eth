@@ -104,7 +104,7 @@ func (w *Wallet) Close() {
 
 func (w *Wallet) CallContractConstant(
 	out any,
-	contractAddress,
+	contractAddress common.Address,
 	abiStr,
 	methodName string,
 	opts *bind.CallOpts,
@@ -128,7 +128,7 @@ func (w *Wallet) CallContractConstant(
 
 func (w *Wallet) CallContractConstantWithPayload(
 	out any,
-	contractAddress,
+	contractAddress common.Address,
 	payload string,
 	outputTypes abi.Arguments,
 	opts *bind.CallOpts,
@@ -138,14 +138,13 @@ func (w *Wallet) CallContractConstantWithPayload(
 		realOpts = *opts
 	}
 
-	contractAddressObj := common.HexToAddress(contractAddress)
 	payload = strings.TrimPrefix(payload, "0x")
 	payloadBuf, err := hex.DecodeString(payload)
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
 	var (
-		msg    = ethereum.CallMsg{From: realOpts.From, To: &contractAddressObj, Data: payloadBuf}
+		msg    = ethereum.CallMsg{From: realOpts.From, To: &contractAddress, Data: payloadBuf}
 		ctx    = realOpts.Context
 		code   []byte
 		output []byte
@@ -159,7 +158,7 @@ func (w *Wallet) CallContractConstantWithPayload(
 		output, err = pb.PendingCallContract(ctx, msg)
 		if err == nil && len(output) == 0 {
 			// Make sure we have a contract to operate on, and bail out otherwise.
-			if code, err = pb.PendingCodeAt(ctx, contractAddressObj); err != nil {
+			if code, err = pb.PendingCodeAt(ctx, contractAddress); err != nil {
 				return errors.Wrap(err, "")
 			} else if len(code) == 0 {
 				return errors.Wrap(bind.ErrNoCode, "")
@@ -172,7 +171,7 @@ func (w *Wallet) CallContractConstantWithPayload(
 		}
 		if len(output) == 0 {
 			// Make sure we have a contract to operate on, and bail out otherwise.
-			code, err = bind.ContractCaller(w.RemoteRpcClient).CodeAt(ctx, contractAddressObj, realOpts.BlockNumber)
+			code, err = bind.ContractCaller(w.RemoteRpcClient).CodeAt(ctx, contractAddress, realOpts.BlockNumber)
 			if err != nil {
 				return errors.Wrap(err, "")
 			}
@@ -543,12 +542,12 @@ func (w *Wallet) UnpackTransferLog(log *types.Log) (*TransferLogData, error) {
 
 func (w *Wallet) FilterLogs(
 	topic0Hex string,
-	logAddress string,
+	logAddress common.Address,
 	logs []*types.Log,
 ) ([]*types.Log, error) {
 	results := make([]*types.Log, 0)
 	for _, log := range logs {
-		if logAddress != "" && log.Address.Cmp(common.HexToAddress(logAddress)) != 0 {
+		if log.Address.Cmp(logAddress) != 0 {
 			continue
 		}
 		if topic0Hex != "" && log.Topics[0].Cmp(common.HexToHash(topic0Hex)) != 0 {
@@ -846,22 +845,22 @@ func (w *Wallet) EstimateGas(msg ethereum.CallMsg) (gasCount_ uint64, err_ error
 	return gasCount, nil
 }
 
-func (w *Wallet) PrivateKeyToAddress(privateKey string) (address_ string, err_ error) {
+func (w *Wallet) PrivateKeyToAddress(privateKey string) (address_ common.Address, err_ error) {
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
-		return "", errors.Wrap(err, "")
+		return common.Address{}, errors.Wrap(err, "")
 	}
 	privateKeyECDSA, err := crypto.ToECDSA(privateKeyBuf)
 	if err != nil {
-		return "", errors.Wrap(err, "")
+		return common.Address{}, errors.Wrap(err, "")
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
-	return crypto.PubkeyToAddress(publicKeyECDSA).String(), nil
+	return crypto.PubkeyToAddress(publicKeyECDSA), nil
 }
 
-func (w *Wallet) IsContract(address string) (isContract_ bool, err_ error) {
+func (w *Wallet) IsContract(address common.Address) (isContract_ bool, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	codeBytes, err := w.RemoteRpcClient.CodeAt(ctx, common.HexToAddress(address), nil)
+	codeBytes, err := w.RemoteRpcClient.CodeAt(ctx, address, nil)
 	if err != nil {
 		return false, errors.Wrap(err, "")
 	}
@@ -873,8 +872,8 @@ func (w *Wallet) IsContract(address string) (isContract_ bool, err_ error) {
 }
 
 func (w *Wallet) BuildCallMethodTx(
-	privateKey,
-	contractAddress,
+	privateKey string,
+	contractAddress common.Address,
 	abiStr,
 	methodName string, // 如果有同名重构函数，比如有 4 个重构函数 test()，则 abi 数组中第一个叫 test，第二个叫 test0，第三个叫 test1，第四个叫 test2
 	opts *CallMethodOpts,
@@ -899,7 +898,6 @@ func (w *Wallet) BuildCallMethodTx(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	contractAddressObj := common.HexToAddress(contractAddress)
 
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
@@ -936,7 +934,7 @@ func (w *Wallet) BuildCallMethodTx(
 	if gasLimit == 0 || isPredictError {
 		msg := ethereum.CallMsg{
 			From:  fromAddress,
-			To:    &contractAddressObj,
+			To:    &contractAddress,
 			Value: value,
 			Data:  input,
 		}
@@ -952,7 +950,7 @@ func (w *Wallet) BuildCallMethodTx(
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
-		&contractAddressObj,
+		&contractAddress,
 		value,
 		gasLimit,
 		input,
@@ -1042,7 +1040,7 @@ func (w *Wallet) BuildDeployContractTx(
 
 func (w *Wallet) EstimateCall(
 	fromAddress string,
-	contractAddress string,
+	contractAddress common.Address,
 	abiStr string,
 	value string,
 	methodName string,
@@ -1061,7 +1059,6 @@ func (w *Wallet) EstimateCall(
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
-	contractAddressObj := common.HexToAddress(contractAddress)
 
 	input, err := parsedAbi.Pack(methodName, params...)
 	if err != nil {
@@ -1069,7 +1066,7 @@ func (w *Wallet) EstimateCall(
 	}
 	msg := ethereum.CallMsg{
 		From:  common.HexToAddress(fromAddress),
-		To:    &contractAddressObj,
+		To:    &contractAddress,
 		Value: go_decimal.MustStart(value).MustShiftedBy(18).MustEndForBigInt(),
 		Data:  input,
 	}
@@ -1209,8 +1206,8 @@ func (w *Wallet) buildLegacyTx(
 }
 
 func (w *Wallet) BuildCallMethodTxWithPayload(
-	privateKey,
-	contractAddress,
+	privateKey string,
+	contractAddress common.Address,
 	payload string,
 	opts *CallMethodOpts,
 ) (btr_ *BuildTxResult, err_ error) {
@@ -1236,8 +1233,6 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-
-	contractAddressObj := common.HexToAddress(contractAddress)
 
 	var value = big.NewInt(0)
 	var gasLimit uint64 = realOpts.GasLimit
@@ -1266,7 +1261,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	if gasLimit == 0 || isPredictError {
 		msg := ethereum.CallMsg{
 			From:  fromAddress,
-			To:    &contractAddressObj,
+			To:    &contractAddress,
 			Value: value,
 			Data:  payloadBuf,
 		}
@@ -1282,7 +1277,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
-		&contractAddressObj,
+		&contractAddress,
 		value,
 		gasLimit,
 		payloadBuf,
@@ -1477,9 +1472,9 @@ func (w *Wallet) TxsInPool() (txs_ *TxsInPoolResult, err_ error) {
 	return &result, nil
 }
 
-func (w *Wallet) Balance(address string) (bal_ *big.Int, err_ error) {
+func (w *Wallet) Balance(address common.Address) (bal_ *big.Int, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	result, err := w.RemoteRpcClient.BalanceAt(ctx, common.HexToAddress(address), nil)
+	result, err := w.RemoteRpcClient.BalanceAt(ctx, address, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
@@ -1495,7 +1490,7 @@ func (w *Wallet) BalanceNoDecimals(address string) (string, error) {
 	return go_decimal.MustStart(result).MustUnShiftedBy(18).EndForString(), nil
 }
 
-func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) (amount_ *big.Int, err_ error) {
+func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress common.Address) (amount_ *big.Int, err_ error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(
 		&result,
@@ -1504,8 +1499,8 @@ func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) 
 		"allowance",
 		nil,
 		[]any{
-			common.HexToAddress(fromAddress),
-			common.HexToAddress(toAddress),
+			fromAddress,
+			toAddress,
 		},
 	)
 	if err != nil {
@@ -1515,9 +1510,9 @@ func (w *Wallet) ApprovedAmount(contractAddress, fromAddress, toAddress string) 
 }
 
 func (w *Wallet) Approve(
-	priv,
-	contractAddress,
-	toAddress string,
+	priv string,
+	contractAddress common.Address,
+	toAddress common.Address,
 	amount *big.Int,
 	opts *CallMethodOpts,
 ) (hash_ string, err_ error) {
@@ -1532,7 +1527,7 @@ func (w *Wallet) Approve(
 		"approve",
 		opts,
 		[]any{
-			common.HexToAddress(toAddress),
+			toAddress,
 			approveAmount,
 		},
 	)
@@ -1548,9 +1543,9 @@ func (w *Wallet) Approve(
 
 func (w *Wallet) ApproveWait(
 	ctx context.Context,
-	priv,
-	contractAddress,
-	toAddress string,
+	priv string,
+	contractAddress common.Address,
+	toAddress common.Address,
 	amount *big.Int,
 	opts *CallMethodOpts,
 ) (txReceipt_ *types.Receipt, err_ error) {
@@ -1834,8 +1829,8 @@ func (w *Wallet) SendEthWait(
 
 func (w *Wallet) SendAllToken(
 	priv string,
-	contractAddress,
-	address string,
+	contractAddress common.Address,
+	address common.Address,
 	opts *CallMethodOpts,
 ) (amountWithDecimals_ *big.Int, hash_ string, err_ error) {
 	fromAddressStr, err := w.PrivateKeyToAddress(priv)
@@ -1859,8 +1854,8 @@ func (w *Wallet) SendAllToken(
 func (w *Wallet) SendAllTokenWait(
 	ctx context.Context,
 	priv string,
-	contractAddress,
-	address string,
+	contractAddress common.Address,
+	address common.Address,
 	opts *CallMethodOpts,
 ) (amountWithDecimals_ *big.Int, txReceipt_ *types.Receipt, err_ error) {
 	amountWithDecimals, hash, err := w.SendAllToken(priv, contractAddress, address, opts)
@@ -1879,8 +1874,8 @@ func (w *Wallet) SendAllTokenWait(
 
 func (w *Wallet) SendToken(
 	priv string,
-	contractAddress,
-	address string,
+	contractAddress common.Address,
+	address common.Address,
 	amount *big.Int,
 	opts *CallMethodOpts,
 ) (hash_ string, err_ error) {
@@ -1891,7 +1886,7 @@ func (w *Wallet) SendToken(
 		"transfer",
 		opts,
 		[]any{
-			common.HexToAddress(address),
+			address,
 			amount,
 		},
 	)
@@ -1908,8 +1903,8 @@ func (w *Wallet) SendToken(
 func (w *Wallet) SendTokenWait(
 	ctx context.Context,
 	priv string,
-	contractAddress,
-	address string,
+	contractAddress common.Address,
+	address common.Address,
 	amount *big.Int,
 	opts *CallMethodOpts,
 ) (txReceipt_ *types.Receipt, err_ error) {
@@ -1927,7 +1922,7 @@ func (w *Wallet) SendTokenWait(
 	return txr, nil
 }
 
-func (w *Wallet) TokenDecimals(tokenAddress string) (decimals_ uint64, err_ error) {
+func (w *Wallet) TokenDecimals(tokenAddress common.Address) (decimals_ uint64, err_ error) {
 	var result uint8
 	err := w.CallContractConstant(
 		&result,
@@ -1955,7 +1950,7 @@ func (w *Wallet) TokenDecimals(tokenAddress string) (decimals_ uint64, err_ erro
 	return uint64(result), nil
 }
 
-func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ string, err_ error) {
+func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address common.Address) (bal_ string, err_ error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(
 		&result,
@@ -1982,7 +1977,7 @@ func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ s
 		"balanceOf",
 		nil,
 		[]any{
-			common.HexToAddress(address),
+			address,
 		},
 	)
 	if err != nil {
@@ -1995,7 +1990,7 @@ func (w *Wallet) TokenBalanceNoDecimals(contractAddress, address string) (bal_ s
 	return go_decimal.MustStart(result).MustUnShiftedBy(decimals).EndForString(), nil
 }
 
-func (w *Wallet) TokenBalance(tokenAddress, address string) (bal_ *big.Int, err_ error) {
+func (w *Wallet) TokenBalance(tokenAddress, address common.Address) (bal_ *big.Int, err_ error) {
 	result := new(big.Int)
 	err := w.CallContractConstant(
 		&result,
@@ -2022,7 +2017,7 @@ func (w *Wallet) TokenBalance(tokenAddress, address string) (bal_ *big.Int, err_
 		"balanceOf",
 		nil,
 		[]any{
-			common.HexToAddress(address),
+			address,
 		},
 	)
 	if err != nil {
