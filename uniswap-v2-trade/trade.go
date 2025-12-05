@@ -1,6 +1,6 @@
 package uniswap_v2_trade
 
-// 同样适用于 pancake V2
+// 同样适用于 pancake V2，fourmeme 都是进入到这个版本
 
 import (
 	"context"
@@ -77,12 +77,12 @@ func (t *Trader) GetAmountsOut(
 }
 
 type BuyByExactETHResult struct {
-	TokenAmount string
-	Fee         string
-	TxId        string
+	TokenAmountWithDecimals string
+	Fee                     string
+	TxId                    string
 }
 
-type BuyByExactETHOpts struct {
+type TradeOpts struct {
 	TokenDecimals uint64
 	WETHAddress   string
 	Slippage      float64 // 滑点，默认 0.5%
@@ -96,12 +96,12 @@ func (t *Trader) BuyByExactETH(
 	ethAmount string,
 	routerAddress string,
 	tokenAddress string,
-	opts *BuyByExactETHOpts,
+	opts *TradeOpts,
 ) (*BuyByExactETHResult, error) {
 
 	var result BuyByExactETHResult
 
-	var realOpts BuyByExactETHOpts
+	var realOpts TradeOpts
 	if opts != nil {
 		realOpts = *opts
 	}
@@ -199,7 +199,7 @@ func (t *Trader) BuyByExactETH(
 		return &result, err
 	}
 
-	result.TokenAmount = go_decimal.MustStart(tokenAmountWithDecimals).MustUnShiftedBy(realOpts.TokenDecimals).EndForString()
+	result.TokenAmountWithDecimals = go_decimal.MustStart(tokenAmountWithDecimals).EndForString()
 	result.Fee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
 	return &result, nil
 }
@@ -213,25 +213,17 @@ type SellByExactTokenResult struct {
 	ApproveTxId string
 }
 
-type SellByExactTokenOpts struct {
-	TokenDecimals uint64
-	WETHAddress   string
-	Slippage      float64 // 滑点，默认 0.5%
-	GasLimit      uint64
-	MaxFeePerGas  *big.Int
-}
-
 func (t *Trader) SellByExactToken(
 	ctx context.Context,
 	priv string,
 	tokenAmount string,
 	routerAddress string,
 	tokenAddress string,
-	opts *SellByExactTokenOpts,
+	opts *TradeOpts,
 ) (*SellByExactTokenResult, error) {
 	var result SellByExactTokenResult
 
-	var realOpts SellByExactTokenOpts
+	var realOpts TradeOpts
 	if opts != nil {
 		realOpts = *opts
 	}

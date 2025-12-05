@@ -47,7 +47,7 @@ func do() error {
 		bnbAmount,
 		constant.Pancake_BSCRouter,
 		tokenAddress,
-		&uniswap_v2_trade.BuyByExactETHOpts{
+		&uniswap_v2_trade.TradeOpts{
 			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
 		},
 	)

@@ -3,16 +3,21 @@ package main
 import (
 	"context"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v2_trade "github.com/pefish/go-coin-eth/uniswap-v2-trade"
-	"github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
+	fourmeme_lib "github.com/pefish/go-coin-eth/fourmeme-lib"
 	i_logger "github.com/pefish/go-interface/i-logger"
+	t_logger "github.com/pefish/go-interface/t-logger"
+	go_logger "github.com/pefish/go-logger"
 )
+
+const txId = "0x0bff0a5951c18c61547536511ab8a3fc54793abdd043124107595f9555ff2cff"
+
+var logger i_logger.ILogger = &i_logger.DefaultLogger
 
 func main() {
 	envMap, _ := godotenv.Read("./.env")
@@ -20,18 +25,17 @@ func main() {
 		os.Setenv(k, v)
 	}
 
+	logger = go_logger.NewLogger(t_logger.Level(os.Getenv("LOG_LEVEL")))
+
 	err := do()
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
 }
 
-const tokenAddress = "0x44440f83419de123d7d411187adb9962db017d03"
-const tokenAmount = "119.034792003962322261"
-
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(
-		&i_logger.DefaultLogger,
+		logger,
 	).InitRemote(&go_coin_eth.UrlParam{
 		RpcUrl: os.Getenv("NODE_HTTPS"),
 		WsUrl:  os.Getenv("NODE_WSS"),
@@ -39,17 +43,15 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	trader := uniswap_v2_trade.New(&i_logger.DefaultLogger, wallet)
 
-	r, err := trader.SellByExactToken(
-		context.Background(),
-		os.Getenv("PRIV"),
-		tokenAmount,
-		constant.Pancake_BSCRouter,
-		tokenAddress,
-		&uniswap_v2_trade.TradeOpts{
-			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
-		},
+	tr, err := wallet.RemoteRpcClient.TransactionReceipt(context.Background(), common.HexToHash(txId))
+	if err != nil {
+		return err
+	}
+
+	r, err := fourmeme_lib.ParseSwapInfos(
+		wallet,
+		tr,
 	)
 	if err != nil {
 		return err

@@ -560,6 +560,31 @@ func (w *Wallet) FilterLogs(
 	return results, nil
 }
 
+func (w *Wallet) FilterLogsByEventNames(
+	eventNames []string,
+	abiStr string,
+	logs []*types.Log,
+) ([]*types.Log, error) {
+	results := make([]*types.Log, 0)
+
+	parsedAbi, err := abi.JSON(strings.NewReader(abiStr))
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+
+	for _, log := range logs {
+		for _, eventName := range eventNames {
+			if log.Topics[0] == parsedAbi.Events[eventName].ID {
+				continue
+			}
+		}
+
+		results = append(results, log)
+	}
+
+	return results, nil
+}
+
 func (w *Wallet) UnpackParamsToStrs(
 	types_ []abi.Type,
 	paramsStr string,

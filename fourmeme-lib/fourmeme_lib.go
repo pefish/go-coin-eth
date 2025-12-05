@@ -1,11 +1,14 @@
 package fourmeme_lib
 
 import (
-	"context"
 	"math/big"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	"github.com/pefish/go-coin-eth/fourmeme-lib/constant"
 	go_decimal "github.com/pefish/go-decimal"
@@ -13,134 +16,6 @@ import (
 	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
-
-type TradeEventType struct {
-	Token   common.Address `json:"token"`
-	Account common.Address `json:"account"`
-	Price   *big.Int       `json:"price"`
-	Amount  *big.Int       `json:"amount"`
-	Cost    *big.Int       `json:"cost"`
-	Fee     *big.Int       `json:"fee"`
-	Offers  *big.Int       `json:"offers"`
-	Funds   *big.Int       `json:"funds"`
-}
-
-type TradeResultType struct {
-	TradeEventType
-
-	NetworkFee  *big.Int `json:"network_fee"`
-	TxId        string   `json:"tx_id"`
-	BlockNumber uint64   `json:"block_number"`
-}
-
-func Buy(
-	ctx context.Context,
-	wallet *go_coin_eth.Wallet,
-	priv string,
-	tokenAddress string,
-	tokenAmount *big.Int,
-	maxCostBnbAmount *big.Int,
-	maxFeePerGas *big.Int, // 1 大概 0.1 刀
-) (*TradeResultType, error) {
-	btr, err := wallet.BuildCallMethodTx(
-		priv,
-		constant.FourmemeToolAddress,
-		constant.FourmemeToolABI,
-		"buyPefish",
-		&go_coin_eth.CallMethodOpts{
-			MaxFeePerGas:   maxFeePerGas,
-			GasLimit:       250000,
-			IsPredictError: false,
-		},
-		[]any{
-			common.HexToAddress(tokenAddress),
-			tokenAmount,
-			maxCostBnbAmount,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	tr, err := wallet.SendRawTransactionWait(ctx, btr.TxHex)
-	if err != nil {
-		return nil, err
-	}
-
-	logs, err := wallet.FilterLogs(
-		"0x7db52723a3b2cdd6164364b3b766e65e540d7be48ffa89582956d8eaebe62942",
-		constant.TokenManagerAddress,
-		tr.Logs,
-	)
-	if err != nil {
-		return nil, err
-	}
-	var r TradeEventType
-	err = wallet.UnpackLog(&r, constant.TokenManagerABI, "TokenSale", logs[0])
-	if err != nil {
-		return nil, err
-	}
-
-	return &TradeResultType{
-		TradeEventType: r,
-		NetworkFee:     go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).RoundDown(0).MustEndForBigInt(),
-		TxId:           tr.TxHash.String(),
-		BlockNumber:    tr.BlockNumber.Uint64(),
-	}, nil
-}
-
-func Sell(
-	ctx context.Context,
-	wallet *go_coin_eth.Wallet,
-	priv string,
-	tokenAddress string,
-	tokenAmount *big.Int,
-	minReceiveBnbAmount *big.Int,
-	maxFeePerGas *big.Int,
-) (*TradeResultType, error) {
-	btr, err := wallet.BuildCallMethodTx(
-		priv,
-		constant.FourmemeToolAddress,
-		constant.FourmemeToolABI,
-		"sellPefish",
-		&go_coin_eth.CallMethodOpts{
-			MaxFeePerGas:   maxFeePerGas,
-			GasLimit:       250000,
-			IsPredictError: false,
-		},
-		[]any{
-			common.HexToAddress(tokenAddress),
-			tokenAmount,
-			minReceiveBnbAmount,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	tr, err := wallet.SendRawTransactionWait(ctx, btr.TxHex)
-	if err != nil {
-		return nil, err
-	}
-	logs, err := wallet.FilterLogs(
-		"0x0a5575b3648bae2210cee56bf33254cc1ddfbc7bf637c0af2ac18b14fb1bae19",
-		constant.TokenManagerAddress,
-		tr.Logs,
-	)
-	if err != nil {
-		return nil, err
-	}
-	var r TradeEventType
-	err = wallet.UnpackLog(&r, constant.TokenManagerABI, "TokenSale", logs[0])
-	if err != nil {
-		return nil, err
-	}
-
-	return &TradeResultType{
-		TradeEventType: r,
-		NetworkFee:     go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).RoundDown(0).MustEndForBigInt(),
-		TxId:           tr.TxHash.String(),
-		BlockNumber:    tr.BlockNumber.Uint64(),
-	}, nil
-}
 
 type TokenInfoType struct {
 	Version        *big.Int       `json:"version"`
@@ -316,4 +191,64 @@ func GetReserveInfo(
 		ReserveTokenWithDecimals: tokenInfo.Offers.String(),
 		Price:                    go_decimal.MustStart(tokenInfo.LastPrice).MustUnShiftedBy(18).EndForString(),
 	}, nil
+}
+
+type SwapInfoType struct {
+	TradeEventType
+
+	Type_       string   `json:"type"` // buy/sell
+	NetworkFee  *big.Int `json:"network_fee"`
+	TxId        string   `json:"tx_id"`
+	BlockNumber uint64   `json:"block_number"`
+}
+
+func ParseSwapInfos(
+	wallet *go_coin_eth.Wallet,
+	txReceipt *types.Receipt,
+) ([]*SwapInfoType, error) {
+	results := make([]*SwapInfoType, 0)
+	parsedAbi, err := abi.JSON(strings.NewReader(constant.TokenManagerABI))
+	if err != nil {
+		return nil, errors.Wrap(err, "")
+	}
+	boundContract := bind.NewBoundContract(
+		common.HexToAddress(""),
+		parsedAbi,
+		wallet.RemoteRpcClient,
+		wallet.RemoteRpcClient,
+		wallet.RemoteRpcClient,
+	)
+	for _, log := range txReceipt.Logs {
+		var r TradeEventType
+		if log.Topics[0] == parsedAbi.Events["TokenPurchase"].ID {
+			err = boundContract.UnpackLog(&r, "TokenPurchase", *log)
+			if err != nil {
+				return nil, errors.Wrap(err, "")
+			}
+			results = append(results, &SwapInfoType{
+				TradeEventType: r,
+				Type_:          "buy",
+				NetworkFee:     go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
+				TxId:           txReceipt.TxHash.String(),
+				BlockNumber:    txReceipt.BlockNumber.Uint64(),
+			})
+		} else if log.Topics[0] == parsedAbi.Events["TokenSale"].ID {
+			err = boundContract.UnpackLog(&r, "TokenSale", *log)
+			if err != nil {
+				return nil, errors.Wrap(err, "")
+			}
+			results = append(results, &SwapInfoType{
+				TradeEventType: r,
+				Type_:          "sell",
+				NetworkFee:     go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
+				TxId:           txReceipt.TxHash.String(),
+				BlockNumber:    txReceipt.BlockNumber.Uint64(),
+			})
+		} else {
+			continue
+		}
+
+	}
+
+	return results, nil
 }
