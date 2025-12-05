@@ -11,6 +11,7 @@ import (
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_v2_trade "github.com/pefish/go-coin-eth/uniswap-v2-trade"
 	"github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
+	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
 
@@ -44,7 +45,7 @@ func do() error {
 	r, err := trader.BuyByExactETH(
 		context.Background(),
 		os.Getenv("PRIV"),
-		bnbAmount,
+		go_decimal.MustStart(bnbAmount).MustShiftedBy(18).MustEndForBigInt(),
 		constant.Pancake_BSCRouter,
 		tokenAddress,
 		&uniswap_v2_trade.TradeOpts{

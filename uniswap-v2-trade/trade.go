@@ -77,23 +77,22 @@ func (t *Trader) GetAmountsOut(
 }
 
 type BuyByExactETHResult struct {
-	TokenAmountWithDecimals string
-	Fee                     string
+	TokenAmountWithDecimals *big.Int
+	FeeWithDecimals         *big.Int
 	TxId                    string
 }
 
 type TradeOpts struct {
-	TokenDecimals uint64
-	WETHAddress   string
-	Slippage      float64 // 滑点，默认 0.5%
-	GasLimit      uint64
-	MaxFeePerGas  *big.Int
+	WETHAddress  string
+	Slippage     float64 // 滑点，默认 0.5%
+	GasLimit     uint64
+	MaxFeePerGas *big.Int
 }
 
 func (t *Trader) BuyByExactETH(
 	ctx context.Context,
 	priv string,
-	ethAmount string,
+	ethAmountWithDecimals *big.Int,
 	routerAddress string,
 	tokenAddress string,
 	opts *TradeOpts,
@@ -118,7 +117,6 @@ func (t *Trader) BuyByExactETH(
 	if err != nil {
 		return nil, err
 	}
-	ethAmountWithDecimals := go_decimal.MustStart(ethAmount).MustShiftedBy(18).MustEndForBigInt()
 
 	balanceWithDecimals, err := t.wallet.Balance(selfAddress)
 	if err != nil {
@@ -135,14 +133,6 @@ func (t *Trader) BuyByExactETH(
 			return nil, err
 		}
 		realOpts.WETHAddress = wethAddress_
-	}
-
-	if realOpts.TokenDecimals == 0 {
-		decimals_, err := t.wallet.TokenDecimals(tokenAddress)
-		if err != nil {
-			return nil, err
-		}
-		realOpts.TokenDecimals = decimals_
 	}
 
 	amountOutWithDecimals, err := t.GetAmountsOut(
@@ -199,24 +189,24 @@ func (t *Trader) BuyByExactETH(
 		return &result, err
 	}
 
-	result.TokenAmountWithDecimals = go_decimal.MustStart(tokenAmountWithDecimals).EndForString()
-	result.Fee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
+	result.TokenAmountWithDecimals = tokenAmountWithDecimals
+	result.FeeWithDecimals = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustEndForBigInt()
 	return &result, nil
 }
 
 type SellByExactTokenResult struct {
-	ETHAmount   string
-	ApproveFee  string
-	SellFee     string
-	Fee         string
-	TxId        string
-	ApproveTxId string
+	ETHAmountWithDecimals  *big.Int
+	ApproveFeeWithDecimals *big.Int
+	SellFeeWithDecimals    *big.Int
+	FeeWithDecimals        *big.Int
+	TxId                   string
+	ApproveTxId            string
 }
 
 func (t *Trader) SellByExactToken(
 	ctx context.Context,
 	priv string,
-	tokenAmount string,
+	tokenAmountWithDecimals *big.Int,
 	routerAddress string,
 	tokenAddress string,
 	opts *TradeOpts,
@@ -240,14 +230,6 @@ func (t *Trader) SellByExactToken(
 	if err != nil {
 		return nil, err
 	}
-	if realOpts.TokenDecimals == 0 {
-		decimals_, err := t.wallet.TokenDecimals(tokenAddress)
-		if err != nil {
-			return nil, err
-		}
-		realOpts.TokenDecimals = decimals_
-	}
-	tokenAmountWithDecimals := go_decimal.MustStart(tokenAmount).MustShiftedBy(realOpts.TokenDecimals).MustEndForBigInt()
 
 	tokenBalanceWithDecimals, err := t.wallet.TokenBalance(tokenAddress, selfAddress)
 	if err != nil {
@@ -274,7 +256,7 @@ func (t *Trader) SellByExactToken(
 		return nil, err
 	}
 
-	result.ApproveFee = "0"
+	result.ApproveFeeWithDecimals = big.NewInt(0)
 	if approvedAmountWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
 		tr, err := t.wallet.ApproveWait(
 			ctx,
@@ -290,7 +272,7 @@ func (t *Trader) SellByExactToken(
 			return nil, err
 		}
 		result.ApproveTxId = tr.TxHash.String()
-		result.ApproveFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
+		result.ApproveFeeWithDecimals = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustEndForBigInt()
 		t.logger.InfoF("Approve 成功。txid <%s>", tr.TxHash.String())
 	}
 
@@ -345,9 +327,9 @@ func (t *Trader) SellByExactToken(
 		return &result, err
 	}
 
-	result.ETHAmount = go_decimal.MustStart(ethAmountWithDecimals).MustUnShiftedBy(18).EndForString()
-	result.SellFee = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustUnShiftedBy(18).EndForString()
-	result.Fee = go_decimal.MustStart(result.ApproveFee).MustAdd(result.SellFee).EndForString()
+	result.ETHAmountWithDecimals = ethAmountWithDecimals
+	result.SellFeeWithDecimals = go_decimal.MustStart(tr.EffectiveGasPrice).MustMulti(tr.GasUsed).MustEndForBigInt()
+	result.FeeWithDecimals = go_decimal.MustStart(result.ApproveFeeWithDecimals).MustAdd(result.SellFeeWithDecimals).MustEndForBigInt()
 	return &result, nil
 }
 
