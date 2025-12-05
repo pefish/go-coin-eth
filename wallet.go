@@ -264,12 +264,12 @@ func (w *Wallet) WatchLogsByWs(
 
 // 通过 CREATE 指令（普通合约部署）
 func (w *Wallet) PredictCreateContractAddress(
-	address string,
+	address common.Address,
 	nonce uint64,
 ) string {
 	hash := sha3.NewLegacyKeccak256()
 	b, _ := rlp.EncodeToBytes([]any{
-		common.HexToAddress(address),
+		address,
 		nonce,
 	})
 	hash.Write(b)
@@ -922,7 +922,7 @@ func (w *Wallet) BuildCallMethodTx(
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.NextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
@@ -998,7 +998,7 @@ func (w *Wallet) BuildDeployContractTx(
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.NextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
@@ -1039,7 +1039,7 @@ func (w *Wallet) BuildDeployContractTx(
 }
 
 func (w *Wallet) EstimateCall(
-	fromAddress string,
+	fromAddress common.Address,
 	contractAddress common.Address,
 	abiStr string,
 	value string,
@@ -1065,7 +1065,7 @@ func (w *Wallet) EstimateCall(
 		return errors.Wrap(err, "")
 	}
 	msg := ethereum.CallMsg{
-		From:  common.HexToAddress(fromAddress),
+		From:  fromAddress,
 		To:    &contractAddress,
 		Value: go_decimal.MustStart(value).MustShiftedBy(18).MustEndForBigInt(),
 		Data:  input,
@@ -1078,9 +1078,9 @@ func (w *Wallet) EstimateCall(
 	return nil
 }
 
-func (w *Wallet) NextNonce(address string) (nonce_ uint64, err_ error) {
+func (w *Wallet) NextNonce(address common.Address) (nonce_ uint64, err_ error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	nonce, err := w.RemoteRpcClient.PendingNonceAt(ctx, common.HexToAddress(address))
+	nonce, err := w.RemoteRpcClient.PendingNonceAt(ctx, address)
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed to retrieve account nonce.")
 	}
@@ -1252,7 +1252,7 @@ func (w *Wallet) BuildCallMethodTxWithPayload(
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.NextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
@@ -1293,8 +1293,8 @@ type BuildTransferTxOpts struct {
 }
 
 func (w *Wallet) BuildTransferTx(
-	privateKey,
-	toAddress string,
+	privateKey string,
+	toAddress common.Address,
 	opts *BuildTransferTxOpts,
 ) (btr_ *BuildTxResult, err_ error) {
 	var realOpts BuildTransferTxOpts
@@ -1304,7 +1304,6 @@ func (w *Wallet) BuildTransferTx(
 
 	privateKey = strings.TrimPrefix(privateKey, "0x")
 
-	toAddressObj := common.HexToAddress(toAddress)
 	privateKeyBuf, err := hex.DecodeString(privateKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "")
@@ -1328,7 +1327,7 @@ func (w *Wallet) BuildTransferTx(
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	fromAddress := crypto.PubkeyToAddress(publicKeyECDSA)
 	if nonce == 0 {
-		nonce, err = w.NextNonce(fromAddress.String())
+		nonce, err = w.NextNonce(fromAddress)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to retrieve account nonce.")
 		}
@@ -1338,7 +1337,7 @@ func (w *Wallet) BuildTransferTx(
 		return w.buildLegacyTx(
 			privateKeyECDSA,
 			nonce,
-			toAddressObj,
+			toAddress,
 			value,
 			gasLimit,
 			realOpts.Payload,
@@ -1350,7 +1349,7 @@ func (w *Wallet) BuildTransferTx(
 	return w.buildTx(
 		privateKeyECDSA,
 		nonce,
-		&toAddressObj,
+		&toAddress,
 		value,
 		gasLimit,
 		realOpts.Payload,
@@ -1481,9 +1480,9 @@ func (w *Wallet) Balance(address common.Address) (bal_ *big.Int, err_ error) {
 	return result, nil
 }
 
-func (w *Wallet) BalanceNoDecimals(address string) (string, error) {
+func (w *Wallet) BalanceNoDecimals(address common.Address) (string, error) {
 	ctx, _ := context.WithTimeout(context.Background(), w.timeout)
-	result, err := w.RemoteRpcClient.BalanceAt(ctx, common.HexToAddress(address), nil)
+	result, err := w.RemoteRpcClient.BalanceAt(ctx, address, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "")
 	}
@@ -1564,9 +1563,9 @@ func (w *Wallet) ApproveWait(
 }
 
 type DeriveFromPathResult struct {
-	Address    string `json:"address"`
-	PublicKey  string `json:"public_key"`
-	PrivateKey string `json:"private_key"`
+	Address    common.Address `json:"address"`
+	PublicKey  string         `json:"public_key"`
+	PrivateKey string         `json:"private_key"`
 }
 
 // 都不带 0x 前缀
@@ -1607,7 +1606,7 @@ func (w *Wallet) DeriveFromPath(seed string, path string) (result_ *DeriveFromPa
 	}
 	publicKeyECDSA := privateKeyECDSA.PublicKey
 	publicKeyStr := hex.EncodeToString(crypto.CompressPubkey(&publicKeyECDSA))
-	addr := crypto.PubkeyToAddress(publicKeyECDSA).String()
+	addr := crypto.PubkeyToAddress(publicKeyECDSA)
 	return &DeriveFromPathResult{
 		Address:    addr,
 		PublicKey:  publicKeyStr,
@@ -1695,7 +1694,7 @@ type SendEthOpts struct {
 
 func (w *Wallet) SendEth(
 	priv string,
-	address string,
+	address common.Address,
 	amount string,
 	opts *SendEthOpts,
 ) (hash_ string, err_ error) {
@@ -1723,7 +1722,7 @@ func (w *Wallet) SendEth(
 // 一些二层网络，比如 Base，需要额外消耗一些 gas，所以需要 remainAmount 参数
 func (w *Wallet) SendAllEthByLegacy(
 	priv string,
-	address string,
+	address common.Address,
 	remainAmount string,
 ) (hash_ string, err_ error) {
 	fromAddress, err := w.PrivateKeyToAddress(priv)
@@ -1766,7 +1765,7 @@ func (w *Wallet) SendAllEthByLegacy(
 
 func (w *Wallet) SendAllEth(
 	priv string,
-	address string,
+	address common.Address,
 	remainAmount string,
 ) (hash_ string, err_ error) {
 	fromAddress, err := w.PrivateKeyToAddress(priv)
@@ -1809,7 +1808,7 @@ func (w *Wallet) SendAllEth(
 func (w *Wallet) SendEthWait(
 	ctx context.Context,
 	priv string,
-	address string,
+	address common.Address,
 	amount string,
 	opts *SendEthOpts,
 ) (txReceipt_ *types.Receipt, err_ error) {
@@ -1833,11 +1832,11 @@ func (w *Wallet) SendAllToken(
 	address common.Address,
 	opts *CallMethodOpts,
 ) (amountWithDecimals_ *big.Int, hash_ string, err_ error) {
-	fromAddressStr, err := w.PrivateKeyToAddress(priv)
+	fromAddress, err := w.PrivateKeyToAddress(priv)
 	if err != nil {
 		return nil, "", err
 	}
-	bal, err := w.TokenBalance(contractAddress, fromAddressStr)
+	bal, err := w.TokenBalance(contractAddress, fromAddress)
 	if err != nil {
 		return bal, "", err
 	}

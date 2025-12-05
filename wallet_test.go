@@ -421,7 +421,7 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 	defer wallet1.Close()
 	_, err = wallet1.BuildTransferTx(
 		"",
-		"0x476fBB25d56B5dD4f1df03165498C403C4713069",
+		common.HexToAddress("0x476fBB25d56B5dD4f1df03165498C403C4713069"),
 		&BuildTransferTxOpts{
 			CallMethodOpts: CallMethodOpts{
 				Value:        new(big.Int).SetUint64(1000000000000000),
@@ -551,7 +551,7 @@ func TestWallet_DeriveFromPath(t *testing.T) {
 
 	result, err := wallet1.DeriveFromPath("308c18194c8345cb16b7a265439bc09c69e3166404951717fe50abe28bc9d19985cc1c06084290c2eba446d2626a1bf3bfb12ede5974653f756f26752475e8d8", "m/0/0/1")
 	go_test_.Equal(t, nil, err)
-	go_test_.Equal(t, "0x3a7d9f86cd69cc009a85d9280f6df5ef1ae8201d", strings.ToLower(result.Address))
+	go_test_.Equal(t, "0x3a7d9f86cd69cc009a85d9280f6df5ef1ae8201d", strings.ToLower(result.Address.String()))
 	go_test_.Equal(t, "e9d3bd38744b8c6026f6bc719b86f725fe4298b654465abaa9a624ddfce8dc95", strings.ToLower(result.PrivateKey))
 }
 
@@ -725,7 +725,7 @@ func TestWallet_SendEth(t *testing.T) {
 	defer wallet1.Close()
 	txHash, err := wallet1.SendEth(
 		"",
-		"0xEA85c80805f36A65D96F6D360D02dFB3eBe18280",
+		common.HexToAddress("0xEA85c80805f36A65D96F6D360D02dFB3eBe18280"),
 		"0.1",
 		nil,
 	)
@@ -1002,13 +1002,13 @@ func TestWallet_FilterLogs(t *testing.T) {
 func TestWallet_PredictCreateContractAddress(t *testing.T) {
 	wallet := NewWallet(&i_logger.DefaultLogger)
 	address := wallet.PredictCreateContractAddress(
-		"0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981",
+		common.HexToAddress("0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981"),
 		0,
 	)
 	go_test_.Equal(t, "0x3731Aa0F49A1866dF10f2639563f729D29D24e34", address)
 
 	address = wallet.PredictCreateContractAddress(
-		"0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981",
+		common.HexToAddress("0xAfE2d7f5c9316EF143DF580c44e3CdB1eed30981"),
 		1,
 	)
 	go_test_.Equal(t, "0x8CA430C20be7452BDE527aFDd5d83b0FBC0AEF30", address)
@@ -1036,7 +1036,7 @@ func TestWallet_SendAllEth(t *testing.T) {
 
 	_, err = wallet.SendAllEth(
 		"",
-		"0xD55B17ba6D269F94d75FfB3651d05529BEFD290A",
+		common.HexToAddress("0xD55B17ba6D269F94d75FfB3651d05529BEFD290A"),
 		"0.000001",
 	)
 	go_test_.Equal(t, nil, err)
