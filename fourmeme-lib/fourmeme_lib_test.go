@@ -58,7 +58,7 @@ func TestTokenInfoByAPI(t *testing.T) {
 func TestGetReserveInfo(t *testing.T) {
 	reserveInfo, err := GetReserveInfo(
 		wallet,
-		common.HexToAddress("0x44440f83419de123d7d411187adb9962db017d03"),
+		common.HexToAddress("0x925c8ab7a9a8a148e87cd7f1ec7ecc3625864444"),
 	)
 	go_test_.Equal(t, nil, err)
 	spew.Dump(reserveInfo)

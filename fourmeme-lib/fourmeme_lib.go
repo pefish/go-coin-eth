@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,6 +13,7 @@ import (
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	"github.com/pefish/go-coin-eth/fourmeme-lib/constant"
 	type_ "github.com/pefish/go-coin-eth/type"
+	uniswap_v2_trade_constant "github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -57,8 +59,8 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress common.Address) (*TokenI
 		var pairAddress common.Address
 		err = wallet.CallContractConstant(
 			&pairAddress,
-			constant.PancakeFactoryAddress,
-			constant.PancakeFactoryABI,
+			uniswap_v2_trade_constant.PancakeV2FactoryAddress,
+			uniswap_v2_trade_constant.PancakeV2FactoryABI,
 			"getPair",
 			nil,
 			[]any{
@@ -68,6 +70,9 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress common.Address) (*TokenI
 		)
 		if err != nil {
 			return nil, err
+		}
+		if pairAddress.Cmp(go_coin_eth.ZeroAddress) == 0 {
+			return nil, errors.New("liquidity added but pair address is zero")
 		}
 		callResult.PairAddress = pairAddress
 	}
@@ -168,6 +173,7 @@ func GetReserveInfo(
 	if err != nil {
 		return nil, err
 	}
+	spew.Dump(tokenInfo)
 	if tokenInfo.Quote.String() != "0x0000000000000000000000000000000000000000" {
 		return nil, errors.New("quote not WBNB")
 	}
