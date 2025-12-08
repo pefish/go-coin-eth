@@ -1159,6 +1159,7 @@ func (w *Wallet) buildTx(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
+	w.logger.DebugF("交易构建成功 <txId: %s>", signedTx.Hash().String())
 	return &BuildTxResult{
 		SignedTx: signedTx,
 		TxHex:    hexutil.Encode(txBytes),
@@ -1365,6 +1366,7 @@ func (w *Wallet) SendRawTransaction(txHex string) (hash_ string, err_ error) {
 	if err != nil {
 		return "", errors.Wrap(err, "")
 	}
+	w.logger.DebugF("交易发送成功 <txId: %s>", hash.String())
 	return hash.String(), nil
 }
 
@@ -1373,14 +1375,7 @@ func (w *Wallet) SendRawTransactionWait(ctx context.Context, txHex string) (txRe
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(ctx, hash, time.Second)
-	if txr == nil {
-		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
-	}
-	if txr.Status == 0 {
-		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
-	}
-	return txr, nil
+	return w.WaitConfirm(ctx, hash, time.Second)
 }
 
 type TransactionByHashResult struct {
@@ -1414,7 +1409,7 @@ func (w *Wallet) TransactionReceiptByHash(txHash string) (txReceipt_ *types.Rece
 	return receipt, nil
 }
 
-func (w *Wallet) WaitConfirm(ctx context.Context, txHash string, interval time.Duration) (txReceipt_ *types.Receipt) {
+func (w *Wallet) WaitConfirm(ctx context.Context, txHash string, interval time.Duration) (txReceipt_ *types.Receipt, err_ error) {
 	timer := time.NewTimer(0)
 out:
 	for {
@@ -1426,17 +1421,23 @@ out:
 				timer.Reset(interval)
 				continue
 			}
-			if receipt.BlockNumber == nil {
+			if receipt == nil ||
+				receipt.BlockNumber == nil {
 				timer.Reset(interval)
 				continue
 			}
+			if receipt.Status == 0 {
+				w.logger.DebugF("交易确认失败 <txId: %s>", txHash)
+				return receipt, errors.Errorf("<TxId: %s>; Tx failed.", txHash)
+			}
+			w.logger.DebugF("交易确认成功 <txId: %s>", txHash)
 			timer.Stop()
-			return receipt
+			return receipt, nil
 		case <-ctx.Done():
 			break out
 		}
 	}
-	return nil
+	return nil, errors.Errorf("<TxId: %s>; Canceled wait.", txHash)
 }
 
 type Transaction struct {
@@ -1552,14 +1553,7 @@ func (w *Wallet) ApproveWait(
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(ctx, hash, time.Second)
-	if txr == nil {
-		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
-	}
-	if txr.Status == 0 {
-		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
-	}
-	return txr, nil
+	return w.WaitConfirm(ctx, hash, time.Second)
 }
 
 type DeriveFromPathResult struct {
@@ -1816,14 +1810,7 @@ func (w *Wallet) SendEthWait(
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(ctx, hash, time.Second)
-	if txr == nil {
-		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
-	}
-	if txr.Status == 0 {
-		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
-	}
-	return txr, nil
+	return w.WaitConfirm(ctx, hash, time.Second)
 }
 
 func (w *Wallet) SendAllToken(
@@ -1861,12 +1848,9 @@ func (w *Wallet) SendAllTokenWait(
 	if err != nil {
 		return amountWithDecimals, nil, err
 	}
-	txr := w.WaitConfirm(ctx, hash, time.Second)
-	if txr == nil {
-		return nil, nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
-	}
-	if txr.Status == 0 {
-		return amountWithDecimals, txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
+	txr, err := w.WaitConfirm(ctx, hash, time.Second)
+	if err != nil {
+		return amountWithDecimals, txr, err
 	}
 	return amountWithDecimals, txr, nil
 }
@@ -1911,14 +1895,7 @@ func (w *Wallet) SendTokenWait(
 	if err != nil {
 		return nil, err
 	}
-	txr := w.WaitConfirm(ctx, hash, time.Second)
-	if txr == nil {
-		return nil, errors.Errorf("<TxId: %s>; Canceled wait.", hash)
-	}
-	if txr.Status == 0 {
-		return txr, errors.Errorf("<TxId: %s>; Tx failed.", hash)
-	}
-	return txr, nil
+	return w.WaitConfirm(ctx, hash, time.Second)
 }
 
 func (w *Wallet) TokenDecimals(tokenAddress common.Address) (decimals_ uint64, err_ error) {
