@@ -166,13 +166,10 @@ func (t *Trader) BuyByExactETH(
 	if err != nil {
 		return nil, err
 	}
-	txId := btr.SignedTx.Hash().String()
-	t.logger.DebugF("购买 txid <%s> 等待确认", txId)
 	txReceipt, err := t.wallet.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
 		return nil, err
 	}
-	t.logger.DebugF("<%s> 已确认", txId)
 	tokenAmountWithDecimals, err := t.receivedTokenAmountInLogs(
 		txReceipt.Logs,
 		tokenAddress,
@@ -274,13 +271,10 @@ func (t *Trader) SellByExactToken(
 	if err != nil {
 		return nil, err
 	}
-	txId := btr.SignedTx.Hash().String()
-	t.logger.DebugF("出售 txid <%s> 等待确认", txId)
 	txReceipt, err := t.wallet.SendRawTransactionWait(ctx, btr.TxHex)
 	if err != nil {
 		return nil, err
 	}
-	t.logger.DebugF("<%s> 已确认", txId)
 
 	ethAmountWithDecimals, err := t.receivedETHAmountInLogs(txReceipt.Logs, realOpts.WETHAddress)
 	if err != nil {
