@@ -159,8 +159,8 @@ func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress common.Address) (*Toke
 }
 
 type ReserveInfoType struct {
-	ReserveBNBWithDecimals   string
-	ReserveTokenWithDecimals string
+	ReserveBNBWithDecimals   *big.Int
+	ReserveTokenWithDecimals *big.Int
 	Price                    string
 }
 
@@ -185,15 +185,15 @@ func GetReserveInfo(
 			return nil, err
 		}
 		return &ReserveInfoType{
-			ReserveBNBWithDecimals:   reserveBNBWithDecimals.String(),
-			ReserveTokenWithDecimals: reserveTokenWithDecimals.String(),
+			ReserveBNBWithDecimals:   reserveBNBWithDecimals,
+			ReserveTokenWithDecimals: reserveTokenWithDecimals,
 			Price:                    go_decimal.MustStart(reserveBNBWithDecimals).MustDivForString(reserveTokenWithDecimals),
 		}, nil
 	}
 
 	return &ReserveInfoType{
-		ReserveBNBWithDecimals:   tokenInfo.Funds.String(),
-		ReserveTokenWithDecimals: tokenInfo.Offers.String(),
+		ReserveBNBWithDecimals:   tokenInfo.Funds,
+		ReserveTokenWithDecimals: tokenInfo.Offers,
 		Price:                    go_decimal.MustStart(tokenInfo.LastPrice).MustUnShiftedBy(18).EndForString(),
 	}, nil
 }
