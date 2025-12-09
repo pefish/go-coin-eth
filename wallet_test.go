@@ -1059,3 +1059,9 @@ func TestWallet_IsAddress(t *testing.T) {
 	r := wallet.IsAddress("73652725672567")
 	spew.Dump(r)
 }
+
+func TestWallet_ToChecksumAddress(t *testing.T) {
+	wallet := NewWallet(&i_logger.DefaultLogger)
+	address := wallet.ToChecksumAddress("0x97fbd7a368a7aa1cc21eca724fa22f9a1b004444")
+	go_test_.Equal(t, "0x97fBd7a368A7aA1cc21eCA724Fa22F9a1B004444", address)
+}
