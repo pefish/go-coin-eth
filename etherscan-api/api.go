@@ -3,7 +3,6 @@ package etherscan_api
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	go_coin_eth "github.com/pefish/go-coin-eth"
@@ -19,10 +18,9 @@ const (
 )
 
 type EtherscanApiClient struct {
-	logger  i_logger.ILogger
-	apiKey  string
-	url     string
-	timeout time.Duration
+	logger i_logger.ILogger
+	apiKey string
+	url    string
 }
 
 type OptionsType struct {
@@ -32,10 +30,9 @@ type OptionsType struct {
 
 func NewEthscanApiClient(logger i_logger.ILogger, opts *OptionsType) *EtherscanApiClient {
 	return &EtherscanApiClient{
-		logger:  logger,
-		apiKey:  opts.ApiKey,
-		url:     opts.Url,
-		timeout: 10 * time.Second,
+		logger: logger,
+		apiKey: opts.ApiKey,
+		url:    opts.Url,
 	}
 }
 
@@ -86,10 +83,8 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		Message string      `json:"message"`
 		Result  interface{} `json:"result"`
 	}
-	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(e.timeout),
-		go_http.WithLogger(e.logger),
-	).GetForStruct(
+	_, _, err := go_http.HttpInstance.GetForStruct(
+		e.logger,
 		&go_http.RequestParams{
 			Url: e.url,
 			Queries: map[string]string{
@@ -146,10 +141,8 @@ func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult
 		Message string                `json:"message"`
 		Result  []GetSourceCodeResult `json:"result"`
 	}
-	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(e.timeout),
-		go_http.WithLogger(e.logger),
-	).GetForStruct(
+	_, _, err := go_http.HttpInstance.GetForStruct(
+		e.logger,
 		&go_http.RequestParams{
 			Url: e.url,
 			Queries: map[string]string{
@@ -187,10 +180,8 @@ func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCrea
 		Message string                    `json:"message"`
 		Result  []GetCreatorAndTxIdResult `json:"result"`
 	}
-	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(e.timeout),
-		go_http.WithLogger(e.logger),
-	).GetForStruct(
+	_, _, err := go_http.HttpInstance.GetForStruct(
+		e.logger,
 		&go_http.RequestParams{
 			Url: e.url,
 			Queries: map[string]string{
@@ -268,18 +259,17 @@ func (e *EtherscanApiClient) FindLogs(
 		Status  string `json:"status"`
 		Message string `json:"message"`
 	}
-	_, resStr, err := go_http.NewHttpRequester(
-		go_http.WithLogger(e.logger),
-		go_http.WithTimeout(e.timeout),
-	).GetForStruct(&go_http.RequestParams{
-		Url: e.url,
-		Queries: map[string]string{
-			"module": "logs",
-			"action": "getLogs",
-			"apikey": e.apiKey,
-		},
-		Params: params,
-	}, &tempResult)
+	_, resStr, err := go_http.HttpInstance.GetForStruct(
+		e.logger,
+		&go_http.RequestParams{
+			Url: e.url,
+			Queries: map[string]string{
+				"module": "logs",
+				"action": "getLogs",
+				"apikey": e.apiKey,
+			},
+			Params: params,
+		}, &tempResult)
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
@@ -348,10 +338,8 @@ func (e *EtherscanApiClient) VerifySourceCode(params *VerifySourceCodeParams) (g
 		Message string `json:"message"`
 		Result  string `json:"result"`
 	}
-	_, _, err := go_http.NewHttpRequester(
-		go_http.WithTimeout(e.timeout),
-		go_http.WithLogger(e.logger),
-	).PostFormDataForStruct(
+	_, _, err := go_http.HttpInstance.PostFormDataForStruct(
+		e.logger,
 		&go_http.RequestParams{
 			Url: e.url,
 			Queries: map[string]string{

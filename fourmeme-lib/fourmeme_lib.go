@@ -3,7 +3,6 @@ package fourmeme_lib
 import (
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -140,7 +139,8 @@ func TokenInfoByAPI(logger i_logger.ILogger, tokenAddress common.Address) (*Toke
 		Msg  string             `json:"msg"`
 		Data TokenInfoByAPIType `json:"data"`
 	}
-	_, _, err := go_http.NewHttpRequester(go_http.WithLogger(logger), go_http.WithTimeout(10*time.Second)).GetForStruct(
+	_, _, err := go_http.HttpInstance.GetForStruct(
+		logger,
 		&go_http.RequestParams{
 			Url: "https://four.meme/meme-api/v1/private/token/get/v2",
 			Queries: map[string]string{

@@ -10,7 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/pefish/go-decimal v0.4.6
 	github.com/pefish/go-format v0.5.3
-	github.com/pefish/go-http v0.8.8
+	github.com/pefish/go-http v0.8.15
 	github.com/pefish/go-interface v0.1.5
 	github.com/pefish/go-logger v0.6.2
 	github.com/pefish/go-random v0.2.9
@@ -36,14 +36,10 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/holiman/uint256 v1.3.2 // indirect
-	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
-	github.com/pefish/go-desensitize v0.0.7 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/smarty/assertions v1.16.0 // indirect
 	github.com/supranational/blst v0.3.16 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect
@@ -55,5 +51,4 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
-	moul.io/http2curl v1.0.0 // indirect
 )
