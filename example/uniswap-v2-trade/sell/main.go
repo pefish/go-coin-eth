@@ -36,7 +36,7 @@ var tokenAddress = common.HexToAddress("0x44440f83419de123d7d411187adb9962db017d
 
 const tokenAmount = "0"
 
-var maxFeePerGas = big.NewInt(100000000) // bsc 最少要给 5000_0000
+var maxFeePerGas = big.NewInt(5_0000_0000) // 0.05 U
 
 var logger i_logger.ILogger = &i_logger.DefaultLogger
 
@@ -98,7 +98,7 @@ func do() error {
 		constant.Pancake_BSCRouter,
 		tokenAddress,
 		&uniswap_v2_trade.TradeOpts{
-			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
+			MaxFeePerGas: maxFeePerGas, // bsc 最少要给 5000_0000
 		},
 	)
 	if err != nil {

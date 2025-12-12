@@ -29,7 +29,7 @@ func main() {
 }
 
 var tokenAddress = common.HexToAddress("0x44440f83419de123d7d411187adb9962db017d03")
-
+var maxFeePerGas = big.NewInt(1_0000_0000) // 0.01 U
 const bnbAmount = "0.001"
 
 func do() error {
@@ -51,7 +51,7 @@ func do() error {
 		constant.Pancake_BSCRouter,
 		tokenAddress,
 		&uniswap_v2_trade.TradeOpts{
-			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
+			MaxFeePerGas: maxFeePerGas, // bsc 最少要给 5000_0000
 		},
 	)
 	if err != nil {

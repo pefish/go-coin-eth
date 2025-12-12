@@ -1159,7 +1159,7 @@ func (w *Wallet) buildTx(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	w.logger.DebugF("交易构建成功 <txId: %s>", signedTx.Hash().String())
+	w.logger.DebugF("交易构建成功 <timestamp: %d> <txId: %s>", time.Now().Unix(), signedTx.Hash().String())
 	return &BuildTxResult{
 		SignedTx: signedTx,
 		TxHex:    hexutil.Encode(txBytes),
@@ -1366,7 +1366,7 @@ func (w *Wallet) SendRawTransaction(txHex string) (hash_ string, err_ error) {
 	if err != nil {
 		return "", errors.Wrap(err, "")
 	}
-	w.logger.DebugF("交易发送成功 <txId: %s>", hash.String())
+	w.logger.DebugF("交易发送成功 <timestamp: %d> <txId: %s>", time.Now().Unix(), hash.String())
 	return hash.String(), nil
 }
 
@@ -1427,10 +1427,10 @@ out:
 				continue
 			}
 			if receipt.Status == 0 {
-				w.logger.DebugF("交易确认失败 <txId: %s>", txHash)
+				w.logger.DebugF("交易确认失败 <timestamp: %d> <txId: %s>", time.Now().Unix(), txHash)
 				return receipt, errors.Errorf("<TxId: %s>; Tx failed.", txHash)
 			}
-			w.logger.DebugF("交易确认成功 <txId: %s>", txHash)
+			w.logger.DebugF("交易确认成功 <timestamp: %d> <txId: %s>", time.Now().Unix(), txHash)
 			timer.Stop()
 			return receipt, nil
 		case <-ctx.Done():

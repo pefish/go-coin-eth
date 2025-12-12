@@ -172,6 +172,9 @@ func GetReserveInfo(
 	if err != nil {
 		return nil, err
 	}
+	if tokenInfo == nil {
+		return nil, errors.New("not fourmeme token")
+	}
 	if tokenInfo.Quote.String() != "0x0000000000000000000000000000000000000000" {
 		return nil, errors.New("quote not WBNB")
 	}
