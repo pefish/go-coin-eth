@@ -65,7 +65,7 @@ type SwapResultType struct {
 	ProtocolFee                 uint16
 }
 
-func (t *Router) SwapExactInput(
+func (t *Router) SwapExactInputV4(
 	ctx context.Context,
 	priv string,
 	pairInfo *uniswap_v4_trade.PoolKeyType,

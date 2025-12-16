@@ -129,7 +129,7 @@ func do() error {
 		logger.InfoF("Universal_Router approve done. txId: %s", tr.TxHash.String())
 	}
 
-	r, err := router.SwapExactInput(
+	r, err := router.SwapExactInputV4(
 		context.Background(),
 		priv,
 		pairInfo,

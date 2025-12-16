@@ -68,32 +68,6 @@ func do() error {
 		tokenIn = pairInfo.Currency0
 	}
 
-	// 检查给 permit2 的授权
-	allowanceAmount, err := wallet.ApprovedAmount(tokenIn, userAddress, uniswap_universal_router.Permit2)
-	if err != nil {
-		return err
-	}
-	logger.InfoF("Permit2 approvedAmount: %s", allowanceAmount.String())
-	if allowanceAmount.Cmp(amountInWithDecimals) < 0 {
-		logger.InfoF("Permit2 need approve first")
-		tr, err := wallet.ApproveWait(
-			context.Background(),
-			priv,
-			tokenIn,
-			uniswap_universal_router.Permit2,
-			nil,
-			&go_coin_eth.CallMethodOpts{
-				MaxFeePerGas:   big.NewInt(100000000),
-				GasLimit:       50000,
-				IsPredictError: true,
-			},
-		)
-		if err != nil {
-			return err
-		}
-		logger.InfoF("Permit2 approve done. txId: %s", tr.TxHash.String())
-	}
-
 	// 要先检查有没有通过 permit2 给 universal_router 授权
 	allowanceInfo, err := router.Allowance(userAddress, tokenIn, uniswap_universal_router.Universal_Router)
 	if err != nil {

@@ -28,7 +28,7 @@ func main() {
 	}
 }
 
-var tokenAddress = common.HexToAddress("0x97693439ea2f0ecdeb9135881e49f354656a911c")
+var tokenAddress = common.HexToAddress("0x55ad16bd573b3365f43a9daeb0cc66a73821b4a5")
 
 var logger i_logger.ILogger = &i_logger.DefaultLogger
 

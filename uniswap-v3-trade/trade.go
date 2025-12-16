@@ -10,12 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	type_ "github.com/pefish/go-coin-eth/type"
 	constants "github.com/pefish/go-coin-eth/uniswap-v3-trade/constant"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
-	"github.com/pkg/errors"
 )
 
 type Trader struct {
@@ -49,7 +47,18 @@ func (t *Trader) WETHAddressFromRouter(routerAddress common.Address) (common.Add
 	return wethAddress, nil
 }
 
-type BuyByExactETHOpts struct {
+type SwapResultType struct {
+	UserAddress                   common.Address
+	InputToken                    common.Address
+	InputTokenAmountWithDecimals  *big.Int
+	OutputToken                   common.Address
+	OutputTokenAmountWithDecimals *big.Int
+	NetworkFee                    *big.Int
+	TxId                          string
+	BlockNumber                   uint64
+}
+
+type SwapExactInputOpts struct {
 	WETHAddress                       common.Address
 	MinReceiveTokenAmountWithDecimals *big.Int
 	GasLimit                          uint64
@@ -57,16 +66,17 @@ type BuyByExactETHOpts struct {
 }
 
 // 只能 route v3 pool，会查找 bnb、token、fee 三个参数唯一确定的 pool 去进行交易，没有这个池子就会失败
-func (t *Trader) BuyByExactETH(
+func (t *Trader) SwapExactInput(
 	ctx context.Context,
 	priv string,
-	ethAmountWithDecimals *big.Int,
+	inputAmountWithDecimals *big.Int,
 	routerAddress common.Address,
-	tokenAddress common.Address,
+	inputToken common.Address, // 如果是 0 地址，代表使用 ETH
+	outputToken common.Address,
 	fee uint64,
-	opts *BuyByExactETHOpts,
-) (*type_.SwapResultType, error) {
-	var realOpts BuyByExactETHOpts
+	opts *SwapExactInputOpts,
+) (*SwapResultType, error) {
+	var realOpts SwapExactInputOpts
 	if opts != nil {
 		realOpts = *opts
 	}
@@ -79,26 +89,22 @@ func (t *Trader) BuyByExactETH(
 		realOpts.MinReceiveTokenAmountWithDecimals = big.NewInt(0)
 	}
 
-	selfAddress, err := t.wallet.PrivateKeyToAddress(priv)
-	if err != nil {
-		return nil, err
-	}
-
-	balanceWithDecimals, err := t.wallet.Balance(selfAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	if balanceWithDecimals.Add(balanceWithDecimals, big.NewInt(10000000000000000)).Cmp(ethAmountWithDecimals) < 0 {
-		return nil, errors.Errorf("余额不足，%s < %s + 10000000000000000", balanceWithDecimals, ethAmountWithDecimals)
-	}
-
-	if realOpts.WETHAddress.Cmp(go_coin_eth.ZeroAddress) == 0 {
+	if realOpts.WETHAddress == go_coin_eth.ZeroAddress {
 		wethAddress_, err := t.WETHAddressFromRouter(routerAddress)
 		if err != nil {
 			return nil, err
 		}
 		realOpts.WETHAddress = wethAddress_
+	}
+
+	userAddress, err := t.wallet.PrivateKeyToAddress(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	value := big.NewInt(0)
+	if inputToken == go_coin_eth.ZeroAddress {
+		value = inputAmountWithDecimals
 	}
 
 	btr, err := t.wallet.BuildCallMethodTx(
@@ -107,7 +113,7 @@ func (t *Trader) BuyByExactETH(
 		constants.RouterABIStr,
 		"exactInputSingle",
 		&go_coin_eth.CallMethodOpts{
-			Value:        ethAmountWithDecimals,
+			Value:        value,
 			GasLimit:     realOpts.GasLimit,
 			MaxFeePerGas: realOpts.MaxFeePerGas,
 		},
@@ -121,11 +127,11 @@ func (t *Trader) BuyByExactETH(
 				AmountOutMinimum  *big.Int
 				SqrtPriceLimitX96 *big.Int
 			}{
-				TokenIn:           realOpts.WETHAddress,
-				TokenOut:          tokenAddress,
+				TokenIn:           inputToken,
+				TokenOut:          outputToken,
 				Fee:               big.NewInt(int64(fee)),
-				Recipient:         selfAddress,
-				AmountIn:          ethAmountWithDecimals,
+				Recipient:         userAddress,
+				AmountIn:          inputAmountWithDecimals,
 				AmountOutMinimum:  realOpts.MinReceiveTokenAmountWithDecimals,
 				SqrtPriceLimitX96: big.NewInt(0),
 			},
@@ -138,24 +144,24 @@ func (t *Trader) BuyByExactETH(
 	if err != nil {
 		return nil, err
 	}
-	tokenAmountWithDecimals, err := t.receivedTokenAmountInLogs(
+	outputAmountWithDecimals, err := t.receivedTokenAmountInLogs(
 		txReceipt.Logs,
-		tokenAddress,
-		selfAddress,
+		outputToken,
+		userAddress,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &type_.SwapResultType{
-		Type_:                   "buy",
-		UserAddress:             selfAddress,
-		ETHAmountWithDecimals:   ethAmountWithDecimals,
-		TokenAmountWithDecimals: tokenAmountWithDecimals,
-		TokenAddress:            tokenAddress,
-		NetworkFee:              go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
-		TxId:                    txReceipt.TxHash.String(),
-		BlockNumber:             txReceipt.BlockNumber.Uint64(),
+	return &SwapResultType{
+		UserAddress:                   userAddress,
+		InputToken:                    inputToken,
+		InputTokenAmountWithDecimals:  inputAmountWithDecimals,
+		OutputTokenAmountWithDecimals: outputAmountWithDecimals,
+		OutputToken:                   outputToken,
+		NetworkFee:                    go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
+		TxId:                          txReceipt.TxHash.String(),
+		BlockNumber:                   txReceipt.BlockNumber.Uint64(),
 	}, nil
 }
 
@@ -196,110 +202,6 @@ func (t *Trader) receivedTokenAmountInLogs(
 	}
 
 	return result, nil
-}
-
-type SellByExactTokenOpts struct {
-	WETHAddress                     common.Address
-	MinReceiveETHAmountWithDecimals *big.Int
-	GasLimit                        uint64
-	MaxFeePerGas                    *big.Int
-}
-
-// 只会得到 WBNB，不会自动转换为 BNB
-func (t *Trader) SellByExactToken(
-	ctx context.Context,
-	priv string,
-	tokenAmountWithDecimals *big.Int,
-	routerAddress common.Address,
-	tokenAddress common.Address,
-	fee uint64,
-	opts *SellByExactTokenOpts,
-) (*type_.SwapResultType, error) {
-	var realOpts SellByExactTokenOpts
-	if opts != nil {
-		realOpts = *opts
-	}
-
-	if realOpts.GasLimit == 0 {
-		realOpts.GasLimit = 300000
-	}
-
-	if realOpts.MinReceiveETHAmountWithDecimals == nil {
-		realOpts.MinReceiveETHAmountWithDecimals = big.NewInt(0)
-	}
-
-	selfAddress, err := t.wallet.PrivateKeyToAddress(priv)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenBalanceWithDecimals, err := t.wallet.TokenBalance(tokenAddress, selfAddress)
-	if err != nil {
-		return nil, err
-	}
-	if tokenBalanceWithDecimals.Cmp(tokenAmountWithDecimals) < 0 {
-		return nil, errors.Errorf("余额不足，%s < %s", tokenBalanceWithDecimals, tokenAmountWithDecimals)
-	}
-
-	if realOpts.WETHAddress.Cmp(go_coin_eth.ZeroAddress) == 0 {
-		wethAddress_, err := t.WETHAddressFromRouter(routerAddress)
-		if err != nil {
-			return nil, err
-		}
-		realOpts.WETHAddress = wethAddress_
-	}
-
-	btr, err := t.wallet.BuildCallMethodTx(
-		priv,
-		routerAddress,
-		constants.RouterABIStr,
-		"exactInputSingle",
-		&go_coin_eth.CallMethodOpts{
-			GasLimit:     realOpts.GasLimit,
-			MaxFeePerGas: realOpts.MaxFeePerGas,
-		},
-		[]any{
-			struct {
-				TokenIn           common.Address
-				TokenOut          common.Address
-				Fee               *big.Int
-				Recipient         common.Address
-				AmountIn          *big.Int
-				AmountOutMinimum  *big.Int
-				SqrtPriceLimitX96 *big.Int
-			}{
-				TokenIn:           tokenAddress,
-				TokenOut:          realOpts.WETHAddress,
-				Fee:               big.NewInt(int64(fee)),
-				Recipient:         selfAddress,
-				AmountIn:          tokenAmountWithDecimals,
-				AmountOutMinimum:  realOpts.MinReceiveETHAmountWithDecimals,
-				SqrtPriceLimitX96: big.NewInt(0),
-			},
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	txReceipt, err := t.wallet.SendRawTransactionWait(ctx, btr.TxHex)
-	if err != nil {
-		return nil, err
-	}
-	ethAmountWithDecimals, err := t.receivedTokenAmountInLogs(txReceipt.Logs, realOpts.WETHAddress, selfAddress)
-	if err != nil {
-		return nil, err
-	}
-
-	return &type_.SwapResultType{
-		Type_:                   "sell",
-		UserAddress:             selfAddress,
-		ETHAmountWithDecimals:   ethAmountWithDecimals,
-		TokenAmountWithDecimals: tokenAmountWithDecimals,
-		TokenAddress:            tokenAddress,
-		NetworkFee:              go_decimal.MustStart(txReceipt.EffectiveGasPrice).MustMulti(txReceipt.GasUsed).RoundDown(0).MustEndForBigInt(),
-		TxId:                    txReceipt.TxHash.String(),
-		BlockNumber:             txReceipt.BlockNumber.Uint64(),
-	}, nil
 }
 
 type PoolInfoType struct {
