@@ -7,7 +7,6 @@ import (
 
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	go_format "github.com/pefish/go-format"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
 
@@ -36,12 +35,11 @@ func do() error {
 		return err
 	}
 	fmt.Printf(
-		"<mnemonic: %s> <index: %d> <address: %s> <priv: %s> <enctr-priv: %s>\n",
+		"<mnemonic: %s> <index: %d> <address: %s> <priv: %s>\n",
 		os.Getenv("Mnemonic"),
 		index,
 		deriveResult.Address,
 		deriveResult.PrivateKey,
-		go_format.EncodePefish(deriveResult.PrivateKey),
 	)
 
 	return nil

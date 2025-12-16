@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	go_format "github.com/pefish/go-format"
+	go_format_any "github.com/pefish/go-format/any"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
@@ -76,7 +76,7 @@ type ListTokenTxResult struct {
 }
 
 func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListTokenTxResult, error) {
-	paramsMap := go_format.StructToMap(params)
+	paramsMap := go_format_any.StructToMap(params)
 
 	var httpResult struct {
 		Status  string      `json:"status"`
@@ -100,13 +100,13 @@ func (e *EtherscanApiClient) ListTokenTx(params *ListTokenTxParams) ([]ListToken
 		return nil, err
 	}
 	if httpResult.Status != "1" {
-		return nil, errors.New(go_format.ToString(httpResult.Result))
+		return nil, errors.New(go_format_any.ToString(httpResult.Result))
 	}
 
 	results := make([]ListTokenTxResult, 0)
 	for _, result := range httpResult.Result.([]interface{}) {
 		var d ListTokenTxResult
-		err := go_format.MapToStruct(&d, result.(map[string]interface{}))
+		err := go_format_any.ToStruct(&d, result.(map[string]interface{}))
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +158,7 @@ func (e *EtherscanApiClient) GetSourceCode(address string) (*GetSourceCodeResult
 		return nil, err
 	}
 	if httpResult.Status != "1" {
-		return nil, errors.New(go_format.ToString(httpResult.Result))
+		return nil, errors.New(go_format_any.ToString(httpResult.Result))
 	}
 
 	return &httpResult.Result[0], nil
@@ -197,7 +197,7 @@ func (e *EtherscanApiClient) GetCreatorAndTxId(contractAddress string) (*GetCrea
 		return nil, err
 	}
 	if httpResult.Status != "1" {
-		return nil, errors.New(go_format.ToString(httpResult.Result))
+		return nil, errors.New(go_format_any.ToString(httpResult.Result))
 	}
 
 	return &httpResult.Result[0], nil
@@ -355,7 +355,7 @@ func (e *EtherscanApiClient) VerifySourceCode(params *VerifySourceCodeParams) (g
 		return "", err
 	}
 	if httpResult.Status != "1" {
-		return "", errors.New(go_format.ToString(httpResult.Result))
+		return "", errors.New(go_format_any.ToString(httpResult.Result))
 	}
 
 	return httpResult.Result, nil

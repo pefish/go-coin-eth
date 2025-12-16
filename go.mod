@@ -8,9 +8,9 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/ethereum/go-ethereum v1.16.5
 	github.com/joho/godotenv v1.5.1
-	github.com/pefish/go-decimal v0.4.6
-	github.com/pefish/go-format v0.5.3
-	github.com/pefish/go-http v0.8.15
+	github.com/pefish/go-decimal v0.4.7
+	github.com/pefish/go-format v0.5.6
+	github.com/pefish/go-http v0.8.17
 	github.com/pefish/go-interface v0.1.5
 	github.com/pefish/go-logger v0.6.2
 	github.com/pefish/go-random v0.2.9
@@ -50,5 +50,4 @@ require (
 	golang.org/x/net v0.46.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
 )

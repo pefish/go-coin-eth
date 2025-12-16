@@ -13,6 +13,7 @@ import (
 	type_ "github.com/pefish/go-coin-eth/type"
 	constants "github.com/pefish/go-coin-eth/uniswap-v3-trade/constant"
 	go_decimal "github.com/pefish/go-decimal"
+	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
@@ -299,4 +300,56 @@ func (t *Trader) SellByExactToken(
 		TxId:                    txReceipt.TxHash.String(),
 		BlockNumber:             txReceipt.BlockNumber.Uint64(),
 	}, nil
+}
+
+type PoolInfoType struct {
+	ID      string `json:"id"`
+	FeeTier int    `json:"feeTier"`
+	Token0  struct {
+		Id       string `json:"id"`
+		Name     string `json:"name"`
+		Symbol   string `json:"symbol"`
+		Decimals int    `json:"decimals"`
+	} `json:"token0"`
+	Token1 struct {
+		Id       string `json:"id"`
+		Name     string `json:"name"`
+		Symbol   string `json:"symbol"`
+		Decimals int    `json:"decimals"`
+	} `json:"token1"`
+	TotalVolumeUSD float64 `json:"totalVolumeUSD,string"`
+	TVLUSD         float64 `json:"tvlUSD,string"`
+	TVLToken0      float64 `json:"tvlToken0,string"`
+	TVLToken1      float64 `json:"tvlToken1,string"`
+}
+
+func (t *Trader) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
+	var httpResult struct {
+		Tokens []struct {
+			Id             string  `json:"id"`
+			Decimals       int     `json:"decimals"`
+			Name           string  `json:"name"`
+			Symbol         string  `json:"symbol"`
+			TotalTxCount   int64   `json:"totalTxCount"`
+			PriceUSD       float64 `json:"priceUSD,string"`
+			TotalVolumeUSD float64 `json:"totalVolumeUSD,string"`
+			TVL            float64 `json:"tvl,string"`
+			TVLUSD         float64 `json:"tvlUSD,string"`
+		} `json:"tokens"`
+		Pools []*PoolInfoType `json:"pools"`
+	}
+	_, _, err := go_http.HttpInstance.GetForStruct(
+		t.logger,
+		&go_http.RequestParams{
+			Url: "https://explorer.pancakeswap.com/api/cached/protocol/v3/bsc/search",
+			Queries: map[string]string{
+				"text": tokenAddress.String(),
+			},
+		},
+		&httpResult,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return httpResult.Pools, nil
 }

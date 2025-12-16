@@ -432,24 +432,24 @@ func TestWallet_BuildTransferTx(t *testing.T) {
 	go_test_.Equal(t, "invalid length, need 256 bits", err.Error())
 }
 
-func TestWallet_UnpackParams(t *testing.T) {
+func TestWallet_UnpackParamsStr(t *testing.T) {
 	wallet1 := NewWallet(&i_logger.DefaultLogger)
 	defer wallet1.Close()
-	datas, err := wallet1.UnpackParams([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
+	datas, err := wallet1.UnpackParamsStr([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "1", datas[0].(*big.Int).String())
 	strs, err := wallet1.UnpackParamsToStrs([]abi.Type{TypeUint256}, "0x0000000000000000000000000000000000000000000000000000000000000001")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "1", strs[0])
 
-	datas, err = wallet1.UnpackParams([]abi.Type{TypeAddress}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
+	datas, err = wallet1.UnpackParamsStr([]abi.Type{TypeAddress}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", datas[0].(common.Address).String())
 	strs, err = wallet1.UnpackParamsToStrs([]abi.Type{TypeAddress}, "0x000000000000000000000000c054668c55ae734080642583246a74bbcd25d4c5")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "0xc054668c55aE734080642583246A74bbcD25D4c5", strs[0])
 
-	datas, err = wallet1.UnpackParams(
+	datas, err = wallet1.UnpackParamsStr(
 		[]abi.Type{TypeUint256, TypeUint256}, "0x00000000000000000000000000000000000000000000004e47868d5c301000000000000000000000000000000000000000000000000000000048df335bd24400")
 	go_test_.Equal(t, nil, err)
 	go_test_.Equal(t, "1444000000000000000000", datas[0].(*big.Int).String())

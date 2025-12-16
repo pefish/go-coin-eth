@@ -1,20 +1,22 @@
 package main
 
 import (
-	"context"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v3_trade "github.com/pefish/go-coin-eth/uniswap-v3-trade"
-	"github.com/pefish/go-coin-eth/uniswap-v3-trade/constant"
+	pancake_quoter "github.com/pefish/go-coin-eth/pancake-quoter"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
+
+var tokenAddress = common.HexToAddress("0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82")
+var fee = uint64(2500)
+
+var logger = &i_logger.DefaultLogger
 
 func main() {
 	envMap, _ := godotenv.Read("./.env")
@@ -28,14 +30,9 @@ func main() {
 	}
 }
 
-var tokenAddress = common.HexToAddress("0x97693439ea2f0ecdeb9135881e49f354656a911c")
-
-const fee = 100
-const bnbAmount = "0.0001"
-
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(
-		&i_logger.DefaultLogger,
+		logger,
 	).InitRemote(&go_coin_eth.UrlParam{
 		RpcUrl: os.Getenv("NODE_HTTPS"),
 		WsUrl:  os.Getenv("NODE_WSS"),
@@ -43,23 +40,18 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	trader := uniswap_v3_trade.New(&i_logger.DefaultLogger, wallet)
 
-	r, err := trader.BuyByExactETH(
-		context.Background(),
-		os.Getenv("PRIV"),
-		go_decimal.MustStart(bnbAmount).MustShiftedBy(18).MustEndForBigInt(),
-		constant.Pancake_BSCRouter,
+	quoter := pancake_quoter.New(logger, wallet)
+	tokenAmount, err := quoter.QuoteExactInputSingle(
+		go_coin_eth.WBNBAddress,
 		tokenAddress,
 		fee,
-		&uniswap_v3_trade.BuyByExactETHOpts{
-			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
-		},
+		go_decimal.MustStart("0.001").MustShiftedBy(18).MustEndForBigInt(),
 	)
 	if err != nil {
 		return err
 	}
-	spew.Dump(r)
+	spew.Dump(tokenAmount.String())
 
 	return nil
 }
