@@ -10,8 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v3_trade "github.com/pefish/go-coin-eth/uniswap-v3-trade"
-	"github.com/pefish/go-coin-eth/uniswap-v3-trade/constant"
+	uniswap_v3 "github.com/pefish/go-coin-eth/uniswap-v3"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
@@ -65,7 +64,7 @@ func do() error {
 		tokenAmountWithDecimals = balance
 	}
 
-	allowanceAmount, err := wallet.ApprovedAmount(tokenAddress, userAddress, constant.Pancake_BSCRouter)
+	allowanceAmount, err := wallet.ApprovedAmount(tokenAddress, userAddress, uniswap_v3.Pancake_BSCRouter)
 	if err != nil {
 		return err
 	}
@@ -76,7 +75,7 @@ func do() error {
 			context.Background(),
 			priv,
 			tokenAddress,
-			constant.Pancake_BSCRouter,
+			uniswap_v3.Pancake_BSCRouter,
 			nil,
 			&go_coin_eth.CallMethodOpts{
 				MaxFeePerGas:   big.NewInt(100000000),
@@ -90,17 +89,17 @@ func do() error {
 		logger.InfoF("approve done. txId: %s", tr.TxHash.String())
 	}
 
-	trader := uniswap_v3_trade.New(logger, wallet)
+	trader := uniswap_v3.New(logger, wallet)
 
 	r, err := trader.SwapExactInput(
 		context.Background(),
 		priv,
 		tokenAmountWithDecimals,
-		constant.Pancake_BSCRouter,
+		uniswap_v3.Pancake_BSCRouter,
 		tokenAddress,
 		go_coin_eth.WBNBAddress,
 		fee,
-		&uniswap_v3_trade.SwapExactInputOpts{
+		&uniswap_v3.SwapExactInputOpts{
 			WETHAddress:  go_coin_eth.WBNBAddress,
 			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
 		},

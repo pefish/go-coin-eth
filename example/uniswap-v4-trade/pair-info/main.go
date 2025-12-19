@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_universal_router "github.com/pefish/go-coin-eth/uniswap-universal-router"
+	uniswap_v4 "github.com/pefish/go-coin-eth/uniswap-v4"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
@@ -42,7 +42,7 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	trader := uniswap_universal_router.New(logger, wallet)
+	trader := uniswap_v4.New(logger, wallet)
 
 	pairInfo, err := trader.PairInfoByPoolID(poolID)
 	if err != nil {

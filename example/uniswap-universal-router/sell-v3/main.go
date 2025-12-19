@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_universal_router "github.com/pefish/go-coin-eth/uniswap-universal-router"
+	"github.com/pefish/go-coin-eth/uniswap-v3"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
@@ -34,8 +35,13 @@ func main() {
 	}
 }
 
-var tokenAddress = common.HexToAddress("0x97693439ea2f0ecdeb9135881e49f354656a911c")
-var poolID = common.HexToHash("0x101552cfd9d16f17db7d11fde6082e4671e9fe39cb21679bb3fad5be9e5ec2c9")
+var poolKey = &uniswap_v3.PoolKeyType{
+	Token0: common.HexToAddress("0x6952c5408b9822295ba4a7e694d0C5FfDB8fE320"),
+	Token1: go_coin_eth.WBNBAddress,
+	Fee:    100,
+}
+
+var tokenIn = poolKey.Token0
 var amountInWithDecimals = go_decimal.MustStart("0").MustShiftedBy(18).MustEndForBigInt()
 
 func do() error {
@@ -55,18 +61,6 @@ func do() error {
 		return err
 	}
 	logger.InfoF("userAddress: %s", userAddress)
-
-	router := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
-	pairInfo, err := router.PairInfoByPoolID(poolID)
-	if err != nil {
-		return err
-	}
-	var tokenIn common.Address
-	if tokenAddress == pairInfo.Currency0 {
-		tokenIn = pairInfo.Currency0
-	} else {
-		tokenIn = pairInfo.Currency1
-	}
 
 	if go_decimal.MustStart(amountInWithDecimals).MustEq(0) {
 		balance, err := wallet.TokenBalance(tokenIn, userAddress)
@@ -101,15 +95,15 @@ func do() error {
 		}
 		logger.InfoF("Permit2 approve done. txId: %s", tr.TxHash.String())
 	}
-
+	router := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
 	// 要先检查有没有通过 permit2 给 universal_router 授权
 	allowanceInfo, err := router.Allowance(userAddress, tokenIn, uniswap_universal_router.Universal_Router)
 	if err != nil {
 		return err
 	}
-	logger.InfoF("Universal_Router approvedAmount: %s", allowanceInfo.Amount.String())
+	logger.InfoF("approvedAmount: %s", allowanceInfo.Amount.String())
 	if allowanceInfo.Amount.Cmp(amountInWithDecimals) < 0 {
-		logger.InfoF("Universal_Router need approve first")
+		logger.InfoF("need approve first")
 		tr, err := router.ApproveWait(
 			context.Background(),
 			priv,
@@ -126,17 +120,17 @@ func do() error {
 		if err != nil {
 			return err
 		}
-		logger.InfoF("Universal_Router approve done. txId: %s", tr.TxHash.String())
+		logger.InfoF("approve done. txId: %s", tr.TxHash.String())
 	}
 
-	r, err := router.SwapExactInputV4(
+	r, err := router.SwapExactInputV3(
 		context.Background(),
 		priv,
-		pairInfo,
+		poolKey,
 		tokenIn,
 		amountInWithDecimals,
 		big.NewInt(0),
-		220000,
+		20_0000,
 		big.NewInt(100000000),
 	)
 	if err != nil {

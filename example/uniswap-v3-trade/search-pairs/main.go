@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v3_trade "github.com/pefish/go-coin-eth/uniswap-v3-trade"
+	"github.com/pefish/go-coin-eth/uniswap-v3"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
@@ -42,7 +42,7 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	trader := uniswap_v3_trade.New(logger, wallet)
+	trader := uniswap_v3.New(logger, wallet)
 
 	pairInfos, err := trader.SearchPancakePairs(tokenAddress)
 	if err != nil {

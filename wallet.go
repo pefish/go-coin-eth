@@ -547,7 +547,7 @@ func (t *Wallet) FilterLogs(
 ) ([]*types.Log, error) {
 	results := make([]*types.Log, 0)
 	for _, log := range logs {
-		if log.Address.Cmp(logAddress) != 0 {
+		if logAddress != ZeroAddress && log.Address != logAddress {
 			continue
 		}
 		if topic0Hex != "" && log.Topics[0].Cmp(common.HexToHash(topic0Hex)) != 0 {

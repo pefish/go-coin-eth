@@ -10,8 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v2_trade "github.com/pefish/go-coin-eth/uniswap-v2-trade"
-	"github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
+	uniswap_v2 "github.com/pefish/go-coin-eth/uniswap-v2"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
@@ -57,9 +56,9 @@ func do() error {
 	}
 	logger.InfoF("userAddress: %s", userAddress)
 
-	trader := uniswap_v2_trade.New(&i_logger.DefaultLogger, wallet)
+	trader := uniswap_v2.New(&i_logger.DefaultLogger, wallet)
 
-	approvedAmount, err := wallet.ApprovedAmount(tokenAddress, userAddress, constant.Pancake_BSCRouter)
+	approvedAmount, err := wallet.ApprovedAmount(tokenAddress, userAddress, uniswap_v2.Pancake_BSCRouter)
 	if err != nil {
 		return err
 	}
@@ -77,7 +76,7 @@ func do() error {
 			context.Background(),
 			priv,
 			tokenAddress,
-			constant.Pancake_BSCRouter,
+			uniswap_v2.Pancake_BSCRouter,
 			nil,
 			&go_coin_eth.CallMethodOpts{
 				MaxFeePerGas:   maxFeePerGas,
@@ -95,9 +94,9 @@ func do() error {
 		context.Background(),
 		priv,
 		tokenAmountWithDecimals,
-		constant.Pancake_BSCRouter,
+		uniswap_v2.Pancake_BSCRouter,
 		tokenAddress,
-		&uniswap_v2_trade.TradeOpts{
+		&uniswap_v2.TradeOpts{
 			MaxFeePerGas: maxFeePerGas, // bsc 最少要给 5000_0000
 		},
 	)

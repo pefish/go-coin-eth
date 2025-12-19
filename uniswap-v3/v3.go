@@ -1,4 +1,4 @@
-package uniswap_v3_trade
+package uniswap_v3
 
 // v3 中，pool 由 token1、token2、fee 三个参数唯一确定
 // 同样适用于 pancake V3
@@ -10,13 +10,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	constants "github.com/pefish/go-coin-eth/uniswap-v3-trade/constant"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
 
-type Trader struct {
+type UniswapV3 struct {
 	wallet *go_coin_eth.Wallet
 	logger i_logger.ILogger
 }
@@ -24,19 +23,19 @@ type Trader struct {
 func New(
 	logger i_logger.ILogger,
 	wallet *go_coin_eth.Wallet,
-) *Trader {
-	return &Trader{
+) *UniswapV3 {
+	return &UniswapV3{
 		wallet: wallet,
 		logger: logger,
 	}
 }
 
-func (t *Trader) WETHAddressFromRouter(routerAddress common.Address) (common.Address, error) {
+func (t *UniswapV3) WETHAddressFromRouter(routerAddress common.Address) (common.Address, error) {
 	var wethAddress common.Address
 	err := t.wallet.CallContractConstant(
 		&wethAddress,
 		routerAddress,
-		constants.RouterABIStr,
+		RouterABI,
 		"WETH9",
 		nil,
 		nil,
@@ -66,7 +65,7 @@ type SwapExactInputOpts struct {
 }
 
 // 只能 route v3 pool，会查找 bnb、token、fee 三个参数唯一确定的 pool 去进行交易，没有这个池子就会失败
-func (t *Trader) SwapExactInput(
+func (t *UniswapV3) SwapExactInput(
 	ctx context.Context,
 	priv string,
 	inputAmountWithDecimals *big.Int,
@@ -110,7 +109,7 @@ func (t *Trader) SwapExactInput(
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
 		routerAddress,
-		constants.RouterABIStr,
+		RouterABI,
 		"exactInputSingle",
 		&go_coin_eth.CallMethodOpts{
 			Value:        value,
@@ -165,7 +164,7 @@ func (t *Trader) SwapExactInput(
 	}, nil
 }
 
-func (t *Trader) receivedTokenAmountInLogs(
+func (t *UniswapV3) receivedTokenAmountInLogs(
 	logs []*types.Log,
 	tokenAddress common.Address,
 	myAddress common.Address,
@@ -204,6 +203,35 @@ func (t *Trader) receivedTokenAmountInLogs(
 	return result, nil
 }
 
+type PoolKeyType struct {
+	Token0 common.Address
+	Token1 common.Address
+	Fee    uint64
+}
+
+func (t *UniswapV3) GetPoolAddress(
+	poolKey *PoolKeyType,
+	factoryAddress common.Address,
+) (common.Address, error) {
+	var result common.Address
+	err := t.wallet.CallContractConstant(
+		&result,
+		factoryAddress,
+		FactoryABI,
+		"getPool",
+		nil,
+		[]any{
+			poolKey.Token0,
+			poolKey.Token1,
+			big.NewInt(int64(poolKey.Fee)),
+		},
+	)
+	if err != nil {
+		return common.Address{}, err
+	}
+	return result, nil
+}
+
 type PoolInfoType struct {
 	ID      string `json:"id"`
 	FeeTier int    `json:"feeTier"`
@@ -225,7 +253,7 @@ type PoolInfoType struct {
 	TVLToken1      float64 `json:"tvlToken1,string"`
 }
 
-func (t *Trader) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
+func (t *UniswapV3) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
 	var httpResult struct {
 		Tokens []struct {
 			Id             string  `json:"id"`

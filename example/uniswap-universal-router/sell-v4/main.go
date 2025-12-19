@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_universal_router "github.com/pefish/go-coin-eth/uniswap-universal-router"
+	"github.com/pefish/go-coin-eth/uniswap-v4"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
@@ -34,9 +35,9 @@ func main() {
 	}
 }
 
-var tokenAddress = common.HexToAddress("0x97693439ea2f0ecdeb9135881e49f354656a911c")
-var poolID = common.HexToHash("0x101552cfd9d16f17db7d11fde6082e4671e9fe39cb21679bb3fad5be9e5ec2c9")
-var amountInWithDecimals = go_decimal.MustStart("0.05").MustShiftedBy(18).MustEndForBigInt()
+var tokenAddress = common.HexToAddress("0x85375D3e9c4a39350f1140280a8b0De6890A40e7")
+var poolID = common.HexToHash("0x416e5132b7c80008cd32cf62439ea38e36c8eec0bbd16b78b3260a0fc5fa8c59")
+var amountInWithDecimals = go_decimal.MustStart("0").MustShiftedBy(18).MustEndForBigInt()
 
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(
@@ -56,16 +57,26 @@ func do() error {
 	}
 	logger.InfoF("userAddress: %s", userAddress)
 
-	router := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
-	pairInfo, err := router.PairInfoByPoolID(poolID)
+	router := uniswap_universal_router.New(logger, wallet)
+
+	uniswapV4 := uniswap_v4.New(logger, wallet)
+	pairInfo, err := uniswapV4.PairInfoByPoolID(poolID)
 	if err != nil {
 		return err
 	}
 	var tokenIn common.Address
 	if tokenAddress == pairInfo.Currency0 {
-		tokenIn = pairInfo.Currency1
-	} else {
 		tokenIn = pairInfo.Currency0
+	} else {
+		tokenIn = pairInfo.Currency1
+	}
+
+	if go_decimal.MustStart(amountInWithDecimals).MustEq(0) {
+		balance, err := wallet.TokenBalance(tokenIn, userAddress)
+		if err != nil {
+			return err
+		}
+		amountInWithDecimals = balance
 	}
 
 	// 检查给 permit2 的授权
@@ -99,9 +110,9 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	logger.InfoF("approvedAmount: %s", allowanceInfo.Amount.String())
+	logger.InfoF("Universal_Router approvedAmount: %s", allowanceInfo.Amount.String())
 	if allowanceInfo.Amount.Cmp(amountInWithDecimals) < 0 {
-		logger.InfoF("need approve first")
+		logger.InfoF("Universal_Router need approve first")
 		tr, err := router.ApproveWait(
 			context.Background(),
 			priv,
@@ -118,7 +129,7 @@ func do() error {
 		if err != nil {
 			return err
 		}
-		logger.InfoF("approve done. txId: %s", tr.TxHash.String())
+		logger.InfoF("Universal_Router approve done. txId: %s", tr.TxHash.String())
 	}
 
 	r, err := router.SwapExactInputV4(
@@ -128,7 +139,7 @@ func do() error {
 		tokenIn,
 		amountInWithDecimals,
 		big.NewInt(0),
-		300000,
+		220000,
 		big.NewInt(100000000),
 	)
 	if err != nil {

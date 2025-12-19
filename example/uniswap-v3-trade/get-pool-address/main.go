@@ -8,11 +8,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	"github.com/pefish/go-coin-eth/uniswap-v2"
+	"github.com/pefish/go-coin-eth/uniswap-v3"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
 )
+
+var logger i_logger.ILogger = &i_logger.DefaultLogger
 
 func main() {
 	envMap, _ := godotenv.Read("./.env")
@@ -28,9 +30,11 @@ func main() {
 	}
 }
 
-var tokenAddress = common.HexToAddress("0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82")
-
-var logger i_logger.ILogger = &i_logger.DefaultLogger
+var poolKey = &uniswap_v3.PoolKeyType{
+	Token0: common.HexToAddress("0x6952c5408b9822295ba4a7e694d0C5FfDB8fE320"),
+	Token1: go_coin_eth.WBNBAddress,
+	Fee:    100,
+}
 
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(
@@ -42,13 +46,23 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	trader := uniswap_v2.New(logger, wallet)
-
-	pairInfos, err := trader.SearchPancakePairs(tokenAddress)
+	priv := os.Getenv("PRIV")
+	userAddress, err := wallet.PrivateKeyToAddress(priv)
 	if err != nil {
 		return err
 	}
-	spew.Dump(pairInfos)
+	logger.InfoF("userAddress: %s", userAddress)
+
+	trader := uniswap_v3.New(logger, wallet)
+
+	r, err := trader.GetPoolAddress(
+		poolKey,
+		uniswap_v3.PancakeV3FactoryAddress,
+	)
+	if err != nil {
+		return err
+	}
+	spew.Dump(r)
 
 	return nil
 }

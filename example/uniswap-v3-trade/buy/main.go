@@ -10,8 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v3_trade "github.com/pefish/go-coin-eth/uniswap-v3-trade"
-	"github.com/pefish/go-coin-eth/uniswap-v3-trade/constant"
+	"github.com/pefish/go-coin-eth/uniswap-v3"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
@@ -58,11 +57,11 @@ func do() error {
 	}
 	logger.InfoF("userAddress: %s", userAddress)
 
-	trader := uniswap_v3_trade.New(logger, wallet)
+	trader := uniswap_v3.New(logger, wallet)
 
 	inputAmountWithDecimals := go_decimal.MustStart(inputAmount).MustShiftedBy(18).MustEndForBigInt()
 	if inputToken != go_coin_eth.ZeroAddress {
-		allowanceAmount, err := wallet.ApprovedAmount(inputToken, userAddress, constant.Pancake_BSCRouter)
+		allowanceAmount, err := wallet.ApprovedAmount(inputToken, userAddress, uniswap_v3.Pancake_BSCRouter)
 		if err != nil {
 			return err
 		}
@@ -73,7 +72,7 @@ func do() error {
 				context.Background(),
 				priv,
 				inputToken,
-				constant.Pancake_BSCRouter,
+				uniswap_v3.Pancake_BSCRouter,
 				nil,
 				&go_coin_eth.CallMethodOpts{
 					MaxFeePerGas:   big.NewInt(100000000),
@@ -92,11 +91,11 @@ func do() error {
 		context.Background(),
 		priv,
 		inputAmountWithDecimals,
-		constant.Pancake_BSCRouter,
+		uniswap_v3.Pancake_BSCRouter,
 		inputToken,
 		tokenAddress,
 		fee,
-		&uniswap_v3_trade.SwapExactInputOpts{
+		&uniswap_v3.SwapExactInputOpts{
 			WETHAddress:  go_coin_eth.WBNBAddress,
 			MaxFeePerGas: big.NewInt(100000000), // bsc 最少要给 5000_0000
 		},

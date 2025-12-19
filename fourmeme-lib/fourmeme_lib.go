@@ -11,7 +11,7 @@ import (
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	"github.com/pefish/go-coin-eth/fourmeme-lib/constant"
 	type_ "github.com/pefish/go-coin-eth/type"
-	uniswap_v2_trade_constant "github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
+	uniswap_v2 "github.com/pefish/go-coin-eth/uniswap-v2"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
@@ -57,8 +57,8 @@ func TokenInfo(wallet *go_coin_eth.Wallet, tokenAddress common.Address) (*TokenI
 		var pairAddress common.Address
 		err = wallet.CallContractConstant(
 			&pairAddress,
-			uniswap_v2_trade_constant.PancakeV2FactoryAddress,
-			uniswap_v2_trade_constant.PancakeV2FactoryABI,
+			uniswap_v2.PancakeV2FactoryAddress,
+			uniswap_v2.FactoryABI,
 			"getPair",
 			nil,
 			[]any{

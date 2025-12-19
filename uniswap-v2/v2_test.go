@@ -1,4 +1,4 @@
-package uniswap_v2_trade
+package uniswap_v2
 
 import (
 	"testing"

@@ -10,8 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_v2_trade "github.com/pefish/go-coin-eth/uniswap-v2-trade"
-	"github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
+	"github.com/pefish/go-coin-eth/uniswap-v2"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
@@ -42,15 +41,15 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	trader := uniswap_v2_trade.New(&i_logger.DefaultLogger, wallet)
+	trader := uniswap_v2.New(&i_logger.DefaultLogger, wallet)
 
 	r, err := trader.BuyByExactETH(
 		context.Background(),
 		os.Getenv("PRIV"),
 		go_decimal.MustStart(bnbAmount).MustShiftedBy(18).MustEndForBigInt(),
-		constant.Pancake_BSCRouter,
+		uniswap_v2.Pancake_BSCRouter,
 		tokenAddress,
-		&uniswap_v2_trade.TradeOpts{
+		&uniswap_v2.TradeOpts{
 			MaxFeePerGas: maxFeePerGas, // bsc 最少要给 5000_0000
 		},
 	)

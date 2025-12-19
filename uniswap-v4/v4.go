@@ -1,16 +1,15 @@
-package uniswap_v4_trade
+package uniswap_v4
 
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 )
 
-type Trader struct {
+type UniswapV4 struct {
 	wallet *go_coin_eth.Wallet
 	logger i_logger.ILogger
 }
@@ -18,8 +17,8 @@ type Trader struct {
 func New(
 	logger i_logger.ILogger,
 	wallet *go_coin_eth.Wallet,
-) *Trader {
-	return &Trader{
+) *UniswapV4 {
+	return &UniswapV4{
 		wallet: wallet,
 		logger: logger,
 	}
@@ -46,7 +45,7 @@ type PoolInfoType struct {
 	TVLToken1      float64 `json:"tvlToken1,string"`
 }
 
-func (t *Trader) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
+func (t *UniswapV4) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
 	var httpResult struct {
 		Tokens []struct {
 			Id             string  `json:"id"`
@@ -77,6 +76,24 @@ func (t *Trader) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoTyp
 	return httpResult.Pools, nil
 }
 
+func (t *UniswapV4) PairInfoByPoolID(poolID common.Hash) (*PoolKeyType, error) {
+	var result PoolKeyType
+	err := t.wallet.CallContractConstant(
+		&result,
+		CL_Pool_Manager,
+		CL_Pool_Manager_ABI,
+		"poolIdToPoolKey",
+		nil,
+		[]any{
+			poolID,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 type PoolKeyType struct {
 	Currency0   common.Address `json:"currency0"`
 	Currency1   common.Address `json:"currency1"`
@@ -85,36 +102,3 @@ type PoolKeyType struct {
 	Fee         *big.Int       `json:"fee"`
 	Parameters  [32]byte       `json:"parameters"`
 }
-
-type CLSwapExactInSingleParamsType struct {
-	PoolKey          PoolKeyType `json:"pool_key"`
-	ZeroForOne       bool        `json:"zero_for_one"`
-	AmountIn         *big.Int    `json:"amount_in"`
-	AmountOutMinimum *big.Int    `json:"amount_out_minimum"`
-	HookData         []byte      `json:"hook_data"`
-}
-
-type CLSettleAllParamsType struct {
-	Address common.Address `json:"address"`
-	Amount  *big.Int       `json:"amount"`
-}
-
-type CLTakeAllParamsType struct {
-	Address common.Address `json:"address"`
-	Amount  *big.Int       `json:"amount"`
-}
-
-var CLSwapExactInSingleParamsAbiType, _ = abi.NewType("tuple", "CLSwapExactInSingleParamsType", []abi.ArgumentMarshaling{
-	{Type: "tuple", Name: "pool_key", Components: []abi.ArgumentMarshaling{
-		{Type: "address", Name: "currency0"},
-		{Type: "address", Name: "currency1"},
-		{Type: "address", Name: "hooks"},
-		{Type: "address", Name: "pool_manager"},
-		{Type: "uint24", Name: "fee"},
-		{Type: "bytes32", Name: "parameters"},
-	}},
-	{Type: "bool", Name: "zero_for_one"},
-	{Type: "uint128", Name: "amount_in"},
-	{Type: "uint128", Name: "amount_out_minimum"},
-	{Type: "bytes", Name: "hook_data"},
-})

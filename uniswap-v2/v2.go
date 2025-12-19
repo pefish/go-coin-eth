@@ -1,4 +1,4 @@
-package uniswap_v2_trade
+package uniswap_v2
 
 // 同样适用于 pancake V2，fourmeme 都是进入到这个版本
 
@@ -11,14 +11,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	type_ "github.com/pefish/go-coin-eth/type"
-	constants "github.com/pefish/go-coin-eth/uniswap-v2-trade/constant"
 	go_decimal "github.com/pefish/go-decimal"
 	go_http "github.com/pefish/go-http"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	"github.com/pkg/errors"
 )
 
-type Trader struct {
+type UniswapV2 struct {
 	wallet *go_coin_eth.Wallet
 	logger i_logger.ILogger
 }
@@ -26,19 +25,19 @@ type Trader struct {
 func New(
 	logger i_logger.ILogger,
 	wallet *go_coin_eth.Wallet,
-) *Trader {
-	return &Trader{
+) *UniswapV2 {
+	return &UniswapV2{
 		wallet: wallet,
 		logger: logger,
 	}
 }
 
-func (t *Trader) WETHAddressFromRouter(routerAddress common.Address) (common.Address, error) {
+func (t *UniswapV2) WETHAddressFromRouter(routerAddress common.Address) (common.Address, error) {
 	var wethAddress common.Address
 	err := t.wallet.CallContractConstant(
 		&wethAddress,
 		routerAddress,
-		constants.RouterAbiStr,
+		RouterABI,
 		"WETH",
 		nil,
 		nil,
@@ -49,7 +48,7 @@ func (t *Trader) WETHAddressFromRouter(routerAddress common.Address) (common.Add
 	return wethAddress, nil
 }
 
-func (t *Trader) GetAmountsOut(
+func (t *UniswapV2) GetAmountsOut(
 	routerAddress common.Address,
 	amountInWithDecimals *big.Int,
 	path []common.Address,
@@ -61,7 +60,7 @@ func (t *Trader) GetAmountsOut(
 	err := t.wallet.CallContractConstant(
 		&results,
 		routerAddress,
-		constants.RouterAbiStr,
+		RouterABI,
 		"getAmountsOut",
 		nil,
 		[]any{
@@ -85,7 +84,7 @@ type TradeOpts struct {
 	MaxFeePerGas *big.Int
 }
 
-func (t *Trader) BuyByExactETH(
+func (t *UniswapV2) BuyByExactETH(
 	ctx context.Context,
 	priv string,
 	ethAmountWithDecimals *big.Int,
@@ -147,7 +146,7 @@ func (t *Trader) BuyByExactETH(
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
 		routerAddress,
-		constants.RouterAbiStr,
+		RouterABI,
 		"swapExactETHForTokensSupportingFeeOnTransferTokens",
 		&go_coin_eth.CallMethodOpts{
 			Value:        ethAmountWithDecimals,
@@ -192,7 +191,7 @@ func (t *Trader) BuyByExactETH(
 	}, nil
 }
 
-func (t *Trader) SellByExactToken(
+func (t *UniswapV2) SellByExactToken(
 	ctx context.Context,
 	priv string,
 	tokenAmountWithDecimals *big.Int,
@@ -252,7 +251,7 @@ func (t *Trader) SellByExactToken(
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
 		routerAddress,
-		constants.RouterAbiStr,
+		RouterABI,
 		"swapExactTokensForETHSupportingFeeOnTransferTokens",
 		&go_coin_eth.CallMethodOpts{
 			GasLimit:     realOpts.GasLimit,
@@ -294,7 +293,7 @@ func (t *Trader) SellByExactToken(
 	}, nil
 }
 
-func (t *Trader) receivedTokenAmountInLogs(
+func (t *UniswapV2) receivedTokenAmountInLogs(
 	logs []*types.Log,
 	tokenAddress common.Address,
 	myAddress common.Address,
@@ -333,7 +332,7 @@ func (t *Trader) receivedTokenAmountInLogs(
 	return result, nil
 }
 
-func (t *Trader) receivedETHAmountInLogs(
+func (t *UniswapV2) receivedETHAmountInLogs(
 	logs []*types.Log,
 	wethAddress common.Address,
 ) (*big.Int, error) {
@@ -378,7 +377,7 @@ type PoolInfoType struct {
 	TvlToken1      float64 `json:"tvlToken1,string"`
 }
 
-func (t *Trader) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
+func (t *UniswapV2) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
 	var httpResult struct {
 		Tokens []struct {
 			Id             string  `json:"id"`
