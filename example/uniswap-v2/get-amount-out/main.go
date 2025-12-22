@@ -1,24 +1,19 @@
 package main
 
 import (
-	"context"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
-	uniswap_universal_router "github.com/pefish/go-coin-eth/uniswap-universal-router"
 	uniswap_v2 "github.com/pefish/go-coin-eth/uniswap-v2"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
 )
-
-var logger i_logger.ILogger = &i_logger.DefaultLogger
 
 func main() {
 	envMap, _ := godotenv.Read("./.env")
@@ -34,17 +29,32 @@ func main() {
 	}
 }
 
+// var poolKey = &uniswap_v2.PoolKeyType{
+// 	Token0: common.HexToAddress("0x6bdcCe4A559076e37755a78Ce0c06214E59e4444"),
+// 	Token1: go_coin_eth.WBNBAddress,
+// }
+// var tokenAddress = common.HexToAddress("0x6bdcCe4A559076e37755a78Ce0c06214E59e4444")
+
+// var poolKey = &uniswap_v2.PoolKeyType{
+// 	Token0: common.HexToAddress("0x73b84F7E3901F39FC29F3704a03126D317Ab4444"),
+// 	Token1: go_coin_eth.WBNBAddress,
+// }
+// var tokenAddress = common.HexToAddress("0x73b84F7E3901F39FC29F3704a03126D317Ab4444")
+
 var poolKey = &uniswap_v2.PoolKeyType{
 	Token0: go_coin_eth.WBNBAddress, // WBNB
 	Token1: common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
 }
 var tokenAddress = common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19")
 
-var amountInWithDecimals = go_decimal.MustStart("0").MustShiftedBy(18).MustEndForBigInt()
+var tokenIn = tokenAddress
+var amountInWithDecimals = go_decimal.MustStart("1000").MustShiftedBy(18).MustEndForBigInt()
+
+var logger i_logger.ILogger = &i_logger.DefaultLogger
 
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(
-		&i_logger.DefaultLogger,
+		logger,
 	).InitRemote(&go_coin_eth.UrlParam{
 		RpcUrl: os.Getenv("NODE_HTTPS"),
 		WsUrl:  os.Getenv("NODE_WSS"),
@@ -52,46 +62,17 @@ func do() error {
 	if err != nil {
 		return err
 	}
+	trader := uniswap_v2.New(logger, wallet)
 
-	priv := os.Getenv("PRIV")
-	userAddress, err := wallet.PrivateKeyToAddress(priv)
-	if err != nil {
-		return err
-	}
-	logger.InfoF("userAddress: %s", userAddress)
-
-	var tokenIn common.Address
-	if tokenAddress == poolKey.Token0 {
-		tokenIn = poolKey.Token0
-	} else {
-		tokenIn = poolKey.Token1
-	}
-
-	if go_decimal.MustStart(amountInWithDecimals).MustEq(0) {
-		balance, err := wallet.TokenBalance(tokenIn, userAddress)
-		if err != nil {
-			return err
-		}
-		amountInWithDecimals = balance
-	}
-
-	router := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
-
-	r, err := router.SwapExactInputV2(
-		context.Background(),
-		priv,
+	quoteResult, err := trader.GetAmountsOut(
+		uniswap_v2.Pancake_BscChainRouter,
 		poolKey,
 		tokenIn,
 		amountInWithDecimals,
-		100,
-		20_0000,
-		big.NewInt(100000000),
-		uniswap_v2.Pancake_BscChainRouter,
 	)
 	if err != nil {
 		return err
 	}
-	spew.Dump(r)
-
+	spew.Dump(quoteResult)
 	return nil
 }

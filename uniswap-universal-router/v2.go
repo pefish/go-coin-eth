@@ -19,10 +19,16 @@ func (t *Router) SwapExactInputV2(
 	poolKey *uniswap_v2.PoolKeyType,
 	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
-	amountOutMinimum *big.Int,
+	slipage uint64, // 例如 slipage = 50，表示 0.5%
 	gasLimit uint64,
 	maxFeePerGas *big.Int,
+	v2RouterAddress common.Address,
 ) (*SwapResultType, error) {
+	if slipage > 10000 {
+		return nil, errors.New("slipage too high")
+	}
+	uniswapV2 := uniswap_v2.New(t.logger, t.wallet)
+
 	if tokenIn != poolKey.Token0 &&
 		tokenIn != poolKey.Token1 {
 		return nil, errors.New("tokenIn is not in pool")
@@ -46,6 +52,10 @@ func (t *Router) SwapExactInputV2(
 	commands := make([]byte, 0)
 	params := make([][]byte, 0)
 	value := big.NewInt(0)
+	nonce, err := t.wallet.NextNonce(userAddress)
+	if err != nil {
+		return nil, err
+	}
 	if tokenIn == go_coin_eth.WBNBAddress {
 		value = amountInWithDecimals
 		commands = append(commands, 0x0b) // WRAP_ETH
@@ -70,16 +80,18 @@ func (t *Router) SwapExactInputV2(
 		params = append(params, wrapETHPayloadBytes)
 		payerIsUser = false
 	} else {
-		_, err = t.ApproveWait(
+		newNonce, err := t.ApproveAsync(
 			ctx,
 			priv,
 			tokenIn,
 			amountInWithDecimals,
 			maxFeePerGas,
+			nonce,
 		)
 		if err != nil {
 			return nil, err
 		}
+		nonce = newNonce
 	}
 
 	var swapRecipient common.Address
@@ -87,6 +99,23 @@ func (t *Router) SwapExactInputV2(
 		swapRecipient = Universal_Router
 	} else {
 		swapRecipient = userAddress
+	}
+
+	amountOutMinimum := big.NewInt(0)
+	if slipage > 0 {
+		amountOut, err := uniswapV2.GetAmountsOut(
+			v2RouterAddress,
+			poolKey,
+			tokenIn,
+			amountInWithDecimals,
+		)
+		if err != nil {
+			return nil, err
+		}
+		amountOutMinimum = go_decimal.MustStart(amountOut).
+			MustMulti(
+				(10000 - float64(slipage)) / 10000,
+			).RoundDown(0).MustEndForBigInt()
 	}
 
 	commands = append(commands, 0x08) // Commands.V2_SWAP_EXACT_IN
@@ -146,7 +175,7 @@ func (t *Router) SwapExactInputV2(
 			},
 		}.Pack(
 			userAddress,
-			big.NewInt(0),
+			amountOutMinimum,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "")
@@ -163,6 +192,7 @@ func (t *Router) SwapExactInputV2(
 			GasLimit:     gasLimit,
 			MaxFeePerGas: maxFeePerGas,
 			Value:        value,
+			Nonce:        nonce,
 		},
 		[]any{
 			commands,

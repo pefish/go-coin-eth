@@ -37,8 +37,11 @@ func main() {
 // var tokenAddress = common.HexToAddress("0x85375D3e9c4a39350f1140280a8b0De6890A40e7") // BNB/SIGMA
 // var poolID = common.HexToHash("0x416e5132b7c80008cd32cf62439ea38e36c8eec0bbd16b78b3260a0fc5fa8c59")
 
-var tokenAddress = common.HexToAddress("0x4829A1D1fB6DED1F81d26868ab8976648baF9893") // RTX/USDT
-var poolID = common.HexToHash("0x9f57ccbb2a7a89120cbdc8dad277d6e82aa9b2c3925e148033963a22e1f57b5e")
+// var tokenAddress = common.HexToAddress("0x4829A1D1fB6DED1F81d26868ab8976648baF9893") // RTX/USDT
+// var poolID = common.HexToHash("0x9f57ccbb2a7a89120cbdc8dad277d6e82aa9b2c3925e148033963a22e1f57b5e")
+
+var tokenAddress = common.HexToAddress("0x810DF4c7Daf4eE06AE7c621D0680E73a505C9A06")
+var poolID = common.HexToHash("0xa255622f283b81ccbe7ddfae8b1da213d436407991e651c2503da7112d06c0e5")
 
 var amountInWithDecimals = go_decimal.MustStart("0.0001").MustShiftedBy(18).MustEndForBigInt()
 
@@ -81,9 +84,10 @@ func do() error {
 		pairInfo,
 		tokenIn,
 		amountInWithDecimals,
-		big.NewInt(0),
+		100,
 		300000,
 		big.NewInt(100000000),
+		uniswap_v4.Pancake_BscChainQuoter,
 	)
 	if err != nil {
 		return err

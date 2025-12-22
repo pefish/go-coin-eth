@@ -1187,7 +1187,7 @@ func (t *Wallet) buildTx(
 	if err != nil {
 		return nil, errors.Wrap(err, "")
 	}
-	t.logger.DebugF("交易构建成功 <timestamp: %d> <txId: %s>", time.Now().Unix(), signedTx.Hash().String())
+	t.logger.DebugF("交易构建成功 <timestamp: %d> <nonce: %d> <txId: %s>", time.Now().Unix(), nonce, signedTx.Hash().String())
 	return &BuildTxResult{
 		SignedTx: signedTx,
 		TxHex:    hexutil.Encode(txBytes),

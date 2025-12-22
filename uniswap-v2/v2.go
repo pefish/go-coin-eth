@@ -55,12 +55,17 @@ func (t *UniswapV2) WETHAddressFromRouter(routerAddress common.Address) (common.
 
 func (t *UniswapV2) GetAmountsOut(
 	routerAddress common.Address,
+	poolKey *PoolKeyType,
+	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
-	path []common.Address,
 ) (amountOutWithDecimals_ *big.Int, err_ error) {
-	if len(path) > 2 {
-		return nil, errors.New("Length of path must be 2.")
+	var tokenOut common.Address
+	if tokenIn == poolKey.Token0 {
+		tokenOut = poolKey.Token1
+	} else {
+		tokenOut = poolKey.Token0
 	}
+
 	results := make([]*big.Int, 0)
 	err := t.wallet.CallContractConstant(
 		&results,
@@ -71,8 +76,8 @@ func (t *UniswapV2) GetAmountsOut(
 		[]any{
 			amountInWithDecimals,
 			[]common.Address{
-				path[0],
-				path[1],
+				tokenIn,
+				tokenOut,
 			},
 		},
 	)
@@ -94,6 +99,7 @@ func (t *UniswapV2) BuyByExactETH(
 	priv string,
 	ethAmountWithDecimals *big.Int,
 	routerAddress common.Address,
+	poolKey *PoolKeyType,
 	tokenAddress common.Address,
 	opts *TradeOpts,
 ) (*type_.SwapResultType, error) {
@@ -135,8 +141,9 @@ func (t *UniswapV2) BuyByExactETH(
 
 	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
+		poolKey,
+		realOpts.WETHAddress,
 		ethAmountWithDecimals,
-		[]common.Address{realOpts.WETHAddress, tokenAddress},
 	)
 	if err != nil {
 		return nil, err
@@ -201,6 +208,7 @@ func (t *UniswapV2) SellByExactToken(
 	priv string,
 	tokenAmountWithDecimals *big.Int,
 	routerAddress common.Address,
+	poolKey *PoolKeyType,
 	tokenAddress common.Address,
 	opts *TradeOpts,
 ) (*type_.SwapResultType, error) {
@@ -240,8 +248,9 @@ func (t *UniswapV2) SellByExactToken(
 
 	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
+		poolKey,
+		realOpts.WETHAddress,
 		tokenAmountWithDecimals,
-		[]common.Address{tokenAddress, realOpts.WETHAddress},
 	)
 	if err != nil {
 		return nil, err

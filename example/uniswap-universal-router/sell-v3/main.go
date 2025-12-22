@@ -91,9 +91,10 @@ func do() error {
 		poolKey,
 		tokenIn,
 		amountInWithDecimals,
-		big.NewInt(0),
+		100,
 		20_0000,
 		big.NewInt(100000000),
+		uniswap_v3.Pancake_BscChainQuoter,
 	)
 	if err != nil {
 		return err

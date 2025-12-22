@@ -7,7 +7,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_v4 "github.com/pefish/go-coin-eth/uniswap-v4"
 	go_decimal "github.com/pefish/go-decimal"
@@ -17,24 +16,47 @@ import (
 func (t *Router) SwapExactInputV4(
 	ctx context.Context,
 	priv string,
-	pairInfo *uniswap_v4.PoolKeyType,
+	poolKey *uniswap_v4.PoolKeyType,
 	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
-	amountOutMinimum *big.Int,
+	slipage uint64, // 例如 slipage = 50，表示 0.5%
 	gasLimit uint64,
 	maxFeePerGas *big.Int,
+	v4QuoterAddress common.Address,
 ) (*SwapResultType, error) {
+	if slipage > 10000 {
+		return nil, errors.New("slipage too high")
+	}
+	uniswapV4 := uniswap_v4.New(t.logger, t.wallet)
+
 	zeroForOne := false
 	var tokenOut common.Address
-	if tokenIn == pairInfo.Currency0 {
+	if tokenIn == poolKey.Currency0 {
 		zeroForOne = true
-		tokenOut = pairInfo.Currency1
+		tokenOut = poolKey.Currency1
 	} else {
-		tokenOut = pairInfo.Currency0
+		tokenOut = poolKey.Currency0
+	}
+
+	amountOutMinimum := big.NewInt(0)
+	if slipage > 0 {
+		quoteResult, err := uniswapV4.QuoteExactInputSingle(
+			v4QuoterAddress,
+			poolKey,
+			tokenIn,
+			amountInWithDecimals,
+		)
+		if err != nil {
+			return nil, err
+		}
+		amountOutMinimum = go_decimal.MustStart(quoteResult.AmountOut).
+			MustMulti(
+				(10000 - float64(slipage)) / 10000,
+			).RoundDown(0).MustEndForBigInt()
 	}
 
 	params := uniswap_v4.CLSwapExactInSingleParamsType{
-		PoolKey:          *pairInfo,
+		PoolKey:          *poolKey,
 		ZeroForOne:       zeroForOne,
 		AmountIn:         amountInWithDecimals,
 		AmountOutMinimum: amountOutMinimum,
@@ -98,20 +120,29 @@ func (t *Router) SwapExactInputV4(
 		return nil, errors.Wrap(err, "")
 	}
 
+	userAddress, _ := t.wallet.PrivateKeyToAddress(priv)
+
+	nonce, err := t.wallet.NextNonce(userAddress)
+	if err != nil {
+		return nil, err
+	}
+
 	value := big.NewInt(0)
 	if tokenIn == go_coin_eth.ZeroAddress {
 		value = amountInWithDecimals
 	} else {
-		_, err = t.ApproveWait(
+		newNonce, err := t.ApproveAsync(
 			ctx,
 			priv,
 			tokenIn,
 			amountInWithDecimals,
 			maxFeePerGas,
+			nonce,
 		)
 		if err != nil {
 			return nil, err
 		}
+		nonce = newNonce
 	}
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
@@ -122,6 +153,7 @@ func (t *Router) SwapExactInputV4(
 			GasLimit:     gasLimit,
 			MaxFeePerGas: maxFeePerGas,
 			Value:        value,
+			Nonce:        nonce,
 		},
 		[]any{
 			[]byte{0x10}, // Commands.INFI_SWAP
@@ -165,7 +197,6 @@ func (t *Router) SwapExactInputV4(
 		return nil, err
 	}
 
-	userAddress, _ := t.wallet.PrivateKeyToAddress(priv)
 	return &SwapResultType{
 		UserAddress:                  userAddress,
 		InputToken:                   tokenIn,
@@ -187,49 +218,54 @@ func (t *Router) SwapExactInputV4(
 	}, nil
 }
 
-func (t *Router) ApproveWait(
+// 异步方法
+func (t *Router) ApproveAsync(
 	ctx context.Context,
 	userPriv string,
 	tokenAddress common.Address,
 	amountWithDecimals *big.Int,
 	maxFeePerGas *big.Int,
-) ([]*types.Receipt, error) {
+	nonce uint64,
+) (uint64, error) {
 	userAddress, err := t.wallet.PrivateKeyToAddress(userPriv)
 	if err != nil {
-		return nil, err
+		return nonce, err
 	}
-	trs := make([]*types.Receipt, 0)
+
 	// 检查给 permit2 的授权
 	allowanceAmount, err := t.wallet.ApprovedAmount(tokenAddress, userAddress, Permit2)
 	if err != nil {
-		return nil, err
+		return nonce, err
 	}
 	t.logger.InfoF("Permit2 approvedAmount: %s", allowanceAmount.String())
 	if allowanceAmount.Cmp(amountWithDecimals) < 0 {
 		t.logger.InfoF("Permit2 need approve first")
-		tr, err := t.wallet.ApproveWait(
-			ctx,
-			userPriv,
-			tokenAddress,
-			Permit2,
-			nil,
-			&go_coin_eth.CallMethodOpts{
-				MaxFeePerGas:   maxFeePerGas,
-				GasLimit:       50000,
-				IsPredictError: true,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		t.logger.InfoF("Permit2 approve done. txId: %s", tr.TxHash.String())
-		trs = append(trs, tr)
+		go func(nonce uint64) {
+			tr, err := t.wallet.ApproveWait(
+				ctx,
+				userPriv,
+				tokenAddress,
+				Permit2,
+				nil,
+				&go_coin_eth.CallMethodOpts{
+					MaxFeePerGas: maxFeePerGas,
+					GasLimit:     50000,
+					Nonce:        nonce,
+				},
+			)
+			if err != nil {
+				t.logger.ErrorF("ApproveWait Permit2 error: %s", err.Error())
+				return
+			}
+			t.logger.InfoF("Permit2 approve done. txId: %s", tr.TxHash.String())
+		}(nonce)
+		nonce++
 	}
 
 	// 要先检查有没有通过 permit2 给 universal_router 授权
 	allowanceInfo, err := t.AllowanceForPermit2(userAddress, tokenAddress, Universal_Router)
 	if err != nil {
-		return trs, err
+		return nonce, err
 	}
 	t.logger.InfoF(
 		"Universal_Router <ApprovedAmount: %s> <Expiration: %d>",
@@ -239,23 +275,27 @@ func (t *Router) ApproveWait(
 	if allowanceInfo.Amount.Cmp(amountWithDecimals) < 0 ||
 		allowanceInfo.Expiration.Int64()*1000 < time.Now().UnixMilli() {
 		t.logger.InfoF("Universal_Router need approve first")
-		tr, err := t.ApprovePermit2Wait(
-			ctx,
-			userPriv,
-			tokenAddress,
-			Universal_Router,
-			nil,
-			time.Now().UnixMilli()+3600*1000, // 1 hour
-			&go_coin_eth.CallMethodOpts{
-				MaxFeePerGas: maxFeePerGas,
-				GasLimit:     50000,
-			},
-		)
-		if err != nil {
-			return trs, err
-		}
-		t.logger.InfoF("Universal_Router approve done. txId: %s", tr.TxHash.String())
-		trs = append(trs, tr)
+		go func(nonce uint64) {
+			tr, err := t.ApprovePermit2Wait(
+				ctx,
+				userPriv,
+				tokenAddress,
+				Universal_Router,
+				nil,
+				time.Now().UnixMilli()+3600*1000, // 1 hour
+				&go_coin_eth.CallMethodOpts{
+					MaxFeePerGas: maxFeePerGas,
+					GasLimit:     50000,
+					Nonce:        nonce,
+				},
+			)
+			if err != nil {
+				t.logger.ErrorF("ApprovePermit2Wait Universal_Router error: %s", err.Error())
+				return
+			}
+			t.logger.InfoF("Universal_Router approve done. txId: %s", tr.TxHash.String())
+		}(nonce)
+		nonce++
 	}
-	return trs, nil
+	return nonce, nil
 }
