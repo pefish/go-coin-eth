@@ -30,20 +30,20 @@ func main() {
 }
 
 // var poolKey = &uniswap_v2.PoolKeyType{
-// 	Token0: common.HexToAddress("0x6bdcCe4A559076e37755a78Ce0c06214E59e4444"),
-// 	Token1: go_coin_eth.WBNBAddress,
+// 	TokenAddress: common.HexToAddress("0x6bdcCe4A559076e37755a78Ce0c06214E59e4444"),
+// 	BaseTokenAddress: go_coin_eth.WBNBAddress,
 // }
 // var tokenAddress = common.HexToAddress("0x6bdcCe4A559076e37755a78Ce0c06214E59e4444")
 
 // var poolKey = &uniswap_v2.PoolKeyType{
-// 	Token0: common.HexToAddress("0x73b84F7E3901F39FC29F3704a03126D317Ab4444"),
-// 	Token1: go_coin_eth.WBNBAddress,
+// 	TokenAddress: common.HexToAddress("0x73b84F7E3901F39FC29F3704a03126D317Ab4444"),
+// 	BaseTokenAddress: go_coin_eth.WBNBAddress,
 // }
 // var tokenAddress = common.HexToAddress("0x73b84F7E3901F39FC29F3704a03126D317Ab4444")
 
 var poolKey = &uniswap_v2.PoolKeyType{
-	Token0: go_coin_eth.WBNBAddress, // WBNB
-	Token1: common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
+	BaseTokenAddress: go_coin_eth.WBNBAddress, // WBNB
+	TokenAddress:     common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
 }
 var tokenAddress = common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19")
 

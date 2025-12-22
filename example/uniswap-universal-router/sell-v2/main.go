@@ -34,8 +34,8 @@ func main() {
 }
 
 var poolKey = &uniswap_v2.PoolKeyType{
-	Token0: go_coin_eth.WBNBAddress, // WBNB
-	Token1: common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
+	BaseTokenAddress: go_coin_eth.WBNBAddress, // WBNB
+	TokenAddress:     common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
 }
 var tokenAddress = common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19")
 
@@ -60,10 +60,10 @@ func do() error {
 	logger.InfoF("userAddress: %s", userAddress)
 
 	var tokenIn common.Address
-	if tokenAddress == poolKey.Token0 {
-		tokenIn = poolKey.Token0
+	if tokenAddress == poolKey.TokenAddress {
+		tokenIn = poolKey.TokenAddress
 	} else {
-		tokenIn = poolKey.Token1
+		tokenIn = poolKey.BaseTokenAddress
 	}
 
 	if go_decimal.MustStart(amountInWithDecimals).MustEq(0) {

@@ -57,18 +57,16 @@ func (t *Router) SwapExactInputV2(
 	}
 	uniswapV2 := uniswap_v2.New(t.logger, t.wallet)
 
-	if tokenIn != poolKey.Token0 &&
-		tokenIn != poolKey.Token1 {
+	if tokenIn != poolKey.TokenAddress &&
+		tokenIn != poolKey.BaseTokenAddress {
 		return nil, errors.New("tokenIn is not in pool")
 	}
 
-	zeroForOne := false
 	var tokenOut common.Address
-	if tokenIn == poolKey.Token0 {
-		tokenOut = poolKey.Token1
-		zeroForOne = true
+	if tokenIn == poolKey.TokenAddress {
+		tokenOut = poolKey.BaseTokenAddress
 	} else {
-		tokenOut = poolKey.Token0
+		tokenOut = poolKey.TokenAddress
 	}
 
 	payerIsUser := true
@@ -258,7 +256,7 @@ func (t *Router) SwapExactInputV2(
 		InputTokenAmountWithDecimals: amountInWithDecimals,
 		OutputToken:                  tokenOut,
 		OutputTokenAmountWithDecimals: func() *big.Int {
-			if zeroForOne {
+			if swapEvent.Amount0In.Cmp(amountInWithDecimals) == 0 {
 				return swapEvent.Amount1Out
 			} else {
 				return swapEvent.Amount0Out

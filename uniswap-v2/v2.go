@@ -18,8 +18,8 @@ import (
 )
 
 type PoolKeyType struct {
-	Token0 common.Address
-	Token1 common.Address
+	TokenAddress     common.Address
+	BaseTokenAddress common.Address
 }
 
 type UniswapV2 struct {
@@ -60,10 +60,10 @@ func (t *UniswapV2) GetAmountsOut(
 	amountInWithDecimals *big.Int,
 ) (amountOutWithDecimals_ *big.Int, err_ error) {
 	var tokenOut common.Address
-	if tokenIn == poolKey.Token0 {
-		tokenOut = poolKey.Token1
+	if tokenIn == poolKey.TokenAddress {
+		tokenOut = poolKey.BaseTokenAddress
 	} else {
-		tokenOut = poolKey.Token0
+		tokenOut = poolKey.TokenAddress
 	}
 
 	results := make([]*big.Int, 0)
