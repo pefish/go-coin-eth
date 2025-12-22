@@ -17,6 +17,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+type PoolKeyType struct {
+	Token0 common.Address
+	Token1 common.Address
+}
+
 type UniswapV2 struct {
 	wallet *go_coin_eth.Wallet
 	logger i_logger.ILogger

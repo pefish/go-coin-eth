@@ -11,7 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_universal_router "github.com/pefish/go-coin-eth/uniswap-universal-router"
-	"github.com/pefish/go-coin-eth/uniswap-v3"
+	uniswap_v3 "github.com/pefish/go-coin-eth/uniswap-v3"
 	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
@@ -34,13 +34,20 @@ func main() {
 	}
 }
 
+// var poolKey = &uniswap_v3.PoolKeyType{
+// 	Token0: common.HexToAddress("0x5C85D6C6825aB4032337F11Ee92a72DF936b46F6"),
+// 	Token1: go_coin_eth.WBNBAddress, // WBNB
+// 	Fee:    2500,
+// }
+// var tokenAddress = common.HexToAddress("0x5C85D6C6825aB4032337F11Ee92a72DF936b46F6")
+
 var poolKey = &uniswap_v3.PoolKeyType{
-	Token0: common.HexToAddress("0x6952c5408b9822295ba4a7e694d0C5FfDB8fE320"),
-	Token1: go_coin_eth.WBNBAddress,
+	Token0: common.HexToAddress("0x55d398326f99059ff775485246999027b3197955"), // USDT
+	Token1: common.HexToAddress("0x825459139c897d769339f295e962396c4f9e4a4d"), // GAME
 	Fee:    100,
 }
+var tokenAddress = common.HexToAddress("0x825459139c897d769339f295e962396c4f9e4a4d")
 
-var tokenIn = poolKey.Token1
 var amountInWithDecimals = go_decimal.MustStart("0.0001").MustShiftedBy(18).MustEndForBigInt()
 
 func do() error {
@@ -60,6 +67,13 @@ func do() error {
 		return err
 	}
 	logger.InfoF("userAddress: %s", userAddress)
+
+	var tokenIn common.Address
+	if tokenAddress == poolKey.Token0 {
+		tokenIn = poolKey.Token1
+	} else {
+		tokenIn = poolKey.Token0
+	}
 
 	router := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
 	r, err := router.SwapExactInputV3(

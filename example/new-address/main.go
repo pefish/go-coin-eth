@@ -28,7 +28,6 @@ func do() error {
 	wallet := go_coin_eth.NewWallet(
 		&i_logger.DefaultLogger,
 	)
-	fmt.Println(os.Getenv("Mnemonic"), os.Getenv("Password"))
 	seed := wallet.SeedHexByMnemonic(os.Getenv("Mnemonic"), os.Getenv("Password"))
 	deriveResult, err := wallet.DeriveFromPath(seed, fmt.Sprintf("m/44'/60'/0'/0/%d", index))
 	if err != nil {

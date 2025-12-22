@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
@@ -9,6 +11,8 @@ import (
 	"github.com/joho/godotenv"
 	go_coin_eth "github.com/pefish/go-coin-eth"
 	uniswap_universal_router "github.com/pefish/go-coin-eth/uniswap-universal-router"
+	uniswap_v2 "github.com/pefish/go-coin-eth/uniswap-v2"
+	go_decimal "github.com/pefish/go-decimal"
 	i_logger "github.com/pefish/go-interface/i-logger"
 	t_logger "github.com/pefish/go-interface/t-logger"
 	go_logger "github.com/pefish/go-logger"
@@ -30,7 +34,13 @@ func main() {
 	}
 }
 
-var tokenAddress = common.HexToAddress("0x97693439ea2f0ecdeb9135881e49f354656a911c")
+var poolKey = &uniswap_v2.PoolKeyType{
+	Token0: go_coin_eth.WBNBAddress, // WBNB
+	Token1: common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
+}
+var tokenAddress = common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19")
+
+var amountInWithDecimals = go_decimal.MustStart("0").MustShiftedBy(18).MustEndForBigInt()
 
 func do() error {
 	wallet, err := go_coin_eth.NewWallet(
@@ -42,6 +52,7 @@ func do() error {
 	if err != nil {
 		return err
 	}
+
 	priv := os.Getenv("PRIV")
 	userAddress, err := wallet.PrivateKeyToAddress(priv)
 	if err != nil {
@@ -49,15 +60,37 @@ func do() error {
 	}
 	logger.InfoF("userAddress: %s", userAddress)
 
-	trader := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
-	allowanceInfo, err := trader.Allowance(
-		userAddress,
-		tokenAddress,
-		uniswap_universal_router.Universal_Router,
+	var tokenIn common.Address
+	if tokenAddress == poolKey.Token0 {
+		tokenIn = poolKey.Token0
+	} else {
+		tokenIn = poolKey.Token1
+	}
+
+	if go_decimal.MustStart(amountInWithDecimals).MustEq(0) {
+		balance, err := wallet.TokenBalance(tokenIn, userAddress)
+		if err != nil {
+			return err
+		}
+		amountInWithDecimals = balance
+	}
+
+	router := uniswap_universal_router.New(&i_logger.DefaultLogger, wallet)
+
+	r, err := router.SwapExactInputV2(
+		context.Background(),
+		priv,
+		poolKey,
+		tokenIn,
+		amountInWithDecimals,
+		big.NewInt(0),
+		20_0000,
+		big.NewInt(100000000),
 	)
 	if err != nil {
 		return err
 	}
-	spew.Dump(allowanceInfo)
+	spew.Dump(r)
+
 	return nil
 }

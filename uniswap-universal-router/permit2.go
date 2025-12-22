@@ -12,11 +12,11 @@ import (
 
 type AllowanceInfoType struct {
 	Amount     *big.Int
-	Expiration *big.Int
+	Expiration *big.Int // s 级别时间戳
 	Nonce      *big.Int
 }
 
-func (t *Router) Allowance(
+func (t *Router) AllowanceForPermit2(
 	userAddress common.Address,
 	tokenAddress common.Address,
 	spender common.Address,
@@ -40,7 +40,7 @@ func (t *Router) Allowance(
 	return &r, nil
 }
 
-func (t *Router) ApproveWait(
+func (t *Router) ApprovePermit2Wait(
 	ctx context.Context,
 	priv string,
 	tokenAddress common.Address,

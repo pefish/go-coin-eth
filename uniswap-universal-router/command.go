@@ -59,6 +59,14 @@ type V3SwapExactInParamsType struct {
 	PayerIsUser  bool
 }
 
+type V2SwapExactInParamsType struct {
+	Recipient    common.Address
+	AmountIn     *big.Int
+	AmountOutMin *big.Int
+	Path         []common.Address
+	PayerIsUser  bool
+}
+
 type CommandData struct {
 	Command string
 	Params  any
@@ -156,6 +164,45 @@ func (t *Router) DecodeCommands(txPayloadStr string) ([]*CommandData, error) {
 				Path:         decodedPath,
 				PayerIsUser:  paramsAny[4].(bool),
 			}
+		case "V2_SWAP_EXACT_IN":
+			paramsAny, err := abi.Arguments{
+				{
+					Name:    "recipient",
+					Type:    go_coin_eth.TypeAddress,
+					Indexed: false,
+				},
+				{
+					Name:    "amountIn",
+					Type:    go_coin_eth.TypeUint256,
+					Indexed: false,
+				},
+				{
+					Name:    "amountOutMin",
+					Type:    go_coin_eth.TypeUint256,
+					Indexed: false,
+				},
+				{
+					Name:    "path",
+					Type:    go_coin_eth.TypeAddressArr,
+					Indexed: false,
+				},
+				{
+					Name:    "payerIsUser",
+					Type:    go_coin_eth.TypeBool,
+					Indexed: false,
+				},
+			}.Unpack(input)
+			if err != nil {
+				return nil, errors.Wrap(err, "")
+			}
+			commandParams = &V2SwapExactInParamsType{
+				Recipient:    paramsAny[0].(common.Address),
+				AmountIn:     paramsAny[1].(*big.Int),
+				AmountOutMin: paramsAny[2].(*big.Int),
+				Path:         paramsAny[3].([]common.Address),
+				PayerIsUser:  paramsAny[4].(bool),
+			}
+
 		case "INFI_SWAP":
 			var actionDatas []*uniswap_v4.ActionData
 			infiSwapParamsAny, err := t.wallet.UnpackParams(
