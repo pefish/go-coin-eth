@@ -41,7 +41,7 @@ func main() {
 // }
 // var tokenAddress = common.HexToAddress("0x73b84F7E3901F39FC29F3704a03126D317Ab4444")
 
-var poolKey = &uniswap_v2.PoolKeyType{
+var poolInfo = &uniswap_v2.PoolInfoType{
 	BaseTokenAddress: go_coin_eth.WBNBAddress, // WBNB
 	TokenAddress:     common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
 }
@@ -66,7 +66,7 @@ func do() error {
 
 	quoteResult, err := trader.GetAmountsOut(
 		uniswap_v2.Pancake_BscChainRouter,
-		poolKey,
+		poolInfo,
 		tokenIn,
 		amountInWithDecimals,
 	)

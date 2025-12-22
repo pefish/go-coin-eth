@@ -18,6 +18,24 @@ import (
 )
 
 type PoolKeyType struct {
+	Token0 common.Address
+	Token1 common.Address
+}
+
+func (t *PoolKeyType) ToPoolInfo(tokenAddress common.Address) *PoolInfoType {
+	var baseTokenAddress common.Address
+	if tokenAddress == t.Token0 {
+		baseTokenAddress = t.Token1
+	} else {
+		baseTokenAddress = t.Token0
+	}
+	return &PoolInfoType{
+		TokenAddress:     tokenAddress,
+		BaseTokenAddress: baseTokenAddress,
+	}
+}
+
+type PoolInfoType struct {
 	TokenAddress     common.Address
 	BaseTokenAddress common.Address
 }
@@ -55,15 +73,15 @@ func (t *UniswapV2) WETHAddressFromRouter(routerAddress common.Address) (common.
 
 func (t *UniswapV2) GetAmountsOut(
 	routerAddress common.Address,
-	poolKey *PoolKeyType,
+	poolInfo *PoolInfoType,
 	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
 ) (amountOutWithDecimals_ *big.Int, err_ error) {
 	var tokenOut common.Address
-	if tokenIn == poolKey.TokenAddress {
-		tokenOut = poolKey.BaseTokenAddress
+	if tokenIn == poolInfo.TokenAddress {
+		tokenOut = poolInfo.BaseTokenAddress
 	} else {
-		tokenOut = poolKey.TokenAddress
+		tokenOut = poolInfo.TokenAddress
 	}
 
 	results := make([]*big.Int, 0)
@@ -99,7 +117,7 @@ func (t *UniswapV2) BuyByExactETH(
 	priv string,
 	ethAmountWithDecimals *big.Int,
 	routerAddress common.Address,
-	poolKey *PoolKeyType,
+	poolInfo *PoolInfoType,
 	tokenAddress common.Address,
 	opts *TradeOpts,
 ) (*type_.SwapResultType, error) {
@@ -141,7 +159,7 @@ func (t *UniswapV2) BuyByExactETH(
 
 	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
-		poolKey,
+		poolInfo,
 		realOpts.WETHAddress,
 		ethAmountWithDecimals,
 	)
@@ -208,7 +226,7 @@ func (t *UniswapV2) SellByExactToken(
 	priv string,
 	tokenAmountWithDecimals *big.Int,
 	routerAddress common.Address,
-	poolKey *PoolKeyType,
+	poolInfo *PoolInfoType,
 	tokenAddress common.Address,
 	opts *TradeOpts,
 ) (*type_.SwapResultType, error) {
@@ -248,7 +266,7 @@ func (t *UniswapV2) SellByExactToken(
 
 	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
-		poolKey,
+		poolInfo,
 		realOpts.WETHAddress,
 		tokenAmountWithDecimals,
 	)
@@ -370,7 +388,7 @@ func (t *UniswapV2) receivedETHAmountInLogs(
 	return withdrawalEvent.Wad, nil
 }
 
-type PoolInfoType struct {
+type PancakePoolInfoType struct {
 	ID      string `json:"id"`
 	FeeTier int    `json:"feeTier"`
 	Token0  struct {
@@ -391,7 +409,7 @@ type PoolInfoType struct {
 	TvlToken1      float64 `json:"tvlToken1,string"`
 }
 
-func (t *UniswapV2) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfoType, error) {
+func (t *UniswapV2) SearchPancakePairs(tokenAddress common.Address) ([]*PancakePoolInfoType, error) {
 	var httpResult struct {
 		Tokens []struct {
 			Id             string  `json:"id"`
@@ -404,7 +422,7 @@ func (t *UniswapV2) SearchPancakePairs(tokenAddress common.Address) ([]*PoolInfo
 			Tvl            float64 `json:"tvl,string"`
 			TvlUSD         float64 `json:"tvlUSD,string"`
 		} `json:"tokens"`
-		Pools []*PoolInfoType `json:"pools"`
+		Pools []*PancakePoolInfoType `json:"pools"`
 	}
 	_, _, err := go_http.HttpInstance.GetForStruct(
 		t.logger,

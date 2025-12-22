@@ -33,7 +33,7 @@ func main() {
 	}
 }
 
-var poolKey = &uniswap_v2.PoolKeyType{
+var poolInfo = &uniswap_v2.PoolInfoType{
 	BaseTokenAddress: go_coin_eth.WBNBAddress, // WBNB
 	TokenAddress:     common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
 }
@@ -60,10 +60,10 @@ func do() error {
 	logger.InfoF("userAddress: %s", userAddress)
 
 	var tokenIn common.Address
-	if tokenAddress == poolKey.TokenAddress {
-		tokenIn = poolKey.TokenAddress
+	if tokenAddress == poolInfo.TokenAddress {
+		tokenIn = poolInfo.TokenAddress
 	} else {
-		tokenIn = poolKey.BaseTokenAddress
+		tokenIn = poolInfo.BaseTokenAddress
 	}
 
 	if go_decimal.MustStart(amountInWithDecimals).MustEq(0) {
@@ -79,7 +79,7 @@ func do() error {
 	r, err := router.SwapExactInputV2(
 		context.Background(),
 		priv,
-		poolKey,
+		poolInfo,
 		tokenIn,
 		amountInWithDecimals,
 		uniswap_v2.Pancake_BscChainRouter,

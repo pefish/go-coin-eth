@@ -16,7 +16,7 @@ import (
 func (t *Router) SwapExactInputV2(
 	ctx context.Context,
 	priv string,
-	poolKey *uniswap_v2.PoolKeyType,
+	poolInfo *uniswap_v2.PoolInfoType,
 	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
 	v2RouterAddress common.Address,
@@ -57,16 +57,16 @@ func (t *Router) SwapExactInputV2(
 	}
 	uniswapV2 := uniswap_v2.New(t.logger, t.wallet)
 
-	if tokenIn != poolKey.TokenAddress &&
-		tokenIn != poolKey.BaseTokenAddress {
+	if tokenIn != poolInfo.TokenAddress &&
+		tokenIn != poolInfo.BaseTokenAddress {
 		return nil, errors.New("tokenIn is not in pool")
 	}
 
 	var tokenOut common.Address
-	if tokenIn == poolKey.TokenAddress {
-		tokenOut = poolKey.BaseTokenAddress
+	if tokenIn == poolInfo.TokenAddress {
+		tokenOut = poolInfo.BaseTokenAddress
 	} else {
-		tokenOut = poolKey.TokenAddress
+		tokenOut = poolInfo.TokenAddress
 	}
 
 	payerIsUser := true
@@ -122,7 +122,7 @@ func (t *Router) SwapExactInputV2(
 	if realOpts.Slippage > 0 {
 		amountOut, err := uniswapV2.GetAmountsOut(
 			v2RouterAddress,
-			poolKey,
+			poolInfo,
 			tokenIn,
 			amountInWithDecimals,
 		)
