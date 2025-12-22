@@ -41,3 +41,10 @@ type SwapResultType struct {
 	Fee                           *big.Int
 	ProtocolFee                   *big.Int
 }
+
+type SwapOpts struct {
+	Slippage     uint64   // 滑点，默认 50, 就是 0.5%
+	GasLimit     uint64   // 默认 300000
+	MaxFeePerGas *big.Int // 默认 100000000
+	Nonce        uint64
+}

@@ -19,12 +19,40 @@ func (t *Router) SwapExactInputV2(
 	poolKey *uniswap_v2.PoolKeyType,
 	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
-	slipage uint64, // 例如 slipage = 50，表示 0.5%
-	gasLimit uint64,
-	maxFeePerGas *big.Int,
 	v2RouterAddress common.Address,
+	opts *SwapOpts,
 ) (*SwapResultType, error) {
-	if slipage > 10000 {
+	var realOpts SwapOpts
+	if opts != nil {
+		realOpts = *opts
+	}
+
+	if realOpts.Slippage == 0 {
+		realOpts.Slippage = 50
+	}
+
+	if realOpts.GasLimit == 0 {
+		realOpts.GasLimit = 300000
+	}
+
+	if realOpts.MaxFeePerGas == nil {
+		realOpts.MaxFeePerGas = big.NewInt(1_0000_0000)
+	}
+
+	userAddress, err := t.wallet.PrivateKeyToAddress(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	if realOpts.Nonce == 0 {
+		nonce, err := t.wallet.NextNonce(userAddress)
+		if err != nil {
+			return nil, err
+		}
+		realOpts.Nonce = nonce
+	}
+
+	if realOpts.Slippage > 10000 {
 		return nil, errors.New("slipage too high")
 	}
 	uniswapV2 := uniswap_v2.New(t.logger, t.wallet)
@@ -32,11 +60,6 @@ func (t *Router) SwapExactInputV2(
 	if tokenIn != poolKey.Token0 &&
 		tokenIn != poolKey.Token1 {
 		return nil, errors.New("tokenIn is not in pool")
-	}
-
-	userAddress, err := t.wallet.PrivateKeyToAddress(priv)
-	if err != nil {
-		return nil, err
 	}
 
 	zeroForOne := false
@@ -52,10 +75,6 @@ func (t *Router) SwapExactInputV2(
 	commands := make([]byte, 0)
 	params := make([][]byte, 0)
 	value := big.NewInt(0)
-	nonce, err := t.wallet.NextNonce(userAddress)
-	if err != nil {
-		return nil, err
-	}
 	if tokenIn == go_coin_eth.WBNBAddress {
 		value = amountInWithDecimals
 		commands = append(commands, 0x0b) // WRAP_ETH
@@ -85,13 +104,13 @@ func (t *Router) SwapExactInputV2(
 			priv,
 			tokenIn,
 			amountInWithDecimals,
-			maxFeePerGas,
-			nonce,
+			realOpts.MaxFeePerGas,
+			realOpts.Nonce,
 		)
 		if err != nil {
 			return nil, err
 		}
-		nonce = newNonce
+		realOpts.Nonce = newNonce
 	}
 
 	var swapRecipient common.Address
@@ -102,7 +121,7 @@ func (t *Router) SwapExactInputV2(
 	}
 
 	amountOutMinimum := big.NewInt(0)
-	if slipage > 0 {
+	if realOpts.Slippage > 0 {
 		amountOut, err := uniswapV2.GetAmountsOut(
 			v2RouterAddress,
 			poolKey,
@@ -114,7 +133,7 @@ func (t *Router) SwapExactInputV2(
 		}
 		amountOutMinimum = go_decimal.MustStart(amountOut).
 			MustMulti(
-				(10000 - float64(slipage)) / 10000,
+				(10000 - float64(realOpts.Slippage)) / 10000,
 			).RoundDown(0).MustEndForBigInt()
 	}
 
@@ -189,10 +208,10 @@ func (t *Router) SwapExactInputV2(
 		Universal_Router_ABI,
 		"execute",
 		&go_coin_eth.CallMethodOpts{
-			GasLimit:     gasLimit,
-			MaxFeePerGas: maxFeePerGas,
+			GasLimit:     realOpts.GasLimit,
+			MaxFeePerGas: realOpts.MaxFeePerGas,
 			Value:        value,
-			Nonce:        nonce,
+			Nonce:        realOpts.Nonce,
 		},
 		[]any{
 			commands,

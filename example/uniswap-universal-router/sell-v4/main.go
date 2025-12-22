@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
@@ -91,10 +90,10 @@ func do() error {
 		pairInfo,
 		tokenIn,
 		amountInWithDecimals,
-		100,
-		220000,
-		big.NewInt(100000000),
 		uniswap_v4.Pancake_BscChainQuoter,
+		&uniswap_universal_router.SwapOpts{
+			Slippage: 100,
+		},
 	)
 	if err != nil {
 		return err

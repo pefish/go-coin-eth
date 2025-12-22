@@ -19,12 +19,40 @@ func (t *Router) SwapExactInputV4(
 	poolKey *uniswap_v4.PoolKeyType,
 	tokenIn common.Address,
 	amountInWithDecimals *big.Int,
-	slipage uint64, // 例如 slipage = 50，表示 0.5%
-	gasLimit uint64,
-	maxFeePerGas *big.Int,
 	v4QuoterAddress common.Address,
+	opts *SwapOpts,
 ) (*SwapResultType, error) {
-	if slipage > 10000 {
+	var realOpts SwapOpts
+	if opts != nil {
+		realOpts = *opts
+	}
+
+	if realOpts.Slippage == 0 {
+		realOpts.Slippage = 50
+	}
+
+	if realOpts.GasLimit == 0 {
+		realOpts.GasLimit = 300000
+	}
+
+	if realOpts.MaxFeePerGas == nil {
+		realOpts.MaxFeePerGas = big.NewInt(1_0000_0000)
+	}
+
+	userAddress, err := t.wallet.PrivateKeyToAddress(priv)
+	if err != nil {
+		return nil, err
+	}
+
+	if realOpts.Nonce == 0 {
+		nonce, err := t.wallet.NextNonce(userAddress)
+		if err != nil {
+			return nil, err
+		}
+		realOpts.Nonce = nonce
+	}
+
+	if realOpts.Slippage > 10000 {
 		return nil, errors.New("slipage too high")
 	}
 	uniswapV4 := uniswap_v4.New(t.logger, t.wallet)
@@ -39,7 +67,7 @@ func (t *Router) SwapExactInputV4(
 	}
 
 	amountOutMinimum := big.NewInt(0)
-	if slipage > 0 {
+	if realOpts.Slippage > 0 {
 		quoteResult, err := uniswapV4.QuoteExactInputSingle(
 			v4QuoterAddress,
 			poolKey,
@@ -51,7 +79,7 @@ func (t *Router) SwapExactInputV4(
 		}
 		amountOutMinimum = go_decimal.MustStart(quoteResult.AmountOut).
 			MustMulti(
-				(10000 - float64(slipage)) / 10000,
+				(10000 - float64(realOpts.Slippage)) / 10000,
 			).RoundDown(0).MustEndForBigInt()
 	}
 
@@ -120,13 +148,6 @@ func (t *Router) SwapExactInputV4(
 		return nil, errors.Wrap(err, "")
 	}
 
-	userAddress, _ := t.wallet.PrivateKeyToAddress(priv)
-
-	nonce, err := t.wallet.NextNonce(userAddress)
-	if err != nil {
-		return nil, err
-	}
-
 	value := big.NewInt(0)
 	if tokenIn == go_coin_eth.ZeroAddress {
 		value = amountInWithDecimals
@@ -136,13 +157,13 @@ func (t *Router) SwapExactInputV4(
 			priv,
 			tokenIn,
 			amountInWithDecimals,
-			maxFeePerGas,
-			nonce,
+			realOpts.MaxFeePerGas,
+			realOpts.Nonce,
 		)
 		if err != nil {
 			return nil, err
 		}
-		nonce = newNonce
+		realOpts.Nonce = newNonce
 	}
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
@@ -150,10 +171,10 @@ func (t *Router) SwapExactInputV4(
 		Universal_Router_ABI,
 		"execute",
 		&go_coin_eth.CallMethodOpts{
-			GasLimit:     gasLimit,
-			MaxFeePerGas: maxFeePerGas,
+			GasLimit:     realOpts.GasLimit,
+			MaxFeePerGas: realOpts.MaxFeePerGas,
 			Value:        value,
-			Nonce:        nonce,
+			Nonce:        realOpts.Nonce,
 		},
 		[]any{
 			[]byte{0x10}, // Commands.INFI_SWAP

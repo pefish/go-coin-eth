@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/davecgh/go-spew/spew"
@@ -83,10 +82,10 @@ func do() error {
 		poolKey,
 		tokenIn,
 		amountInWithDecimals,
-		100,
-		20_0000,
-		big.NewInt(100000000),
 		uniswap_v2.Pancake_BscChainRouter,
+		&uniswap_universal_router.SwapOpts{
+			Slippage: 100,
+		},
 	)
 	if err != nil {
 		return err
