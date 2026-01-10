@@ -279,6 +279,7 @@ func (t *UniswapV2) SellByExactToken(
 		MustMulti(1 - realOpts.Slippage).
 		RoundDown(0).
 		MustEndForBigInt()
+	t.logger.InfoF("<slippage: %f> <amountOutWithDecimals: %s> <minETHAmountWithDecimals: %s>", realOpts.Slippage, amountOutWithDecimals.String(), minETHAmountWithDecimals.String())
 
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,
