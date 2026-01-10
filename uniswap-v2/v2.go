@@ -267,7 +267,7 @@ func (t *UniswapV2) SellByExactToken(
 	amountOutWithDecimals, err := t.GetAmountsOut(
 		routerAddress,
 		poolInfo,
-		realOpts.WETHAddress,
+		tokenAddress,
 		tokenAmountWithDecimals,
 	)
 	if err != nil {
@@ -279,14 +279,14 @@ func (t *UniswapV2) SellByExactToken(
 		MustMulti(1 - realOpts.Slippage).
 		RoundDown(0).
 		MustEndForBigInt()
-	t.logger.InfoF(
-		"<tokenAmountWithDecimals: %s> <amountOutWithDecimals: %s> <slippage: %f> <minETHAmountWithDecimals: %s>",
-		tokenAmountWithDecimals.String(),
-		amountOutWithDecimals.String(),
-		realOpts.Slippage,
-		minETHAmountWithDecimals.String(),
-	)
-	minETHAmountWithDecimals = big.NewInt(0)
+	// t.logger.InfoF(
+	// 	"<tokenAmountWithDecimals: %s> <amountOutWithDecimals: %s> <slippage: %f> <minETHAmountWithDecimals: %s>",
+	// 	tokenAmountWithDecimals.String(),
+	// 	amountOutWithDecimals.String(),
+	// 	realOpts.Slippage,
+	// 	minETHAmountWithDecimals.String(),
+	// )
+	// minETHAmountWithDecimals = big.NewInt(0)
 
 	btr, err := t.wallet.BuildCallMethodTx(
 		priv,

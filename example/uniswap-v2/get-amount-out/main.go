@@ -43,12 +43,12 @@ func main() {
 
 var poolInfo = &uniswap_v2.PoolInfoType{
 	BaseTokenAddress: go_coin_eth.WBNBAddress, // WBNB
-	TokenAddress:     common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19"),
+	TokenAddress:     common.HexToAddress("0x924fa68a0FC644485b8df8AbfA0A41C2e7744444"),
 }
-var tokenAddress = common.HexToAddress("0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19")
+var tokenAddress = common.HexToAddress("0x924fa68a0FC644485b8df8AbfA0A41C2e7744444")
 
 var tokenIn = tokenAddress
-var amountInWithDecimals = go_decimal.MustStart("1000").MustShiftedBy(18).MustEndForBigInt()
+var amountInWithDecimals = go_decimal.MustStart("62476766410090636150").MustShiftedBy(0).MustEndForBigInt()
 
 var logger i_logger.ILogger = &i_logger.DefaultLogger
 
@@ -73,6 +73,6 @@ func do() error {
 	if err != nil {
 		return err
 	}
-	spew.Dump(quoteResult)
+	spew.Dump(quoteResult.String())
 	return nil
 }
